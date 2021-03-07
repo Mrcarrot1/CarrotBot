@@ -1,0 +1,53 @@
+__**Math**__
+Add- Adds two numbers: `%math add <number1> <number2>`
+
+Subtract- Subtracts a number from another number: `%math subtract <number1> <number2>`
+
+Multiply- Multiplies two numbers: `%math multiply <number1> <number2>`
+
+Divide- Divides a number by another number: `%math divide <dividend> <divisor>`
+
+Sqrt- Returns the square root of a number: `%math sqrt <number>`
+
+Square- Returns the square of a number: `%math square <number>`
+
+PowerOf- Returns a specified power of a number: `%math powerof <number> <exponent>`
+
+Average- Returns the average of three numbers: `%math average <number1> <number2> <number3>`
+
+__**Bot**__(\* = Can be used by only trusted users, \*\* = Can be used by only the bot owner)
+Info- Returns info about the bot: `%bot info`
+
+AddTrustedUser\*\*- Adds a user to the trusted list: `%bot addtrusteduser <userID>`
+
+RemoveTrustedUser\*\*- Removes a user from the trusted list: `%bot removetrusteduser <userID>`
+
+SuggestFeature- Suggests a feature be added to the bot by the bot owner(Mrcarrot#3305): `%bot suggestfeature "<feature>"`
+
+Help- The command you just used!(`%help`)
+
+Invite- Returns a link to invite the bot to your server: `%bot invite`
+
+Server- Returns the link to the official server for the bot: `%bot server`
+
+__**Server**__
+Info- Returns info about the server: `%server info`
+
+Owner- Returns the server owner: `%server owner`
+
+__**User**__
+Info- Returns info about a specified user: `%user info <user>`
+
+Get- Returns the name and discriminator(i. e. the four numbers that come after the Username) of a specified user: `%user get <user>`
+
+GetID- Returns the ID of a specified user: `%user getid <user>`
+
+__**Random**__
+String- Returns a random string: `%random string <length>`
+
+Int- Returns a random integer: `%random int <minvalue> <maxvalue>`
+
+__**Channel**__
+GetID- Returns the internal ID of a channel: `%channel getid <channel>`
+
+AddToLink\*-Adds a channel to the multi-server conversation: `%channel addtolink <channelID> <channelCallSign>`

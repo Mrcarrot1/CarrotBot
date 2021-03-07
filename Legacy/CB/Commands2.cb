@@ -1,0 +1,8 @@
+__**Terms**
+__Accept- Used to accept the terms of the multi-server conversation: `%terms accept`
+
+__**Message**__
+Say\*- Makes the bot say something: `%message say "<message>" <channelId>` \*Note: the channel ID is optional
+User\*- Makes the bot message a user: `%message user "<message>" <userId>`
+Broadcast\*- Makes the bot send a message into the multi-server conversation: `%message broadcast "<message>"`
+Get- Gets the properties and text of a message and sends a message containing them: `%message get <messageId>`
