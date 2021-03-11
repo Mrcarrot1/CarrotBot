@@ -45,6 +45,8 @@ namespace CarrotBot
             });
             discord.MessageCreated += HandleMessage;
             discord.Ready += Ready;
+            discord.MessageUpdated += MessageUpdated;
+            discord.MessageDeleted += MessageDeleted;
             await discord.ConnectAsync();
 
             BotGuild = discord.GetGuildAsync(388339196978266114).Result;
@@ -80,6 +82,20 @@ namespace CarrotBot
             {
                 await Conversation.Conversation.StartConversation();
                 firstRun = false;
+            }
+        }
+        static async Task MessageUpdated(MessageUpdateEventArgs e)
+        {
+            if(Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            {
+                await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
+            }
+        }
+        static async Task MessageDeleted(MessageDeleteEventArgs e)
+        {
+            if(Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            {
+                await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
             }
         }
     }

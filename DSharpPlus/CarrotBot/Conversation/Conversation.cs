@@ -12,24 +12,25 @@ namespace CarrotBot.Conversation
 {
     public class Conversation
     {
-        public static List<ConversationChannel> ConversationChannels = new List<ConversationChannel>();
-        public static List<ulong> AcceptedUsers = new List<ulong>();
+        private static DiscordChannel liveFeedChannel = null;
         public static async Task CarryOutConversation(DiscordMessage message)
         {
             ulong userId = message.Author.Id;
             bool channelIsInConversation = false;
             string Server = "";
-            for (int i = 0; i < ConversationChannels.Count(); i++)
+            ConversationChannel originalChannel = null;
+            for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
-                if (message.Channel.Id == ConversationChannels[i].Id)
+                if (message.Channel.Id == ConversationData.ConversationChannels[i].Id)
                 {
                     channelIsInConversation = true;
-                    Server = ConversationChannels[i].Server;
+                    Server = ConversationData.ConversationChannels[i].Server;
+                    originalChannel = ConversationData.ConversationChannels[i];
                 }
             }
             if (!channelIsInConversation)
                 return;
-            if (!AcceptedUsers.Contains(userId))
+            if (!ConversationData.AcceptedUsers.Contains(userId))
             {
                 var user = await message.Channel.Guild.GetMemberAsync(userId);
                 await message.DeleteAsync();
@@ -37,12 +38,19 @@ namespace CarrotBot.Conversation
                 Thread.Sleep(10);
                 return;
             }
-            for (int i = 0; i < ConversationChannels.Count(); i++)
+            if(ConversationData.BannedUsers.Contains(userId))
+            {
+                var user = await message.Channel.Guild.GetMemberAsync(userId);
+                await message.DeleteAsync();
+                await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
+            }
+            ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, originalChannel);
+            for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
 
-                if (message.Channel.Id != ConversationChannels[i].Id)
+                if (message.Channel.Id != ConversationData.ConversationChannels[i].Id)
                 {
-                    var channel = Program.discord.GetChannelAsync(ConversationChannels[i].Id).Result;
+                    var channel = Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
                     string messageToSend = $"({Server}) {message.Author.Username}#{message.Author.Discriminator}: {message.Content.Replace("@", "@ ")}";
                     if (message.Attachments.Count > 0)
                         messageToSend += $"\n   Attached File: {message.Attachments.First().Url}";
@@ -52,9 +60,9 @@ namespace CarrotBot.Conversation
                     try
                     {
                         if (!Embed)
-                            await channel.SendMessageAsync(messageToSend);
+                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend));
                         else
-                            await channel.SendMessageAsync(messageToSend, false, message.Embeds.First() as DiscordEmbed);
+                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend, false, message.Embeds.First() as DiscordEmbed));
                     }
                     catch(Exception e)
                     {
@@ -64,19 +72,27 @@ namespace CarrotBot.Conversation
                     Thread.Sleep(1);
                 }
             }
+            ConversationData.ConversationMessages.Add(msgObject.Id, msgObject);
+            ConversationData.ConversationMessagesByOrigId.Add(message.Id, msgObject);
+            ConversationData.LastMessage = msgObject;
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+            eb.WithDescription(message.Content);
+            eb.WithFooter($"Internal CB Id: {msgObject.Id}");
+            msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
         }
         public static async Task SendConversationMessage(string msg)
         {
             LoadDatabase();
-            for (int i = 0; i < ConversationChannels.Count(); i++)
+            for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
                 try
                 {
-                    await Program.discord.GetChannelAsync(ConversationChannels[i].Id).Result.SendMessageAsync(msg);
+                    await Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result.SendMessageAsync(msg);
                 }
                 catch (Exception e)
                 {
-                    await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {ConversationChannels[i].Id}:\n{e.ToString()}");
+                    await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {ConversationData.ConversationChannels[i].Id}:\n{e.ToString()}");
                 }
                 Thread.Sleep(5);
             }
@@ -84,43 +100,43 @@ namespace CarrotBot.Conversation
         public static async Task StartConversation()
         {
             LoadDatabase();
-            await SendConversationMessage("WARNING: THIS IS A HIGHLY UNSTABLE BETA\nThe CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
+            await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
             Program.conversation = true;
         }
         public static void LoadDatabase()
         {
-            ConversationChannels = new List<ConversationChannel>();
-            foreach (string str in File.ReadAllLines($@"{Utils.localDataPath}/ConversationServers.csv"))
+            liveFeedChannel = Program.discord.GetChannelAsync(818960559625732096).Result;
+            ConversationData.ConversationChannels = new List<ConversationChannel>();
+            foreach (string str in File.ReadAllLines($@"{Utils.conversationDataPath}/ConversationServers.csv"))
             {
                 string[] values = str.Split(',');
                 if (values[1] != null)
                 {
                     bool ok = ulong.TryParse(values[0], out ulong Id);
                     if (ok)
-                        ConversationChannels.Add(new ConversationChannel(Id, values[1]));
+                        ConversationData.ConversationChannels.Add(new ConversationChannel(Id, values[1]));
                 }
             }
-            foreach (string str in File.ReadAllText($@"{Utils.localDataPath}/AcceptedUsers.cb").Split(','))
+            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/AcceptedUsers.cb").Split(','))
             {
                 if (ulong.TryParse(str, out ulong userId))
-                    AcceptedUsers.Add(userId);
+                    ConversationData.AcceptedUsers.Add(userId);
             }
-        }
-    }
-    public class ConversationChannel
-    {
-        public ulong Id { get; set; }
-        public string Server { get; set; }
-
-        public ConversationChannel()
-        {
-            Server = null;
-            Id = 0;
-        }
-        public ConversationChannel(ulong id, string server)
-        {
-            Server = server;
-            Id = id;
+            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/Administrators.cb").Split(','))
+            {
+                if (ulong.TryParse(str, out ulong userId))
+                    ConversationData.Administrators.Add(userId);
+            }
+            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/Moderators.cb").Split(','))
+            {
+                if (ulong.TryParse(str, out ulong userId))
+                    ConversationData.Moderators.Add(userId);
+            }
+            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/BannedUsers.cb").Split(','))
+            {
+                if (ulong.TryParse(str, out ulong userId))
+                    ConversationData.BannedUsers.Add(userId);
+            }
         }
     }
 }

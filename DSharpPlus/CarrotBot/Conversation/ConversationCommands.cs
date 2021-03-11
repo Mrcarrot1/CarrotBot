@@ -56,8 +56,8 @@ namespace CarrotBot.Conversation
             if(accept)
             {
                 await ctx.RespondAsync("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.");
-                Conversation.AcceptedUsers.Add(ctx.User.Id);
-                File.AppendAllText($@"{Utils.localDataPath}/AcceptedUsers.cb", $",{ctx.User.Id}");
+                ConversationData.AcceptedUsers.Add(ctx.User.Id);
+                File.AppendAllText($@"{Utils.conversationDataPath}/AcceptedUsers.cb", $",{ctx.User.Id}");
             }
             else
             {
@@ -75,16 +75,65 @@ namespace CarrotBot.Conversation
         public async Task AddChannel(CommandContext ctx, string channel, string name)
         {
             ulong Id = Utils.GetId(channel);
-            if(ctx.User.Id == 366298290377195522)
+            if(ConversationData.Administrators.Contains(ctx.User.Id))
             {
-                File.AppendAllText($@"{Utils.localDataPath}/ConversationServers.csv", $"\n{Id},{name}");
+                File.AppendAllText($@"{Utils.conversationDataPath}/ConversationServers.csv", $"\n{Id},{name}");
                 Conversation.LoadDatabase();
                 await ctx.RespondAsync("Channel added to conversation.");
             }
             else
             {
-                await Program.Mrcarrot.SendMessageAsync($"Channel requested for addition to conversation: {Id}, {name}");
+                await Program.discord.GetChannelAsync(818960822151544873).Result.SendMessageAsync($"Channel requested for addition to conversation: {Id}, {name}");
                 await ctx.RespondAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
+            }
+        }
+        [Command("ban"), Description("Bans a user from being able to take part in the conversation.")]
+        public async Task BanUser(CommandContext ctx, string user)
+        {
+            ulong Id = Utils.GetId(user);
+            if(!ConversationData.Moderators.Contains(Id) && ConversationData.Moderators.Contains(ctx.User.Id))
+            {
+                ConversationData.BannedUsers.Add(Id);
+                File.AppendAllText($@"{Utils.conversationDataPath}/BannedUsers.cb", $",{Id}");
+                await ctx.RespondAsync("User banned.");
+            }
+            else
+            {
+                await ctx.RespondAsync("Either that user is a moderator, or you don't have permisson to ban people.");
+            }
+        }
+        [Command("deletemsg"), Description("Deletes a message from the conversation.")]
+        public async Task DeleteMessage(CommandContext ctx, ulong msgId)
+        {
+            if(ConversationData.Moderators.Contains(ctx.User.Id))
+            {
+                await ConversationData.ConversationMessages[msgId].DeleteMessage();
+                await ctx.RespondAsync("Message deleted.");
+            }
+            else
+            {
+                await ctx.RespondAsync("You don't have permission to do that!");
+            }
+        }
+        [Command("addmod"), Description("Adds a user as a conversation moderator.")]
+        public async Task AddMod(CommandContext ctx, string user, bool confirm = false)
+        {
+            ulong Id = Utils.GetId(user);
+            DiscordUser duser = await Program.discord.GetUserAsync(Id);
+            if(!ConversationData.Administrators.Contains(ctx.User.Id))
+            {
+                await ctx.RespondAsync("You don't have permission to do that!");
+                return;
+            }
+            if(!confirm)
+            {
+                await ctx.RespondAsync($"About to add {duser.Username}#{duser.Discriminator} as a conversation moderator.\nType `%conversation addmod {Id} true to continue.");
+            }
+            else
+            {
+                ConversationData.Moderators.Add(Id);
+                File.AppendAllText($@"{Utils.conversationDataPath}/Moderators.cb", $",{Id}");
+                await ctx.RespondAsync($"Added {duser.Username} as a conversation moderator.");
             }
         }
     }

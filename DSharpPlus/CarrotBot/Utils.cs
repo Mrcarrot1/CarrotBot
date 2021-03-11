@@ -7,6 +7,7 @@ namespace CarrotBot
     {
         
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
+        public static string conversationDataPath = $@"{localDataPath}/Conversation";
         public static ulong GetId(string mention)
         {
             try
