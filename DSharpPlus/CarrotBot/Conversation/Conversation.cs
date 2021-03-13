@@ -79,6 +79,7 @@ namespace CarrotBot.Conversation
             eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
             eb.WithDescription(message.Content);
             eb.WithFooter($"Internal CB Id: {msgObject.Id}");
+            eb.WithColor(DiscordColor.Yellow);
             msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
         }
         public static async Task SendConversationMessage(string msg)

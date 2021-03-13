@@ -19,6 +19,12 @@ namespace CarrotBot.Conversation
         {
             if(includeOriginal)
                 await originalMessage.DeleteAsync();
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds.First().Title}");
+            eb.WithDescription(liveFeedMessage.Embeds.First().Description);
+            eb.WithFooter($"Internal CB Id: {Id}");
+            eb.WithColor(DiscordColor.Red);
+            await liveFeedMessage.ModifyAsync(embed: eb.Build());
             foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
             {
                 await msg.Value.DeleteAsync();
@@ -27,11 +33,13 @@ namespace CarrotBot.Conversation
 
         public async Task UpdateMessage()
         {
-            /*DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-            eb.WithTitle($"Message from {originalMessage.Author.Username}#{originalMessage.Author.Discriminator} (via {originalChannel.Server})");
-            eb.WithDescription(originalMessage.Content);
-            eb.WithFooter($"Internal CB Id: {msgObject.Id}");
-            await liveFeedMessage.ModifyAsync(embed: liveFeedMessage.Embeds.First().);*/
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle($"[EDITED] {liveFeedMessage.Embeds.First().Title}");
+            eb.AddField("Original Content:", liveFeedMessage.Embeds.First().Description);
+            eb.AddField("Edited Content:", originalMessage.Content);
+            eb.WithFooter($"Internal CB Id: {Id}");
+            eb.WithColor(DiscordColor.Yellow);
+            await liveFeedMessage.ModifyAsync(embed: eb.Build());
             foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
             {
                 await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
