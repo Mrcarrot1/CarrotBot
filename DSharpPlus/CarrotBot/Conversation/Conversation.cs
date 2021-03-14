@@ -30,9 +30,9 @@ namespace CarrotBot.Conversation
             }
             if (!channelIsInConversation)
                 return;
+            var user = await message.Channel.Guild.GetMemberAsync(userId);
             if (!ConversationData.AcceptedUsers.Contains(userId))
             {
-                var user = await message.Channel.Guild.GetMemberAsync(userId);
                 await message.DeleteAsync();
                 await user.SendMessageAsync($"<@{userId}> By entering the conversation, you consent to having your data read and used by others. \nType `%conversation acceptterms` to accept these terms. Until you do, your data will not be sent.");
                 Thread.Sleep(10);
@@ -40,21 +40,48 @@ namespace CarrotBot.Conversation
             }
             if(ConversationData.BannedUsers.Contains(userId))
             {
-                var user = await message.Channel.Guild.GetMemberAsync(userId);
                 await message.DeleteAsync();
                 await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
             }
-            ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, originalChannel);
+            ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel);
+            DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
+            string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
+            string Footer = $"Via {Server}";
+            if(ConversationData.Administrators.Contains(userId))
+            {
+                Title = $"[ADMIN] {Title}";
+                eb2.WithColor(DiscordColor.Blue);
+                Footer = $"This user is a conversation administrator ・ {Footer}";
+            }
+            if(ConversationData.Moderators.Contains(userId))
+            {
+                Title = $"[MOD] {Title}";
+                eb2.WithColor(DiscordColor.Magenta);
+                Footer = $"This user is a conversation moderataor ・ {Footer}";
+            }
+            if(userId == 366298290377195522)
+            {
+                Title = $"[DEV] {Title}";
+                eb2.WithColor(DiscordColor.Green);
+                Footer = $"This user is the developer of CarrotBot ・　{Footer}";
+            }
+            eb2.WithTitle($"{message.Author.Username}#{message.Author.Discriminator}");
+            eb2.WithThumbnailUrl(message.Author.AvatarUrl);
+            eb2.WithFooter($"Via {Server}");
+            eb2.WithDescription(message.Content);
+            if (message.Attachments.Count > 0)
+            {
+                eb2.WithImageUrl(message.Attachments[0].Url);
+                eb2.AddField("Attachment URL", message.Attachments[0].Url);
+            }
+            DiscordEmbed embed = eb2.Build();
             for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
-
                 if (message.Channel.Id != ConversationData.ConversationChannels[i].Id)
                 {
                     var channel = Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
-                    string messageToSend = $"({Server}) {message.Author.Username}#{message.Author.Discriminator}: {message.Content.Replace("@", "@ ")}";
-                    if (message.Attachments.Count > 0)
-                        messageToSend += $"\n   Attached File: {message.Attachments.First().Url}";
-                    bool Embed = false;
+                    
+                    /*bool Embed = false;
                     if (message.Embeds.Count > 0)
                         Embed = true;
                     try
@@ -62,7 +89,11 @@ namespace CarrotBot.Conversation
                         if (!Embed)
                             msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend));
                         else
-                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend, false, message.Embeds.First() as DiscordEmbed));
+                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend, false, message.Embeds[0] as DiscordEmbed));
+                    }*/
+                    try
+                    {
+                        msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(embed: embed));
                     }
                     catch(Exception e)
                     {
@@ -78,9 +109,10 @@ namespace CarrotBot.Conversation
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
             eb.WithDescription(message.Content);
-            eb.WithFooter($"Internal CB Id: {msgObject.Id}");
-            eb.WithColor(DiscordColor.Yellow);
+            eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
+            eb.WithColor(DiscordColor.Green);
             msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
+            msgObject.Embed = embed;
         }
         public static async Task SendConversationMessage(string msg)
         {
