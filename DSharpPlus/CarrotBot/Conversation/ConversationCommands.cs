@@ -25,7 +25,7 @@ namespace CarrotBot.Conversation
                 return;
             }
             
-            if(loadDatabase) Conversation.LoadDatabase();
+            if(loadDatabase) ConversationData.LoadDatabase();
             await Conversation.SendConversationMessage("WARNING: THIS IS A HIGHLY UNSTABLE BETA\nThe CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
             Program.conversation = true;
             await ctx.RespondAsync("Started conversation.");
@@ -42,6 +42,7 @@ namespace CarrotBot.Conversation
 
             await Conversation.SendConversationMessage("The CarrotBot Multi-Server Conversation is no longer active.");
             Program.conversation = false;
+            ConversationData.WriteDatabase();
             await ctx.RespondAsync("Stopped conversation.");
         }
         [Command("sendmessage")]
@@ -57,7 +58,7 @@ namespace CarrotBot.Conversation
             {
                 await ctx.RespondAsync("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.");
                 ConversationData.AcceptedUsers.Add(ctx.User.Id);
-                File.AppendAllText($@"{Utils.conversationDataPath}/AcceptedUsers.cb", $",{ctx.User.Id}");
+                ConversationData.WriteDatabase();
             }
             else
             {
@@ -68,8 +69,14 @@ namespace CarrotBot.Conversation
         [Command("reload")]
         public async Task ReloadDatabase(CommandContext ctx)
         {
-            Conversation.LoadDatabase();
+            ConversationData.LoadDatabase();
             await ctx.RespondAsync("Reloaded conversation database.");
+        }
+        [Command("flushdatabase")]
+        public async Task FlushDatabase(CommandContext ctx)
+        {
+            ConversationData.WriteDatabase();
+            await ctx.RespondAsync("Wrote conversation database to disk");
         }
         [Command("addchannel"), Description("Used to add your channel to the conversation")]
         public async Task AddChannel(CommandContext ctx, string channel, string name)
@@ -77,8 +84,8 @@ namespace CarrotBot.Conversation
             ulong Id = Utils.GetId(channel);
             if(ConversationData.Administrators.Contains(ctx.User.Id))
             {
-                File.AppendAllText($@"{Utils.conversationDataPath}/ConversationServers.csv", $"\n{Id},{name}");
-                Conversation.LoadDatabase();
+                ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name));
+                ConversationData.WriteDatabase();
                 await ctx.RespondAsync("Channel added to conversation.");
             }
             else
@@ -94,7 +101,7 @@ namespace CarrotBot.Conversation
             if(!ConversationData.Moderators.Contains(Id) && ConversationData.Moderators.Contains(ctx.User.Id))
             {
                 ConversationData.BannedUsers.Add(Id);
-                File.AppendAllText($@"{Utils.conversationDataPath}/BannedUsers.cb", $",{Id}");
+                ConversationData.WriteDatabase();
                 await ctx.RespondAsync("User banned.");
             }
             else
@@ -132,9 +139,23 @@ namespace CarrotBot.Conversation
             else
             {
                 ConversationData.Moderators.Add(Id);
-                File.AppendAllText($@"{Utils.conversationDataPath}/Moderators.cb", $",{Id}");
+                ConversationData.WriteDatabase();
                 await ctx.RespondAsync($"Added {duser.Username} as a conversation moderator.");
             }
+        }
+        [Command("approveuser"), Description("Adds a user to the conversation verified list.")]
+        public async Task ApproveUser(CommandContext ctx, string user)
+        {
+            ulong Id = Utils.GetId(user);
+            DiscordUser duser = await Program.discord.GetUserAsync(Id);
+            if(!ConversationData.Moderators.Contains(ctx.User.Id))
+            {
+                await ctx.RespondAsync("You don't have permission to do that!");
+                return;
+            }
+            ConversationData.VerifiedUsers.Add(Id);
+            ConversationData.WriteDatabase();
+            await ctx.RespondAsync($"Added {duser.Username} as a verified conversation user.");
         }
     }
 }

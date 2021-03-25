@@ -14,8 +14,8 @@ namespace CarrotBot
         public static void Setup()
         {
             firstRun = false;
-            //logPath = $@"{Utils.localDataPath}/Log.txt";
-            //File.WriteAllText(logPath, "-----Log initiated for CarrotBot.-----\nRun by " + Environment.UserName + ". Local time: " + DateTime.Now + "; UTC: " + DateTime.UtcNow + ".\n---------------------------------------------");
+            logPath = $@"{Utils.localDataPath}/Log.txt";
+            File.WriteAllText(logPath, "-----Log initiated for CarrotBot.-----\nRun by " + Environment.UserName + ". Local time: " + DateTime.Now + "; UTC: " + DateTime.UtcNow + ".\n---------------------------------------------");
 
         }
         public static void Log(string Message)
@@ -23,7 +23,7 @@ namespace CarrotBot
             if (firstRun)
                 Setup();
             //ISocketMessageChannel channel = Program.client.GetChannel(490551836323872779) as ISocketMessageChannel;
-            //File.AppendAllText(logPath, $"\n{Message}");
+            File.AppendAllText(logPath, $"\n{Message}");
             Console.WriteLine(Message);
             Thread.Sleep(75);
             //if (channel != null)

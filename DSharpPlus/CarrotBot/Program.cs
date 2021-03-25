@@ -11,7 +11,7 @@ namespace CarrotBot
     class Program
     {
         //Set to true to run beta
-        private static readonly bool isBeta = false;
+        public static readonly bool isBeta = false;
         //Set to true to enable certain debug features such as more verbose logs
         private static readonly bool debug = true;
 
@@ -49,8 +49,7 @@ namespace CarrotBot
             discord.MessageDeleted += MessageDeleted;
             await discord.ConnectAsync();
 
-            BotGuild = discord.GetGuildAsync(388339196978266114).Result;
-            Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
+            
             
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
@@ -63,22 +62,33 @@ namespace CarrotBot
             commands.RegisterCommands<Commands.BotCommands>();
             commands.RegisterCommands<Commands.MathCommands>();
             commands.RegisterCommands<Commands.UserCommands>();
+            commands.RegisterCommands<Commands.ServerCommands>();
+            commands.RegisterCommands<Commands.GuildCommands>();
 
             await Task.Delay(-1);
         }
         static async Task HandleMessage(MessageCreateEventArgs e)
         {
+            try
+            {
             if(debug)
                 Console.WriteLine($"{e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}");
             if(conversation && e.Message.Author.Id != discord.CurrentUser.Id)
                 await Conversation.Conversation.CarryOutConversation(e.Message);
+            }
+            catch(Exception ee)
+            {
+                Logger.Log(ee.ToString());
+            }
         }
         static async Task Ready(ReadyEventArgs e)
         {
+            BotGuild = discord.GetGuildAsync(388339196978266114).Result;
+            Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
             Logger.Log("Connection ready");
             await discord.UpdateStatusAsync(new DiscordGame($"in {discord.Guilds.Count} servers | {commandPrefix}help"));
 
-            if(!isBeta && firstRun)
+            if(firstRun)
             {
                 await Conversation.Conversation.StartConversation();
                 firstRun = false;

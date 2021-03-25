@@ -12,7 +12,8 @@ namespace CarrotBot.Conversation
 {
     public class Conversation
     {
-        private static DiscordChannel liveFeedChannel = null;
+        public static DiscordChannel liveFeedChannel = null;
+        public static DiscordChannel embedsChannel = null;
         public static async Task CarryOutConversation(DiscordMessage message)
         {
             ulong userId = message.Author.Id;
@@ -42,32 +43,96 @@ namespace CarrotBot.Conversation
             {
                 await message.DeleteAsync();
                 await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
+                return;
+            }
+            if(ConversationData.LastMessage != null)
+            {
+                if(ConversationData.LastMessage.Author.Id == userId && ConversationData.LastMessage.originalChannel.Id == originalChannel.Id)
+                {
+                    //Messages in the same embed are separated by the zero width space (​)
+                    if(ConversationData.LastMessage.Embed.Description.Length + message.Content.Length <= 2046)
+                    {
+                        ConversationMessage secondMsgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel, ConversationData.LastMessage.IndexInEmbed + 1);
+                        DiscordEmbedBuilder eb3 = new DiscordEmbedBuilder(ConversationData.LastMessage.Embed);
+                        eb3.WithDescription(eb3.Description + "​\n" + message.Content); //Separate messages by a zero-width space followed by a line break
+                        var embed3 = eb3.Build();
+                        secondMsgObject.Embed = embed3;
+                        secondMsgObject.ChannelMessages = ConversationData.LastMessage.ChannelMessages;
+                        ConversationData.LastMessage = secondMsgObject;
+                        foreach(KeyValuePair<ulong, DiscordMessage> msg in ConversationData.LastMessage.ChannelMessages)
+                        {
+                            //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
+                            await msg.Value.ModifyAsync(embed: embed3);
+                        }
+                        await ConversationData.LastMessage.EmbedMessage.ModifyAsync(embed: embed3);
+                        DiscordEmbedBuilder eb4 = new DiscordEmbedBuilder();
+                        eb4.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+                        eb4.WithDescription(message.Content);
+                        eb4.WithFooter($"Internal CB Id: {secondMsgObject.Id}\nUser Id: {message.Author.Id}");
+                        eb4.WithColor(DiscordColor.Green);
+                        secondMsgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb4.Build());
+                        secondMsgObject.PreviousMessage = ConversationData.LastMessage;
+                        secondMsgObject.EmbedMessage = ConversationData.LastMessage.EmbedMessage;
+                        ConversationData.ConversationMessages.Add(secondMsgObject.Id, secondMsgObject);
+                        ConversationData.ConversationMessagesByOrigId.Add(message.Id, secondMsgObject);
+                        ConversationData.LastMessage.UpdateEmbed(false, true);
+                        ConversationData.LastMessage.NextMessage = secondMsgObject;
+                        ConversationData.LastMessage = secondMsgObject;
+                        return;
+                    }
+
+                }
+            }
+            DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
+            eb2.WithColor(DiscordColor.LightGray);
+            if(ConversationData.VerifiedUsers.Contains(userId))
+                eb2.WithColor(new DiscordColor("206E49"));
+            else if(ConversationData.PreVerifiedUsers.ContainsKey(userId))
+            {
+                if(DateTimeOffset.Now.Subtract(ConversationData.PreVerifiedUsers[userId].LastMessageSentTime) > new TimeSpan(0, 0, 60))
+                {
+                    ConversationData.PreVerifiedUsers[userId].MessagesSent++;
+                    ConversationData.PreVerifiedUsers[userId].LastMessageSentTime = DateTime.Now;
+                    if(ConversationData.PreVerifiedUsers[userId].MessagesSent >= 20)
+                    {
+                        ConversationData.VerifiedUsers.Add(userId);
+                        ConversationData.PreVerifiedUsers.Remove(userId);
+                        eb2.WithColor(new DiscordColor("206E49"));
+                    }
+                }
+                ConversationData.WriteDatabase();
+            }
+            else
+            {
+                ConversationData.PreVerifiedUsers.Add(userId, new PreVerifiedUser(userId, 1));
+                ConversationData.WriteDatabase();
             }
             ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel);
-            DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
             string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
             string Footer = $"Via {Server}";
-            if(ConversationData.Administrators.Contains(userId))
-            {
-                Title = $"[ADMIN] {Title}";
-                eb2.WithColor(DiscordColor.Blue);
-                Footer = $"This user is a conversation administrator ・ {Footer}";
-            }
-            if(ConversationData.Moderators.Contains(userId))
-            {
-                Title = $"[MOD] {Title}";
-                eb2.WithColor(DiscordColor.Magenta);
-                Footer = $"This user is a conversation moderataor ・ {Footer}";
-            }
+            
             if(userId == 366298290377195522)
             {
                 Title = $"[DEV] {Title}";
                 eb2.WithColor(DiscordColor.Green);
-                Footer = $"This user is the developer of CarrotBot ・　{Footer}";
+                Footer = $"CarrotBot Developer ・ {Footer}";
             }
-            eb2.WithTitle($"{message.Author.Username}#{message.Author.Discriminator}");
-            eb2.WithThumbnailUrl(message.Author.AvatarUrl);
-            eb2.WithFooter($"Via {Server}");
+            else if(ConversationData.Administrators.Contains(userId))
+            {
+                Title = $"[ADMIN] {Title}";
+                eb2.WithColor(DiscordColor.Blue);
+                Footer = $"Conversation Administrator ・ {Footer}";
+            }
+            else if(ConversationData.Moderators.Contains(userId))
+            {
+                Title = $"[MOD] {Title}";
+                eb2.WithColor(DiscordColor.Magenta);
+                Footer = $"Conversation Moderator ・ {Footer}";
+            } 
+            //eb2.WithTitle(Title);
+            eb2.WithAuthor(Title, icon_url: user.AvatarUrl);
+            
+            eb2.WithFooter(Footer);
             eb2.WithDescription(message.Content);
             if (message.Attachments.Count > 0)
             {
@@ -105,6 +170,7 @@ namespace CarrotBot.Conversation
             }
             ConversationData.ConversationMessages.Add(msgObject.Id, msgObject);
             ConversationData.ConversationMessagesByOrigId.Add(message.Id, msgObject);
+            msgObject.PreviousMessage = ConversationData.LastMessage;
             ConversationData.LastMessage = msgObject;
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
@@ -113,10 +179,11 @@ namespace CarrotBot.Conversation
             eb.WithColor(DiscordColor.Green);
             msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
             msgObject.Embed = embed;
+            msgObject.EmbedMessage = await embedsChannel.SendMessageAsync(embed: embed);
         }
         public static async Task SendConversationMessage(string msg)
         {
-            LoadDatabase();
+            ConversationData.LoadDatabase();
             for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
                 try
@@ -132,43 +199,18 @@ namespace CarrotBot.Conversation
         }
         public static async Task StartConversation()
         {
-            LoadDatabase();
-            await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
-            Program.conversation = true;
-        }
-        public static void LoadDatabase()
-        {
-            liveFeedChannel = Program.discord.GetChannelAsync(818960559625732096).Result;
-            ConversationData.ConversationChannels = new List<ConversationChannel>();
-            foreach (string str in File.ReadAllLines($@"{Utils.conversationDataPath}/ConversationServers.csv"))
+            try
             {
-                string[] values = str.Split(',');
-                if (values[1] != null)
-                {
-                    bool ok = ulong.TryParse(values[0], out ulong Id);
-                    if (ok)
-                        ConversationData.ConversationChannels.Add(new ConversationChannel(Id, values[1]));
-                }
+                ConversationData.LoadDatabase();
+                if(!Program.isBeta)
+                    await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
+                else
+                    await SendConversationMessage("The CarrotBot Multi-Server Conversation Beta is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!\nThis is a beta version and as such is less stable and more frequently updated than the main conversation.");
+                Program.conversation = true;
             }
-            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/AcceptedUsers.cb").Split(','))
+            catch(Exception e)
             {
-                if (ulong.TryParse(str, out ulong userId))
-                    ConversationData.AcceptedUsers.Add(userId);
-            }
-            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/Administrators.cb").Split(','))
-            {
-                if (ulong.TryParse(str, out ulong userId))
-                    ConversationData.Administrators.Add(userId);
-            }
-            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/Moderators.cb").Split(','))
-            {
-                if (ulong.TryParse(str, out ulong userId))
-                    ConversationData.Moderators.Add(userId);
-            }
-            foreach (string str in File.ReadAllText($@"{Utils.conversationDataPath}/BannedUsers.cb").Split(','))
-            {
-                if (ulong.TryParse(str, out ulong userId))
-                    ConversationData.BannedUsers.Add(userId);
+                await Program.Mrcarrot.SendMessageAsync(e.ToString());
             }
         }
     }
