@@ -11,7 +11,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace CarrotBot.Commands
 {
-    [Group("server"), Description("Commands for interacting with a given server")]
+    [Group("server"), Description("Commands for interacting with a given server"), Aliases("guild")]
     public class ServerCommands
     {
         [Command("owner")]
@@ -37,6 +37,4 @@ namespace CarrotBot.Commands
             await ctx.RespondAsync(embed: eb.Build());
         }
     }
-    [Group("guild"), Description("Commands for interacting with a guild(alias for server)")]
-    public class GuildCommands : ServerCommands { }
 }

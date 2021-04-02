@@ -6,5 +6,9 @@
 		{
 			"path": "CBMessenger"
 		}
-	]
+	],
+	"settings": {
+		"files.autoSave": "afterDelay",
+		"editor.fontSize": 12
+	}
 }

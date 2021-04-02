@@ -5,6 +5,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
+using CarrotBot.Leveling;
 
 namespace CarrotBot
 {
@@ -63,7 +64,7 @@ namespace CarrotBot
             commands.RegisterCommands<Commands.MathCommands>();
             commands.RegisterCommands<Commands.UserCommands>();
             commands.RegisterCommands<Commands.ServerCommands>();
-            commands.RegisterCommands<Commands.GuildCommands>();
+            commands.RegisterCommands<LevelingCommands>();
 
             await Task.Delay(-1);
         }
@@ -71,10 +72,21 @@ namespace CarrotBot
         {
             try
             {
-            if(debug)
-                Console.WriteLine($"{e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}");
-            if(conversation && e.Message.Author.Id != discord.CurrentUser.Id)
-                await Conversation.Conversation.CarryOutConversation(e.Message);
+                if(debug)
+                    Console.WriteLine($"{e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}");
+                if(conversation && e.Message.Author.Id != discord.CurrentUser.Id)
+                    await Conversation.Conversation.CarryOutConversation(e.Message);
+                if(LevelingData.Servers.ContainsKey(e.Guild.Id) && e.Message.Author.Id != 389513870835974146)
+                {
+                    if(LevelingData.Servers[e.Guild.Id].Users.ContainsKey(e.Author.Id))
+                    {
+                        await LevelingData.Servers[e.Guild.Id].Users[e.Author.Id].HandleMessage(e.Message);
+                    }
+                    else if(!e.Author.IsBot)
+                    {
+                        LevelingData.Servers[e.Guild.Id].CreateUser(e.Message.Author.Id, DateTimeOffset.Now);
+                    }
+                }
             }
             catch(Exception ee)
             {
@@ -93,6 +105,7 @@ namespace CarrotBot
                 await Conversation.Conversation.StartConversation();
                 firstRun = false;
             }
+            LevelingData.LoadDatabase();
         }
         static async Task MessageUpdated(MessageUpdateEventArgs e)
         {
