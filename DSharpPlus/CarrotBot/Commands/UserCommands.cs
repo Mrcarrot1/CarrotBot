@@ -11,16 +11,23 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace CarrotBot.Commands
 {
-    [Group("user")]
+    //[Group("user")]
     public class UserCommands
     {
-        [Command("info"), Description("Gets info about a user")]
+        [Command("userinfo"), Description("Gets info about a user")]
         public async Task Info(CommandContext ctx, [Description("The user in question. Leave blank to return your own info.")]string userMention = null)
         {
             try {
             ulong userId = 0;
-            if (userMention != null)
-                userId = Utils.GetId(userMention);
+            try
+            {
+                if (userMention != null)
+                    userId = Utils.GetId(userMention);
+            }
+            catch(FormatException)
+            {
+
+            }
             var member = ctx.Member;
             try
             {

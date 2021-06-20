@@ -6,6 +6,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
 using CarrotBot.Leveling;
+using CarrotBot.Data;
 
 namespace CarrotBot
 {
@@ -20,7 +21,7 @@ namespace CarrotBot
         static bool firstRun = true;
 
         public static DiscordClient discord;
-        static CommandsNextModule commands;
+        public static CommandsNextModule commands;
         public static DiscordMember Mrcarrot;
         public static DiscordGuild BotGuild;
         private static string commandPrefix = "";
@@ -44,10 +45,13 @@ namespace CarrotBot
                 UseInternalLogHandler = true,
                 LogLevel = LogLevel.Debug
             });
+            Database.Load();
+            Dripcoin.LoadData();
             discord.MessageCreated += HandleMessage;
             discord.Ready += Ready;
             discord.MessageUpdated += MessageUpdated;
             discord.MessageDeleted += MessageDeleted;
+            discord.GuildMemberAdded += MemberJoined;
             await discord.ConnectAsync();
 
             
@@ -55,7 +59,8 @@ namespace CarrotBot
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = commandPrefix
+                StringPrefix = commandPrefix,
+                //EnableDefaultHelp = false
             });
             commands.RegisterCommands<Commands.UngroupedCommands>();
             commands.RegisterCommands<Conversation.ConversationCommands>();
@@ -65,8 +70,17 @@ namespace CarrotBot
             commands.RegisterCommands<Commands.UserCommands>();
             commands.RegisterCommands<Commands.ServerCommands>();
             commands.RegisterCommands<LevelingCommands>();
+            commands.RegisterCommands<DripcoinCommands>();
 
             await Task.Delay(-1);
+        }
+        static async Task MemberJoined(GuildMemberAddEventArgs e)
+        {
+            GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
+            foreach(ulong roleId in guildData.RolesToAssignOnJoin)
+            {
+                await e.Member.GrantRoleAsync(e.Guild.GetRole(roleId));
+            }
         }
         static async Task HandleMessage(MessageCreateEventArgs e)
         {
@@ -74,9 +88,11 @@ namespace CarrotBot
             {
                 if(debug)
                     Console.WriteLine($"{e.Author.Username}#{e.Author.Discriminator}: {e.Message.Content}");
-                if(conversation && e.Message.Author.Id != discord.CurrentUser.Id)
+                if(e.Author.Id == discord.CurrentUser.Id) return;
+                if(e.Channel.IsPrivate) return;
+                if(conversation)
                     await Conversation.Conversation.CarryOutConversation(e.Message);
-                if(LevelingData.Servers.ContainsKey(e.Guild.Id) && e.Message.Author.Id != 389513870835974146)
+                if(LevelingData.Servers.ContainsKey(e.Guild.Id))
                 {
                     if(LevelingData.Servers[e.Guild.Id].Users.ContainsKey(e.Author.Id))
                     {
@@ -86,6 +102,28 @@ namespace CarrotBot
                     {
                         LevelingData.Servers[e.Guild.Id].CreateUser(e.Message.Author.Id, DateTimeOffset.Now);
                     }
+                }
+                foreach(var user in e.MentionedUsers)
+                {
+                    GuildUserData mentionedUserData = Database.GetOrCreateGuildData(e.Guild.Id).GetOrCreateUserData(user.Id);
+                    if(mentionedUserData.IsAFK)
+                    {
+                        await e.Channel.SendMessageAsync($"{user.Username} is AFK: {mentionedUserData.AFKMessage}\n({DateTimeOffset.Now.Subtract(mentionedUserData.AFKTime).ToString("g").Split('.')[0]} ago)");
+                    }
+                }
+                GuildUserData userData = Database.GetOrCreateGuildData(e.Guild.Id).GetOrCreateUserData(e.Author.Id);
+                if(userData.IsAFK)
+                {
+                    userData.RemoveAFK();
+                    try
+                    {
+                        await e.Guild.GetMemberAsync(e.Author.Id).Result.ModifyAsync(e.Guild.GetMemberAsync(e.Author.Id).Result.Nickname.Replace("[AFK] ", ""));
+                    }
+                    catch { }
+                }
+                if(e.Author.Id == 366298290377195522 && e.Message.Content.ToLowerInvariant().Equals("am i right lads or am i right?"))
+                {
+                    await e.Channel.SendMessageAsync("<@!366298290377195522> You are right lad!");
                 }
             }
             catch(Exception ee)
@@ -102,10 +140,11 @@ namespace CarrotBot
 
             if(firstRun)
             {
-                await Conversation.Conversation.StartConversation();
+                await Conversation.Conversation.StartConversation(false);
                 firstRun = false;
             }
             LevelingData.LoadDatabase();
+            await BotGuild.GetChannel(502841234285527041).SendMessageAsync("CarrotBot ready.");
         }
         static async Task MessageUpdated(MessageUpdateEventArgs e)
         {

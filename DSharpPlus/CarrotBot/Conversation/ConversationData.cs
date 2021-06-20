@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.IO;
 using DSharpPlus.Entities;
+using KarrotObjectNotation;
 
 namespace CarrotBot.Conversation
 {
@@ -39,7 +40,7 @@ namespace CarrotBot.Conversation
         }
         public static void LoadDatabase()
         {
-            ConfigNode databaseNode = ConfigParser.Parse(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb"));
+            KONNode databaseNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb"));
             Conversation.liveFeedChannel = Program.discord.GetChannelAsync(818960559625732096).Result;
             Conversation.embedsChannel = Program.discord.GetChannelAsync(824473207608049684).Result;
             ConversationChannels = new List<ConversationChannel>();
@@ -49,11 +50,11 @@ namespace CarrotBot.Conversation
             Moderators = new List<ulong>();
             BannedUsers = new List<ulong>();
             VerifiedUsers = new List<ulong>();
-            foreach(ConfigNode childNode in databaseNode.Children)
+            foreach(KONNode childNode in databaseNode.Children)
             {
                 if(childNode.Name == "CHANNELS")
                 {
-                    foreach(ConfigNode childNode2 in childNode.Children)
+                    foreach(KONNode childNode2 in childNode.Children)
                     {
                         if(childNode2.Name == "CHANNEL")
                         {
@@ -65,7 +66,7 @@ namespace CarrotBot.Conversation
                 }
                 if(childNode.Name == "PREVERIFIED_USERS")
                 {
-                    foreach(ConfigNode childNode2 in childNode.Children)
+                    foreach(KONNode childNode2 in childNode.Children)
                     {
                         if(childNode2.Name == "USER")
                         {
@@ -74,7 +75,7 @@ namespace CarrotBot.Conversation
                     }
                 }
             }
-            foreach(ConfigArray array in databaseNode.Arrays)
+            foreach(KONArray array in databaseNode.Arrays)
             {
                 if(array.Name == "ACCEPTED_USERS")
                 {
@@ -155,22 +156,22 @@ namespace CarrotBot.Conversation
         }
         public static void WriteDatabase()
         {
-            ConfigNode databaseNode = new ConfigNode("CONVERSATION_DATABASE");
+            KONNode databaseNode = new KONNode("CONVERSATION_DATABASE");
 
-            ConfigNode channelsNode = new ConfigNode("CHANNELS");
+            KONNode channelsNode = new KONNode("CHANNELS");
             foreach(ConversationChannel channel in ConversationChannels)
             {
-                ConfigNode channelNode = new ConfigNode("CHANNEL");
+                KONNode channelNode = new KONNode("CHANNEL");
                 channelNode.Values.Add("id", channel.Id.ToString());
                 channelNode.Values.Add("name", channel.Server);
                 channelsNode.AddChild(channelNode);
             }
             databaseNode.AddChild(channelsNode);
 
-            ConfigNode preVerifiedUsersNode = new ConfigNode("PREVERIFIED_USERS");
+            KONNode preVerifiedUsersNode = new KONNode("PREVERIFIED_USERS");
             foreach(PreVerifiedUser user in PreVerifiedUsers.Values)
             {
-                ConfigNode userNode = new ConfigNode("USER");
+                KONNode userNode = new KONNode("USER");
                 userNode.AddValue("id", user.Id.ToString());
                 userNode.AddValue("messages", user.MessagesSent.ToString());
                 userNode.AddValue("lastMessageTime", user.LastMessageSentTime.ToUnixTimeSeconds().ToString());
@@ -178,27 +179,27 @@ namespace CarrotBot.Conversation
             }
             databaseNode.AddChild(preVerifiedUsersNode);
 
-            ConfigArray acceptedUsers = new ConfigArray("ACCEPTED_USERS");
+            KONArray acceptedUsers = new KONArray("ACCEPTED_USERS");
             foreach(ulong user in AcceptedUsers)
             {
                 acceptedUsers.Items.Add(user.ToString());
             }
-            ConfigArray administrators = new ConfigArray("ADMINISTRATORS");
+            KONArray administrators = new KONArray("ADMINISTRATORS");
             foreach(ulong user in Administrators)
             {
                 administrators.Items.Add(user.ToString());
             }
-            ConfigArray moderators = new ConfigArray("MODERATORS");
+            KONArray moderators = new KONArray("MODERATORS");
             foreach(ulong user in Moderators)
             {
                 moderators.Items.Add(user.ToString());
             }
-            ConfigArray bannedUsers = new ConfigArray("BANNED_USERS");
+            KONArray bannedUsers = new KONArray("BANNED_USERS");
             foreach(ulong user in BannedUsers)
             {
                 bannedUsers.Items.Add(user.ToString());
             }
-            ConfigArray verifiedUsers = new ConfigArray("VERIFIED_USERS");
+            KONArray verifiedUsers = new KONArray("VERIFIED_USERS");
             foreach(ulong user in VerifiedUsers)
             {
                 verifiedUsers.Items.Add(user.ToString());
@@ -208,7 +209,7 @@ namespace CarrotBot.Conversation
             databaseNode.AddArray(moderators);
             databaseNode.AddArray(bannedUsers);
             databaseNode.AddArray(verifiedUsers);
-            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", ConfigWriter.Write(databaseNode));
+            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", KONWriter.Default.Write(databaseNode));
         }
     }
 }

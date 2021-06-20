@@ -9,6 +9,7 @@
 	],
 	"settings": {
 		"files.autoSave": "afterDelay",
-		"editor.fontSize": 12
+		"editor.fontSize": 12,
+		"git.autoRepositoryDetection": "openEditors"
 	}
 }

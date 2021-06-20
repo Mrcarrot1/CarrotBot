@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using KarrotObjectNotation;
 
 namespace CarrotBot.Leveling
 {
@@ -12,6 +13,7 @@ namespace CarrotBot.Leveling
         public Dictionary<ulong, LevelingUser> Users { get; internal set; }
         public List<LevelingUser> UsersByRank { get; internal set; }
         public Dictionary<int, ulong> RoleRewards { get; internal set; }
+        public List<ulong> NoXPChannels { get; internal set; }
 
         public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime,  int xp = 5, int level = 0)
         {
@@ -38,24 +40,24 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            ConfigNode node = new ConfigNode("LEVELING_SERVER");
+            KONNode node = new KONNode("LEVELING_SERVER");
             node.Values.Add("id", Id.ToString());
-            ConfigNode rolesNode = new ConfigNode("ROLES");
+            KONNode rolesNode = new KONNode("ROLES");
             foreach(KeyValuePair<int, ulong> role in RoleRewards)
             {
-                ConfigNode roleNode = new ConfigNode("ROLE");
+                KONNode roleNode = new KONNode("ROLE");
                 roleNode.AddValue("id", role.Value.ToString());
                 roleNode.AddValue("level", role.Key.ToString());
                 rolesNode.AddChild(roleNode);
             }
             node.AddChild(rolesNode);
-            ConfigArray usersArray = new ConfigArray("USERS");
+            KONArray usersArray = new KONArray("USERS");
             foreach(LevelingUser user in UsersByRank)
             {
                 usersArray.Items.Add(user.Id.ToString());
             }
             node.AddArray(usersArray);
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", ConfigWriter.Write(node));
+            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", KONWriter.Default.Write(node));
         }
     }
 }

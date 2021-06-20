@@ -14,7 +14,7 @@ namespace CarrotBot
         public static void Setup()
         {
             firstRun = false;
-            logPath = $@"{Utils.localDataPath}/Log.txt";
+            logPath = $@"{Utils.localDataPath}/Log_{DateTime.Now.ToString("dd-MM-yyyy_HH:mm:ss")}.txt";
             File.WriteAllText(logPath, "-----Log initiated for CarrotBot.-----\nRun by " + Environment.UserName + ". Local time: " + DateTime.Now + "; UTC: " + DateTime.UtcNow + ".\n---------------------------------------------");
 
         }

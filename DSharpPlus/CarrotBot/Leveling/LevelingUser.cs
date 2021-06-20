@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using DSharpPlus.Entities;
+using KarrotObjectNotation;
 
 namespace CarrotBot.Leveling
 {
@@ -15,11 +16,36 @@ namespace CarrotBot.Leveling
         public DateTimeOffset LastMessageTimestamp { get; internal set; }
         private TimeSpan messageInterval = new TimeSpan(0, 0, 60);
 
+        public int TotalXP 
+        {
+            get
+            {
+                int output = CurrentXP;
+                for(int i = Level; i > 0; i--)
+                {
+                    output += i * 150;
+                }
+                return output;
+            }
+        }
+
         public async Task HandleMessage(DiscordMessage msg)
         {
             if(msg.Content.StartsWith('%')) return;
             if(DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
             {
+                if(msg.Channel.Guild.Id == 824824193001979924)
+                {
+                    if(Dripcoin.UserBalances.ContainsKey(msg.Author.Id))
+                    {
+                        Dripcoin.AddBalance(msg.Author.Id, 1);
+                    }
+                    else
+                    {
+                        Dripcoin.CreateUser(msg.Author.Id);
+                        Dripcoin.AddBalance(msg.Author.Id, 1);
+                    }
+                }
                 CurrentXP += 5;
                 if(CurrentXP >= LevelingData.XPNeededForLevel(Level + 1))
                 {
@@ -46,12 +72,12 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            ConfigNode node = new ConfigNode("LEVELING_USER");
+            KONNode node = new KONNode("LEVELING_USER");
             node.Values.Add("id", Id.ToString());
             node.Values.Add("xp", CurrentXP.ToString());
             node.Values.Add("level", Level.ToString());
             node.Values.Add("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds().ToString());
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", ConfigWriter.Write(node));
+            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", KONWriter.Default.Write(node));
         }
         public LevelingUser(ulong id, LevelingServer server)
         {

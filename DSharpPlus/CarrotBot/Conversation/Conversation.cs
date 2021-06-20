@@ -45,7 +45,7 @@ namespace CarrotBot.Conversation
                 await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
                 return;
             }
-            if(ConversationData.LastMessage != null)
+            if(ConversationData.LastMessage != null && false)
             {
                 if(ConversationData.LastMessage.Author.Id == userId && ConversationData.LastMessage.originalChannel.Id == originalChannel.Id)
                 {
@@ -73,6 +73,7 @@ namespace CarrotBot.Conversation
                         secondMsgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb4.Build());
                         secondMsgObject.PreviousMessage = ConversationData.LastMessage;
                         secondMsgObject.EmbedMessage = ConversationData.LastMessage.EmbedMessage;
+                        await secondMsgObject.EmbedMessage.ModifyAsync(embed: embed3);
                         ConversationData.ConversationMessages.Add(secondMsgObject.Id, secondMsgObject);
                         ConversationData.ConversationMessagesByOrigId.Add(message.Id, secondMsgObject);
                         ConversationData.LastMessage.UpdateEmbed(false, true);
@@ -197,15 +198,18 @@ namespace CarrotBot.Conversation
                 Thread.Sleep(5);
             }
         }
-        public static async Task StartConversation()
+        public static async Task StartConversation(bool alert = true)
         {
             try
             {
                 ConversationData.LoadDatabase();
-                if(!Program.isBeta)
-                    await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
-                else
-                    await SendConversationMessage("The CarrotBot Multi-Server Conversation Beta is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!\nThis is a beta version and as such is less stable and more frequently updated than the main conversation.");
+                if(alert)
+                {
+                    if(!Program.isBeta)
+                        await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
+                    else
+                        await SendConversationMessage("The CarrotBot Multi-Server Conversation Beta is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!\nThis is a beta version and as such is less stable and more frequently updated than the main conversation.");
+                }
                 Program.conversation = true;
             }
             catch(Exception e)

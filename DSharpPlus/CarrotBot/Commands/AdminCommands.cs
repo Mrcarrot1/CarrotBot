@@ -8,6 +8,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using CarrotBot.Data;
 
 namespace CarrotBot.Commands
 {
@@ -75,6 +76,66 @@ namespace CarrotBot.Commands
             catch
             {
                 await ctx.RespondAsync("I can't unban that user. Maybe I don't have permission?");
+            }
+        }
+        [Command("warn"), RequirePermissions(Permissions.ManageGuild)]
+        public async Task Warn(CommandContext ctx, string userMention, [RemainingText]string reason)
+        {
+            ulong userId = Utils.GetId(userMention);
+            DiscordEmbedBuilder eb =  new DiscordEmbedBuilder();
+            eb.WithAuthor("Warning Issued");
+            if(reason != null)
+                eb.WithDescription($"Warned <@!{userId}>: **{reason}**");
+            else
+                eb.WithDescription($"Warned <@!{userId}>. No reason given.");
+            GuildUserData user = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
+            user.AddWarning(reason, ctx.User.Id);
+            user.FlushData();
+            await ctx.RespondAsync(embed: eb.Build());
+        }
+        [Command("warnings")]
+        public async Task Warnings(CommandContext ctx, string userMention)
+        {
+            ulong userId = Utils.GetId(userMention);
+            GuildUserData user = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
+            if(user.Warnings.Count == 0)
+            {
+                await ctx.RespondAsync("That user doesn't have any warnings in this server!");
+            }
+            else foreach(var warning in user.Warnings)
+            {
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                eb.WithAuthor($"{ctx.Guild.GetMemberAsync(userId).Result.Username}'s Warnings");
+                eb.AddField($"{warning.Item2.ToString("yyyy-MM-dd HH:mm:ss")}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
+                await ctx.RespondAsync(embed:eb.Build());
+            }
+        }
+        [Command("addjoinrole"), RequirePermissions(Permissions.ManageRoles)]
+        public async Task AddJoinRole(CommandContext ctx, string role)
+        {
+            try
+            {
+                ulong Id = Utils.GetId(role);
+                Database.GetOrCreateGuildData(ctx.Guild.Id).AddJoinRole(Id);
+                await ctx.RespondAsync("Added role to grant on join.");
+            }
+            catch(FormatException)
+            {
+                await ctx.RespondAsync("I couldn't find that role. Make sure you're using the role's Id or mention!");
+            }
+        }
+        [Command("removejoinrole"), RequirePermissions(Permissions.ManageRoles)]
+        public async Task RemoveJoinRole(CommandContext ctx, string role)
+        {
+            try
+            {
+                ulong Id = Utils.GetId(role);
+                Database.GetOrCreateGuildData(ctx.Guild.Id).RemoveJoinRole(Id);
+                await ctx.RespondAsync("Added role to grant on join.");
+            }
+            catch(FormatException)
+            {
+                await ctx.RespondAsync("I couldn't find that role. Make sure you're using the role's Id or mention!");
             }
         }
     }

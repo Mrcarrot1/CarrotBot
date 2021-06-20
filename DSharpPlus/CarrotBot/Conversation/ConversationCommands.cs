@@ -79,7 +79,7 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Wrote conversation database to disk");
         }
         [Command("addchannel"), Description("Used to add your channel to the conversation")]
-        public async Task AddChannel(CommandContext ctx, string channel, string name)
+        public async Task AddChannel(CommandContext ctx, [Description("The channel to connect to the conversation")]string channel, [RemainingText, Description("What the conversation should call your server")]string name)
         {
             ulong Id = Utils.GetId(channel);
             if(ConversationData.Administrators.Contains(ctx.User.Id))
@@ -87,6 +87,7 @@ namespace CarrotBot.Conversation
                 ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name));
                 ConversationData.WriteDatabase();
                 await ctx.RespondAsync("Channel added to conversation.");
+                await Program.discord.GetChannelAsync(Id).Result.SendMessageAsync("This channel has just been added to the CarrotBot Multi-Server Conversation.\nHave fun chatting with other users!\nNote: for legal reasons, you must accept the conversation's terms(`%conversation acceptterms` to enter.");
             }
             else
             {
