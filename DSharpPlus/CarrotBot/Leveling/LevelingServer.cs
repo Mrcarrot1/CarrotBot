@@ -40,6 +40,7 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
+            if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_SERVER");
             node.Values.Add("id", Id.ToString());
             KONNode rolesNode = new KONNode("ROLES");

@@ -76,6 +76,7 @@ namespace CarrotBot.Data
         }
         public static void FlushAll()
         {
+            if(Program.isBeta) return;
             foreach(KeyValuePair<ulong, GuildData> guild in Guilds)
             {
                 guild.Value.FlushData(true);

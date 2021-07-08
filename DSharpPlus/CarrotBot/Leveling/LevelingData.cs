@@ -94,6 +94,7 @@ namespace CarrotBot.Leveling
         }
         public static void FlushServerList()
         {
+            if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_DATABASE");
             KONArray serversArray = new KONArray("SERVERS");
             foreach(KeyValuePair<ulong, LevelingServer> server in Servers)
@@ -105,6 +106,7 @@ namespace CarrotBot.Leveling
         }
         public static void FlushAllData()
         {
+            if(Program.isBeta) return;
             FlushServerList();
             foreach(KeyValuePair<ulong, LevelingServer> server in Servers)
             {

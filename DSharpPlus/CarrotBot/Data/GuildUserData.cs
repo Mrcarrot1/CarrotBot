@@ -37,6 +37,7 @@ namespace CarrotBot.Data
 
         public void FlushData()
         {
+            if(Program.isBeta) return;
             KONNode userNode = new KONNode("GUILD_USER_DATA");
             userNode.AddValue("id", Id.ToString());
             userNode.AddValue("isAFK", IsAFK.ToString());

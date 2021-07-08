@@ -39,18 +39,18 @@ namespace CarrotBot.Conversation
                 Thread.Sleep(10);
                 return;
             }
-            if(ConversationData.BannedUsers.Contains(userId))
+            if (ConversationData.BannedUsers.Contains(userId))
             {
                 await message.DeleteAsync();
                 await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
                 return;
             }
-            if(ConversationData.LastMessage != null && false)
+            if (ConversationData.LastMessage != null && false)
             {
-                if(ConversationData.LastMessage.Author.Id == userId && ConversationData.LastMessage.originalChannel.Id == originalChannel.Id)
+                if (ConversationData.LastMessage.Author.Id == userId && ConversationData.LastMessage.originalChannel.Id == originalChannel.Id)
                 {
                     //Messages in the same embed are separated by the zero width space (​)
-                    if(ConversationData.LastMessage.Embed.Description.Length + message.Content.Length <= 2046)
+                    if (ConversationData.LastMessage.Embed.Description.Length + message.Content.Length <= 2046)
                     {
                         ConversationMessage secondMsgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel, ConversationData.LastMessage.IndexInEmbed + 1);
                         DiscordEmbedBuilder eb3 = new DiscordEmbedBuilder(ConversationData.LastMessage.Embed);
@@ -59,7 +59,7 @@ namespace CarrotBot.Conversation
                         secondMsgObject.Embed = embed3;
                         secondMsgObject.ChannelMessages = ConversationData.LastMessage.ChannelMessages;
                         ConversationData.LastMessage = secondMsgObject;
-                        foreach(KeyValuePair<ulong, DiscordMessage> msg in ConversationData.LastMessage.ChannelMessages)
+                        foreach (KeyValuePair<ulong, DiscordMessage> msg in ConversationData.LastMessage.ChannelMessages)
                         {
                             //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
                             await msg.Value.ModifyAsync(embed: embed3);
@@ -86,19 +86,19 @@ namespace CarrotBot.Conversation
             }
             DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
             eb2.WithColor(DiscordColor.LightGray);
-            if(ConversationData.VerifiedUsers.Contains(userId))
-                eb2.WithColor(new DiscordColor("206E49"));
-            else if(ConversationData.PreVerifiedUsers.ContainsKey(userId))
+            if (ConversationData.VerifiedUsers.Contains(userId))
+                eb2.WithColor(Utils.CBGreen);
+            else if (ConversationData.PreVerifiedUsers.ContainsKey(userId))
             {
-                if(DateTimeOffset.Now.Subtract(ConversationData.PreVerifiedUsers[userId].LastMessageSentTime) > new TimeSpan(0, 0, 60))
+                if (DateTimeOffset.Now.Subtract(ConversationData.PreVerifiedUsers[userId].LastMessageSentTime) > new TimeSpan(0, 0, 60))
                 {
                     ConversationData.PreVerifiedUsers[userId].MessagesSent++;
                     ConversationData.PreVerifiedUsers[userId].LastMessageSentTime = DateTime.Now;
-                    if(ConversationData.PreVerifiedUsers[userId].MessagesSent >= 20)
+                    if (ConversationData.PreVerifiedUsers[userId].MessagesSent >= 20)
                     {
                         ConversationData.VerifiedUsers.Add(userId);
                         ConversationData.PreVerifiedUsers.Remove(userId);
-                        eb2.WithColor(new DiscordColor("206E49"));
+                        eb2.WithColor(Utils.CBGreen);
                     }
                 }
                 ConversationData.WriteDatabase();
@@ -111,28 +111,28 @@ namespace CarrotBot.Conversation
             ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel);
             string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
             string Footer = $"Via {Server}";
-            
-            if(userId == 366298290377195522)
+
+            if (userId == 366298290377195522)
             {
                 Title = $"[DEV] {Title}";
                 eb2.WithColor(DiscordColor.Green);
                 Footer = $"CarrotBot Developer ・ {Footer}";
             }
-            else if(ConversationData.Administrators.Contains(userId))
+            else if (ConversationData.Administrators.Contains(userId))
             {
                 Title = $"[ADMIN] {Title}";
                 eb2.WithColor(DiscordColor.Blue);
                 Footer = $"Conversation Administrator ・ {Footer}";
             }
-            else if(ConversationData.Moderators.Contains(userId))
+            else if (ConversationData.Moderators.Contains(userId))
             {
                 Title = $"[MOD] {Title}";
-                eb2.WithColor(DiscordColor.Magenta);
+                eb2.WithColor(DiscordColor.HotPink);
                 Footer = $"Conversation Moderator ・ {Footer}";
-            } 
+            }
             //eb2.WithTitle(Title);
             eb2.WithAuthor(Title, icon_url: user.AvatarUrl);
-            
+
             eb2.WithFooter(Footer);
             eb2.WithDescription(message.Content);
             if (message.Attachments.Count > 0)
@@ -146,7 +146,7 @@ namespace CarrotBot.Conversation
                 if (message.Channel.Id != ConversationData.ConversationChannels[i].Id)
                 {
                     var channel = Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
-                    
+
                     /*bool Embed = false;
                     if (message.Embeds.Count > 0)
                         Embed = true;
@@ -161,7 +161,7 @@ namespace CarrotBot.Conversation
                     {
                         msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(embed: embed));
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {channel.Id}:\n{e.ToString()}");
                     }
@@ -203,16 +203,16 @@ namespace CarrotBot.Conversation
             try
             {
                 ConversationData.LoadDatabase();
-                if(alert)
+                if (alert)
                 {
-                    if(!Program.isBeta)
+                    if (!Program.isBeta)
                         await SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
                     else
                         await SendConversationMessage("The CarrotBot Multi-Server Conversation Beta is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!\nThis is a beta version and as such is less stable and more frequently updated than the main conversation.");
                 }
                 Program.conversation = true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 await Program.Mrcarrot.SendMessageAsync(e.ToString());
             }

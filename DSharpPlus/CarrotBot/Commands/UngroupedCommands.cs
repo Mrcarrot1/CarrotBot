@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -18,10 +21,159 @@ namespace CarrotBot.Commands
 {
     public class UngroupedCommands
     {
-        /*[Command("help"), Description("Displays command help.")]
+        [Command("help"), Description("Displays command help.")]
         public async Task Help(CommandContext ctx, [Description("Command to provide help for.")] params string[] command)
         {
+            try {
+            var topLevel = ctx.CommandsNext.RegisteredCommands.Distinct();
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle("Help");
+            eb.WithColor(Utils.CBGreen);
+
+
+            if(command != null && command.Any())
+            {
+                Command cmd = null;
+                var searchIn = new List<Command>();
+                foreach(var c in topLevel)
+                {
+                    searchIn.Add(c.Value);
+                }
+                foreach(var c in command)
+                {
+                    if(searchIn == null)
+                    {
+                        cmd = null;
+                        break;
+                    }
+
+                    cmd = searchIn.FirstOrDefault(xc => xc.Name.ToLowerInvariant() == c.ToLowerInvariant() || (xc.Aliases != null && xc.Aliases.Select(xs => xs.ToLowerInvariant()).Contains(c.ToLowerInvariant())));
+
+                    if (cmd == null)
+                        break;
+
+                    var failedChecks = await cmd.RunChecksAsync(ctx, true).ConfigureAwait(false);
+                    if (failedChecks.Any())
+                        throw new ChecksFailedException(cmd, ctx, failedChecks);
+
+                    searchIn = cmd is CommandGroup ? (cmd as CommandGroup).Children.ToList() : null;
+                }
+                if (cmd is CommandGroup group)
+                {
+                    eb.WithDescription($"`{cmd.QualifiedName}`: {cmd.Description}");
+                    var commandsToSearch = group.Children.Where(xc => !xc.IsHidden);
+                    var eligibleCommands = new List<Command>();
+                    foreach (var candidateCommand in commandsToSearch)
+                    {
+                        if (candidateCommand.ExecutionChecks == null || !candidateCommand.ExecutionChecks.Any())
+                        {
+                            eligibleCommands.Add(candidateCommand);
+                            continue;
+                        }
+
+                        var candidateFailedChecks = await candidateCommand.RunChecksAsync(ctx, true).ConfigureAwait(false);
+                        if (!candidateFailedChecks.Any())
+                            eligibleCommands.Add(candidateCommand);
+                    }
+
+                    if (eligibleCommands.Any())
+                    {
+                        eligibleCommands = eligibleCommands.OrderBy(x => x.Name).ToList();
+                        string subcommands = "None";
+                        foreach(Command c in eligibleCommands)
+                        {
+                            if(subcommands == "None")
+                                subcommands = $"`{c.QualifiedName}`";
+                            else
+                                subcommands += $", `{c.QualifiedName}`";
+                        }
+                        eb.AddField("Subcommands", subcommands);
+                    }
+                }
+                else
+                {
+                    eb.WithDescription($"`{cmd.QualifiedName}`: {cmd.Description}");
+                    if(cmd.Description == null)
+                    {
+                        eb.WithDescription($"`{cmd.QualifiedName}`");
+                    }
+                    if(cmd.Arguments.Any())
+                    {
+                        string arguments = "";
+                        foreach(var arg in cmd.Arguments)
+                        {
+                            string argstr = "";
+                            if(arg.IsOptional)
+                            {
+                                argstr = $"`[{arg.Name}]: {arg.Type}`: {arg.Description} Default Value: {arg.DefaultValue}";
+                                if(arg.DefaultValue == null)
+                                    argstr = argstr.Replace("Default Value: ", "Default Value: Empty");
+                            }
+                            else argstr = $"`<{arg.Name}>: {arg.Type}`: {arg.Description}";
+                            if(arg.IsCatchAll)
+                            {
+                                argstr = argstr
+                                .Replace($"{arg.Name}>", $"{arg.Name}...>")
+                                .Replace($"{arg.Name}]", $"{arg.Name}...]");
+                            }
+                            if(arg.Description == null)
+                            {
+                                argstr = argstr
+                                .Replace("`: ", "`");
+                            }
+                            arguments += $"\n{argstr}";
+                        }
+                        eb.AddField("Arguments", arguments.Trim());
+                    }
+                }
+            }
+            //List all commands if no input
+            else
+            {
+                eb.WithDescription($"Listing top-level commands and groups. Use `{Program.commandPrefix}help <command/group>` to see subcommands or usage details.");
+                string topLevelCommands = "None";
+                string commandGroups = "None";
+                foreach(KeyValuePair<string, Command> command1 in topLevel.OrderBy(x => x.Value.Name))
+                {
+                    Command cmd = command1.Value;
+
+                    if(!ctx.Channel.IsPrivate)
+                    {
+                        if((cmd.Name == "rank" || cmd.Name == "leaderboard" || cmd.Name == "disableleveling") && !Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
+                        if(cmd.Name == "enableleveling" && Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
+                        if(cmd.IsHidden && !(cmd.Name == "dripcoin" && ctx.Guild.Id == 824824193001979924))
+                        {
+                            continue;
+                        }
+                    }
+                    
+                    if(cmd is CommandGroup group)
+                    {
+                        if(commandGroups.Contains($"`{cmd.Name}`")) continue;
+                        if(commandGroups == "None")
+                            commandGroups = $"`{cmd.Name}`";
+                        else if(!commandGroups.Contains($"`{cmd.Name}`"))
+                            commandGroups += $", `{cmd.Name}`";
+                    }
+                    else
+                    {
+                        if(topLevelCommands == "None")
+                            topLevelCommands = $"`{cmd.Name}`";
+                        else if(!topLevelCommands.Contains($"`{cmd.Name}`"))
+                            topLevelCommands += $", `{cmd.Name}`";
+                    }
+                }
+                eb.AddField("Commands", topLevelCommands);
+                eb.AddField("Groups", commandGroups);
+            }
             
+
+            await ctx.RespondAsync(embed: eb.Build());
+            }
+            catch(Exception e)
+            {
+                await ctx.RespondAsync(e.ToString());
+            }
             /*var topLevel = Program.commands.RegisteredCommands.Distinct();
             var helpBuilder = ctx.CommandsNext.HelpFormatter.Create(ctx);
 
@@ -58,7 +210,26 @@ namespace CarrotBot.Commands
 
                 if (cmd is CommandGroup group)
                 {
+                    var commandsToSearch = group.Children.Where(xc => !xc.IsHidden);if (cmd is CommandGroup group)
+                {
                     var commandsToSearch = group.Children.Where(xc => !xc.IsHidden);
+                    var eligibleCommands = new List<Command>();
+                    foreach (var candidateCommand in commandsToSearch)
+                    {
+                        if (candidateCommand.ExecutionChecks == null || !candidateCommand.ExecutionChecks.Any())
+                        {
+                            eligibleCommands.Add(candidateCommand);
+                            continue;
+                        }
+
+                        var candidateFailedChecks = await candidateCommand.RunChecksAsync(ctx, true).ConfigureAwait(false);
+                        if (!candidateFailedChecks.Any())
+                            eligibleCommands.Add(candidateCommand);
+                    }
+
+                    if (eligibleCommands.Any())
+                        helpBuilder.WithSubcommands(eligibleCommands.OrderBy(xc => xc.Name));
+                }
                     var eligibleCommands = new List<Command>();
                     foreach (var candidateCommand in commandsToSearch)
                     {
@@ -100,15 +271,13 @@ namespace CarrotBot.Commands
 
             var helpMessage = helpBuilder.Build();
 
-            var builder = new DiscordMessageBuilder().WithContent(helpMessage.Content).WithEmbed(helpMessage.Embed);
+            var builder = new DiscordMessageBuilder().WithContent(helpMessage.Conhttp://www.example.com/recepticle.aspxent).WithEmbed(helpMessage.Embed);
 
             if (!ctx.Config.DmHelp || ctx.Channel is DiscordDmChannel || ctx.Guild == null)
                 await ctx.RespondAsync(builder).ConfigureAwait(false);
             else
-                await ctx.Member.SendMessageAsync(builder).ConfigureAwait(false);
-
-            } //end comment here
-        }*/
+                await ctx.Member.SendMessageAsync(builder).ConfigureAwailocalDataPathlocalDataPath*/
+        }
         /*[Command("webhookme")]
         public async Task Webhook(CommandContext ctx, [RemainingText]string message)
         {
@@ -136,16 +305,20 @@ namespace CarrotBot.Commands
                 }
             }
         }
-        [Command("shutdown")]
+        [Command("shutdown"), Hidden]
         public async Task Shutdown(CommandContext ctx)
         {
-            if(ctx.User.Id != 366298290377195522) return;
+            if(ctx.User.Id != 366298290377195522 && ctx.User.Id != 374283134243700747 && ctx.User.Id != 129329809741447168 && ctx.User.Id != 245703456382386177) return;
+            if(ctx.User.Id != 366298290377195522)
+            {
+                File.WriteAllText($@"{Utils.localDataPath}/DO_NOT_START.cb", "DO_NOT_START");
+            }
             await ctx.RespondAsync("CarrotBot shutting down. Good night!");
-            Logger.Log("Bot shutting down.");
+            Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
             Console.WriteLine();
             Environment.Exit(0);
         }
-        [Command("restart")]
+        [Command("restart"), Hidden]
         public async Task Restart(CommandContext ctx)
         {
             if(ctx.User.Id != 366298290377195522) return;
@@ -155,7 +328,7 @@ namespace CarrotBot.Commands
             Console.WriteLine();
             Environment.Exit(0);
         }
-        [Command("updateping")]
+        [Command("updateping"), Hidden]
         public async Task UpdatePing(CommandContext ctx)
         {
             if(!ctx.Guild.Equals(Program.BotGuild)) return;
@@ -182,6 +355,45 @@ namespace CarrotBot.Commands
             }
             catch { }
             await ctx.RespondAsync($"Set your AFK: {message}");
+        }
+        private static readonly HttpClient client = new HttpClient();
+        [Command("catpic"), Description("Provides a random cat picture courtesy of thecatapi.com")]
+        public async Task CatPic(CommandContext ctx)
+        {
+            try 
+            {
+                client.DefaultRequestHeaders.Add("x-api-key", SensitiveInformation.catAPIKey);
+                var responseString = await client.GetStringAsync("https://api.thecatapi.com/v1/images/search");
+                Console.WriteLine("Response string: {0}", responseString);
+                string[] splitResponseString = responseString.Split("\"url\":\"");
+                string url = "";
+                foreach(char c in splitResponseString[1])
+                {
+                    if(c != '"')
+                    {
+                        url += c;
+                    }
+                    else break;
+                }
+                await ctx.RespondAsync(url);
+            }
+            catch(Exception e)
+            {
+                Logger.Log(e.ToString());
+            }
+        }
+        [Command("about"), Description("Shows various information about the bot.")]
+        public async Task About(CommandContext ctx)
+        {
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle("About CarrotBot");
+            eb.WithColor(Utils.CBGreen);
+            eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `{Program.commandPrefix}help` for command help.");
+            eb.AddField("Current Version", $"v{Utils.currentVersion}");
+            eb.AddField("Invite/Vote Link", "https://top.gg/bot/389513870835974146", true);
+            eb.AddField("Support Server", "https://discord.gg/wHPwHu7");
+
+            await ctx.RespondAsync(embed: eb.Build());
         }
     }
 }

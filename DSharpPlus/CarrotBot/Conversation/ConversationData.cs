@@ -156,6 +156,7 @@ namespace CarrotBot.Conversation
         }
         public static void WriteDatabase()
         {
+            if(Program.isBeta) return;
             KONNode databaseNode = new KONNode("CONVERSATION_DATABASE");
 
             KONNode channelsNode = new KONNode("CHANNELS");

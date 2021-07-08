@@ -14,6 +14,7 @@ namespace CarrotBot.Data
 
         public void FlushData(bool flushUserData = false)
         {
+            if(Program.isBeta) return;
             KONNode node = new KONNode("GUILD_DATA");
             node.AddValue("id", Id.ToString());
             KONArray usersArray = new KONArray("USERS");

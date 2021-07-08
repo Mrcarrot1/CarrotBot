@@ -13,7 +13,8 @@ namespace CarrotBot
     class Program
     {
         //Set to true to run beta
-        public static readonly bool isBeta = false;
+        //Additional check added to make sure the binaries in production never run on the beta account
+        public static readonly bool isBeta = Environment.UserName == "root" ? false : true;
         //Set to true to enable certain debug features such as more verbose logs
         private static readonly bool debug = true;
 
@@ -24,19 +25,25 @@ namespace CarrotBot
         public static CommandsNextModule commands;
         public static DiscordMember Mrcarrot;
         public static DiscordGuild BotGuild;
-        private static string commandPrefix = "";
+        public static string commandPrefix = "";
         static void Main(string[] args)
         {
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         static async Task MainAsync(string[] args)
         {
+            if(File.Exists($@"{Utils.localDataPath}/DO_NOT_START.cb"))
+            {
+                Logger.Log("Do not start flag detected. Exiting.");
+                Environment.Exit(0);
+            }
             //Check to see if it's the beta, and set these values accordingly
             //I know I'll probably forget how this operator works at some point
             //So it's worth explaining the code
             string token = isBeta ? SensitiveInformation.betaToken : SensitiveInformation.botToken;
             Console.Title = isBeta ? "CarrotBot Beta" : "CarrotBot";
             commandPrefix = isBeta ? "b%" : "%";
+            
 
             discord = new DiscordClient(new DiscordConfiguration
             {
@@ -60,7 +67,7 @@ namespace CarrotBot
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefix = commandPrefix,
-                //EnableDefaultHelp = false
+                EnableDefaultHelp = false
             });
             commands.RegisterCommands<Commands.UngroupedCommands>();
             commands.RegisterCommands<Conversation.ConversationCommands>();
@@ -121,7 +128,7 @@ namespace CarrotBot
                     }
                     catch { }
                 }
-                if(e.Author.Id == 366298290377195522 && e.Message.Content.ToLowerInvariant().Equals("am i right lads or am i right?"))
+                if(e.Author.Id == 366298290377195522 && e.Message.Content.ToLowerInvariant().Trim().Equals("am i right lads or am i right?"))
                 {
                     await e.Channel.SendMessageAsync("<@!366298290377195522> You are right lad!");
                 }
@@ -133,18 +140,26 @@ namespace CarrotBot
         }
         static async Task Ready(ReadyEventArgs e)
         {
-            BotGuild = discord.GetGuildAsync(388339196978266114).Result;
-            Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
-            Logger.Log("Connection ready");
-            await discord.UpdateStatusAsync(new DiscordGame($"in {discord.Guilds.Count} servers | {commandPrefix}help"));
-
-            if(firstRun)
+            try
             {
-                await Conversation.Conversation.StartConversation(false);
-                firstRun = false;
+                    BotGuild = discord.GetGuildAsync(388339196978266114).Result;
+                Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
+                Logger.Log("Connection ready");
+                await discord.UpdateStatusAsync(new DiscordGame($"in {discord.Guilds.Count} servers | {commandPrefix}help"));
+
+                if(firstRun)
+                {
+                    await Conversation.Conversation.StartConversation(false);
+                    firstRun = false;
+                }
+                LevelingData.LoadDatabase();
+                //await BotGuild.GetChannel(502841234285527041).SendMessageAsync("CarrotBot ready.");
             }
-            LevelingData.LoadDatabase();
-            await BotGuild.GetChannel(502841234285527041).SendMessageAsync("CarrotBot ready.");
+            catch(Exception ee)
+            {
+                Logger.Log(ee.ToString());
+            }
+            
         }
         static async Task MessageUpdated(MessageUpdateEventArgs e)
         {

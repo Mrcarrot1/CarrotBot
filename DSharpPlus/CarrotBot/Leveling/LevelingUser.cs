@@ -72,6 +72,7 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
+            if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_USER");
             node.Values.Add("id", Id.ToString());
             node.Values.Add("xp", CurrentXP.ToString());
