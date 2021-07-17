@@ -7,7 +7,7 @@ namespace CarrotBot
 {
     public class Utils
     {
-        private static readonly string version = "1.0.0";
+        private static readonly string version = "1.1.0";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         public static string logsPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Logs";
@@ -29,7 +29,7 @@ namespace CarrotBot
                 ulong output = ulong.Parse(mention);
                 return output;
             }
-            catch (System.Exception)
+            catch
             {
                 throw new FormatException();
 

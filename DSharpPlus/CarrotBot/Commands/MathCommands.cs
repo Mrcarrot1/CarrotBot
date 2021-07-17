@@ -12,7 +12,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace CarrotBot.Commands
 {
     [Group("math"), Description("Math commands")]
-    public class MathCommands
+    public class MathCommands : BaseCommandModule
     {
         [Command("add"), Description("Adds two numbers")]
         public async Task Add(CommandContext ctx, double num1, double num2)

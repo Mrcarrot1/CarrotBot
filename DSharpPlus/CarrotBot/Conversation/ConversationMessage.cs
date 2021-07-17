@@ -114,7 +114,7 @@ namespace CarrotBot.Conversation
             eb2.WithAuthor(Embed.Author.Name, Author.AvatarUrl);
             eb2.WithFooter($"{Embed.Footer.Text} ・ Edited");
             eb2.WithDescription(originalMessage.Content);
-            eb2.WithColor(Embed.Color);
+            eb2.WithColor((DiscordColor)Embed.Color);
             if (originalMessage.Attachments.Count > 0)
             {
                 eb2.WithImageUrl(originalMessage.Attachments[0].Url);

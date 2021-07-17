@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.IO;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -22,7 +23,7 @@ namespace CarrotBot
         static bool firstRun = true;
 
         public static DiscordClient discord;
-        public static CommandsNextModule commands;
+        public static CommandsNextExtension commands;
         public static DiscordMember Mrcarrot;
         public static DiscordGuild BotGuild;
         public static string commandPrefix = "";
@@ -49,12 +50,13 @@ namespace CarrotBot
             {
                 Token = token,
                 TokenType = TokenType.Bot,
-                UseInternalLogHandler = true,
-                LogLevel = LogLevel.Debug
+                MinimumLogLevel = isBeta ? Microsoft.Extensions.Logging.LogLevel.Debug : Microsoft.Extensions.Logging.LogLevel.Information,
+                Intents = DiscordIntents.All
             });
             Database.Load();
             Dripcoin.LoadData();
             discord.MessageCreated += HandleMessage;
+            discord.MessageCreated += CommandHandler;
             discord.Ready += Ready;
             discord.MessageUpdated += MessageUpdated;
             discord.MessageDeleted += MessageDeleted;
@@ -62,12 +64,16 @@ namespace CarrotBot
             await discord.ConnectAsync();
 
             
-            
+            List<string> stringPrefixes = new List<string>();
+            stringPrefixes.Add(commandPrefix);
+            if(!isBeta)
+                stringPrefixes.Add("cb%");
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = commandPrefix,
-                EnableDefaultHelp = false
+                StringPrefixes = stringPrefixes,
+                EnableDefaultHelp = false,
+                UseDefaultCommandHandler = false
             });
             commands.RegisterCommands<Commands.UngroupedCommands>();
             commands.RegisterCommands<Conversation.ConversationCommands>();
@@ -81,7 +87,7 @@ namespace CarrotBot
 
             await Task.Delay(-1);
         }
-        static async Task MemberJoined(GuildMemberAddEventArgs e)
+        static async Task MemberJoined(DiscordClient client, GuildMemberAddEventArgs e)
         {
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
             foreach(ulong roleId in guildData.RolesToAssignOnJoin)
@@ -89,7 +95,7 @@ namespace CarrotBot
                 await e.Member.GrantRoleAsync(e.Guild.GetRole(roleId));
             }
         }
-        static async Task HandleMessage(MessageCreateEventArgs e)
+        static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
         {
             try
             {
@@ -124,7 +130,10 @@ namespace CarrotBot
                     userData.RemoveAFK();
                     try
                     {
-                        await e.Guild.GetMemberAsync(e.Author.Id).Result.ModifyAsync(e.Guild.GetMemberAsync(e.Author.Id).Result.Nickname.Replace("[AFK] ", ""));
+                        await e.Guild.GetMemberAsync(e.Author.Id).Result.ModifyAsync(x => 
+                        {
+                            x.Nickname = e.Guild.GetMemberAsync(e.Author.Id).Result.Nickname.Replace("[AFK] ", "");
+                        });
                     }
                     catch { }
                 }
@@ -135,17 +144,17 @@ namespace CarrotBot
             }
             catch(Exception ee)
             {
-                Logger.Log(ee.ToString());
+                Logger.Log(ee.ToString(), Logger.LogLevel.EXC);
             }
         }
-        static async Task Ready(ReadyEventArgs e)
+        static async Task Ready(DiscordClient client, ReadyEventArgs e)
         {
             try
             {
                     BotGuild = discord.GetGuildAsync(388339196978266114).Result;
                 Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
                 Logger.Log("Connection ready");
-                await discord.UpdateStatusAsync(new DiscordGame($"in {discord.Guilds.Count} servers | {commandPrefix}help"));
+                await discord.UpdateStatusAsync(new DiscordActivity($"in {client.Guilds.Count} servers | {commandPrefix}help", ActivityType.Playing));
 
                 if(firstRun)
                 {
@@ -157,23 +166,72 @@ namespace CarrotBot
             }
             catch(Exception ee)
             {
-                Logger.Log(ee.ToString());
+                Logger.Log(ee.ToString(), Logger.LogLevel.EXC);
             }
             
         }
-        static async Task MessageUpdated(MessageUpdateEventArgs e)
+        static async Task MessageUpdated(DiscordClient client, MessageUpdateEventArgs e)
         {
             if(Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
             }
         }
-        static async Task MessageDeleted(MessageDeleteEventArgs e)
+        static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
             if(Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
             }
+        }
+        static private Task CommandHandler(DiscordClient client, MessageCreateEventArgs e)
+        {
+            var cnext = client.GetCommandsNext();
+            var msg = e.Message;
+            var cmdStart = -1;
+            //If beta, ignore any other prefix
+            if(isBeta)
+            {
+                cmdStart = msg.GetStringPrefixLength("b%");
+            }
+            else
+            {
+                if(Database.Guilds[e.Guild.Id].GuildPrefix != commandPrefix)
+                {
+                    cmdStart = msg.GetStringPrefixLength(Database.Guilds[e.Guild.Id].GuildPrefix);
+                }
+                else
+                {
+                    cmdStart = msg.GetStringPrefixLength(commandPrefix);
+                }
+                //Special case for help command- the bot's status says %help, so you can run it like that anywhere
+                if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
+
+                //Check for default prefixes if no guild-specific prefix was found
+                if(cmdStart == -1)
+                {
+                    cmdStart = msg.GetStringPrefixLength("cb%");
+                    if(cmdStart == -1)
+                        cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
+                } 
+            }
+
+            //If no valid prefixes, exit
+            if(cmdStart == -1) return Task.CompletedTask; 
+
+            // Retrieve prefix.
+            var prefix = msg.Content.Substring(0, cmdStart);
+
+            // Retrieve full command string.
+            var cmdString = msg.Content.Substring(cmdStart);
+
+            var command = cnext.FindCommand(cmdString, out var args);
+
+            var ctx = cnext.CreateContext(msg, prefix, command, args);
+            
+            Task.Run(async () => await cnext.ExecuteCommandAsync(ctx));
+
+            return Task.CompletedTask;
         }
     }
 }

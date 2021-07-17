@@ -12,7 +12,7 @@ using CarrotBot.Data;
 
 namespace CarrotBot.Commands
 {
-    public class AdminCommands
+    public class AdminCommands : BaseCommandModule
     {
         [Command("clear"), RequirePermissions(Permissions.ManageMessages), RequireUserPermissions(Permissions.ManageMessages), Description("Removes the last *n* messages.")]
         public async Task Clear(CommandContext ctx, [Description("The number of messages to remove.")]int messages)
@@ -28,7 +28,7 @@ namespace CarrotBot.Commands
         {
             ulong UserId = Utils.GetId(userMention);
             DiscordMember user = await ctx.Guild.GetMemberAsync(UserId);
-            if(user.Roles.OrderBy(x => x.Position).First().Position > ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+            if(user.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
             {
                 await ctx.RespondAsync("You don't have permission to kick that user!");
                 return;
@@ -69,7 +69,7 @@ namespace CarrotBot.Commands
             }
             try
             {
-                if(user.Roles.OrderBy(x => x.Position).First().Position > ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+                if(user.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
                 {
                     await ctx.RespondAsync("You don't have permission to ban that user!");
                     return;

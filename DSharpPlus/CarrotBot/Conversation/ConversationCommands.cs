@@ -13,7 +13,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace CarrotBot.Conversation
 {
     [Group("conversation"), Description("Commands for interacting with the CarrotBot Multi-Server Conversation")]
-    public class ConversationCommands
+    public class ConversationCommands : BaseCommandModule
     {
         [Command("start")]
         public async Task StartConversation(CommandContext ctx, bool loadDatabase = true)

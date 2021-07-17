@@ -131,14 +131,14 @@ namespace CarrotBot.Conversation
                 Footer = $"Conversation Moderator ・ {Footer}";
             }
             //eb2.WithTitle(Title);
-            eb2.WithAuthor(Title, icon_url: user.AvatarUrl);
+            eb2.WithAuthor(Title, iconUrl: user.AvatarUrl);
 
             eb2.WithFooter(Footer);
             eb2.WithDescription(message.Content);
             if (message.Attachments.Count > 0)
             {
-                eb2.WithImageUrl(message.Attachments[0].Url);
-                eb2.AddField("Attachment URL", message.Attachments[0].Url);
+                eb2.WithImageUrl(message.Attachments[0].ProxyUrl);
+                eb2.Description += $"\n[Attachment Link]({message.Attachments[0].ProxyUrl})";
             }
             DiscordEmbed embed = eb2.Build();
             for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
