@@ -402,6 +402,7 @@ namespace CarrotBot.Commands
         public async Task SetPrefix(CommandContext ctx, string prefix)
         {
             Database.Guilds[ctx.Guild.Id].GuildPrefix = prefix;
+            Database.Guilds[ctx.Guild.Id].FlushData();
             await ctx.RespondAsync($"Set prefix for this server: `{prefix}`.");
         }
     }

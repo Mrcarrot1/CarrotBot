@@ -196,14 +196,7 @@ namespace CarrotBot
             }
             else
             {
-                if(Database.Guilds[e.Guild.Id].GuildPrefix != commandPrefix)
-                {
-                    cmdStart = msg.GetStringPrefixLength(Database.Guilds[e.Guild.Id].GuildPrefix);
-                }
-                else
-                {
-                    cmdStart = msg.GetStringPrefixLength(commandPrefix);
-                }
+                cmdStart = msg.GetStringPrefixLength(Database.Guilds[e.Guild.Id].GuildPrefix);
                 //Special case for help command- the bot's status says %help, so you can run it like that anywhere
                 if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
 
