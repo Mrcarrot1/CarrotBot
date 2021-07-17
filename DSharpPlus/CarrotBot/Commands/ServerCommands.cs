@@ -12,28 +12,50 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace CarrotBot.Commands
 {
     [Group("server"), Description("Commands for interacting with a given server"), Aliases("guild")]
-    public class ServerCommands
+    public class ServerCommands : BaseCommandModule
     {
         [Command("owner")]
         public async Task Owner(CommandContext ctx)
         {
             var eb = new DiscordEmbedBuilder();
             eb.WithDescription($"<@{ctx.Guild.Owner.Id}>\n{ctx.Guild.Owner.Username}#{ctx.Guild.Owner.Discriminator}\n{ctx.Guild.Owner.Id}\n{ctx.Guild.Name}");
-            eb.Color = DiscordColor.Green;
-            eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
-            eb.WithThumbnailUrl(ctx.Guild.Owner.AvatarUrl);
+            eb.Color = Utils.CBGreen;
+            //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
+            eb.WithThumbnail(ctx.Guild.Owner.GetAvatarUrl(ImageFormat.Auto));
             eb.WithTitle("Server Owner");
             await ctx.RespondAsync(embed: eb.Build());
         }
         [Command("info")]
         public async Task Info(CommandContext ctx)
         {
+            if(ctx.Channel.IsPrivate)
+            {
+                await ctx.RespondAsync("You need to be in a server to use this command!");
+                return;
+            }
             var eb = new DiscordEmbedBuilder();
-            eb.Color = DiscordColor.Green;
-            eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
-            eb.WithThumbnailUrl(ctx.Guild.IconUrl);
+            eb.Color = Utils.CBGreen;
+            //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
+            eb.WithThumbnail(ctx.Guild.IconUrl);
             eb.WithTitle("Server Info");
-            eb.WithDescription($"Name: {ctx.Guild.Name}\nOwner: <@{ctx.Guild.Owner.Id}>\nVoice Region: {ctx.Guild.GetVoiceRegionsAsync().Result[0].Name}\nCreated at: {ctx.Guild.CreationTimestamp.ToUniversalTime().ToString()} (UTC)\nChannels: {ctx.Guild.Channels.Count}");
+            //eb.WithDescription($"Name: {ctx.Guild.Name}\nOwner: <@{ctx.Guild.Owner.Id}>\nCreated at: ({ctx.Guild.CreationTimestamp.ToUniversalTime().ToString()} UTC)\nChannels: {ctx.Guild.Channels.Count}");
+            
+            eb.AddField("Name", $"{ctx.Guild.Name}");
+            eb.AddField("Owned By", $"<@!{ctx.Guild.Owner.Id}>", true);
+            eb.AddField("Created At", $"<t:{ctx.Guild.CreationTimestamp.ToUnixTimeSeconds()}:R> ({ctx.Guild.CreationTimestamp.ToUniversalTime()} UTC)");
+            eb.AddField("Voice Region", $"{ctx.Guild.VoiceRegion.Name}");
+            int textChannels = 0;
+            int voiceChannels = 0;
+            int categories = 0;
+            foreach(DiscordChannel channel in ctx.Guild.Channels.Values)
+            {
+                if(channel.Type is ChannelType.Text or ChannelType.News) textChannels++;
+                if(channel.Type == ChannelType.Voice) voiceChannels++;
+                if(channel.Type == ChannelType.Category) categories++;
+            }
+            eb.AddField("Text Channels", $"{textChannels}", true);
+            eb.AddField("Voice Channels", $"{voiceChannels}", true);
+            eb.AddField("Total Channels", $"{ctx.Guild.Channels.Count - categories}", true);
             await ctx.RespondAsync(embed: eb.Build());
         }
     }

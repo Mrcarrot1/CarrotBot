@@ -12,7 +12,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace CarrotBot.Commands
 {
     [Group("bot"), Description("Commands for various CarrotBot functions")]
-    public class BotCommands
+    public class BotCommands : BaseCommandModule
     {
         [Command("server"), Description("Provides the link to the CarrotBot Discord server")]
         public async Task BotServer(CommandContext ctx)

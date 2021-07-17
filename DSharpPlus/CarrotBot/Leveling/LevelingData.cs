@@ -29,6 +29,8 @@ namespace CarrotBot.Leveling
                     {
                         KONNode serverIndex = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/Index.cb"));
                         LevelingServer server = new LevelingServer(ulong.Parse(item));
+                        if(serverIndex.Values.ContainsKey("levelUpChannel"))
+                            server.SetLevelUpChannel(ulong.Parse(serverIndex.Values["levelUpChannel"]));
                         foreach(KONNode childNode in serverIndex.Children)
                         {
                             if(childNode.Name == "ROLES")

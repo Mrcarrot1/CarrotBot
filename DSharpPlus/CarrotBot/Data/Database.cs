@@ -28,6 +28,7 @@ namespace CarrotBot.Data
                     {
                         KONNode guildNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb"));
                         GuildData guild = new GuildData(ulong.Parse(item));
+                        if(guildNode.Values.ContainsKey("prefix")) guild.GuildPrefix = guildNode.Values["prefix"];
                         foreach(KONArray array1 in guildNode.Arrays)
                         {
                             if(array1.Name == "USERS")

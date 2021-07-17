@@ -12,11 +12,14 @@ namespace CarrotBot.Data
 
         public List<ulong> RolesToAssignOnJoin { get; internal set; }
 
+        public string GuildPrefix = "%";
+
         public void FlushData(bool flushUserData = false)
         {
             if(Program.isBeta) return;
             KONNode node = new KONNode("GUILD_DATA");
             node.AddValue("id", Id.ToString());
+            node.AddValue("prefix", GuildPrefix);
             KONArray usersArray = new KONArray("USERS");
             foreach(KeyValuePair<ulong, GuildUserData> user in Users)
             {

@@ -55,8 +55,7 @@ namespace CarrotBot.Leveling
                     {
                         Description = $"Congratulations <@{msg.Author.Id}> !\nYou have advanced to level **{Level}**!",
                         Title = "Level Up",
-                        Color = DiscordColor.Lilac,
-                        ThumbnailUrl = msg.Author.AvatarUrl
+                        Color = Utils.CBOrange
                     };
                     if(Server.RoleRewards.ContainsKey(Level))
                     {
@@ -64,7 +63,10 @@ namespace CarrotBot.Leveling
                         await msg.Channel.Guild.GetMemberAsync(msg.Author.Id).Result.GrantRoleAsync(msg.Channel.Guild.GetRole(Server.RoleRewards[Level]));
                     }
                     Server.SortUsersByRank();
-                    await msg.RespondAsync(embed: eb.Build());
+                    if(Server.LevelUpChannel == null)
+                        await msg.RespondAsync(embed: eb.Build());
+                    else
+                        await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync($"<@!{msg.Author.Id}>", embed: eb.Build());
                 }
                 LastMessageTimestamp = DateTimeOffset.Now;
                 FlushData();

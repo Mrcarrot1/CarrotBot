@@ -14,6 +14,7 @@ namespace CarrotBot.Leveling
         public List<LevelingUser> UsersByRank { get; internal set; }
         public Dictionary<int, ulong> RoleRewards { get; internal set; }
         public List<ulong> NoXPChannels { get; internal set; }
+        public ulong? LevelUpChannel { get; internal set; }
 
         public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime,  int xp = 5, int level = 0)
         {
@@ -43,6 +44,8 @@ namespace CarrotBot.Leveling
             if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_SERVER");
             node.Values.Add("id", Id.ToString());
+            if(LevelUpChannel != null)
+                node.AddValue("levelUpChannel", LevelUpChannel.ToString());
             KONNode rolesNode = new KONNode("ROLES");
             foreach(KeyValuePair<int, ulong> role in RoleRewards)
             {
@@ -59,6 +62,10 @@ namespace CarrotBot.Leveling
             }
             node.AddArray(usersArray);
             File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", KONWriter.Default.Write(node));
+        }
+        public void SetLevelUpChannel(ulong? channelId)
+        {
+            LevelUpChannel = channelId;
         }
     }
 }

@@ -19,7 +19,7 @@ using CarrotBot.Data;
 
 namespace CarrotBot.Commands
 {
-    public class UngroupedCommands
+    public class UngroupedCommands : BaseCommandModule
     {
         [Command("help"), Description("Displays command help.")]
         public async Task Help(CommandContext ctx, [Description("Command to provide help for.")] params string[] command)
@@ -97,10 +97,10 @@ namespace CarrotBot.Commands
                     {
                         eb.WithDescription($"`{cmd.QualifiedName}`");
                     }
-                    if(cmd.Arguments.Any())
+                    if(cmd.Overloads.Last().Arguments.Any())
                     {
-                        string arguments = "";
-                        foreach(var arg in cmd.Arguments)
+                        string Overloads = "";
+                        foreach(var arg in cmd.Overloads.Last().Arguments)
                         {
                             string argstr = "";
                             if(arg.IsOptional)
@@ -121,9 +121,9 @@ namespace CarrotBot.Commands
                                 argstr = argstr
                                 .Replace("`: ", "`");
                             }
-                            arguments += $"\n{argstr}";
+                            Overloads += $"\n{argstr}";
                         }
-                        eb.AddField("Arguments", arguments.Trim());
+                        eb.AddField("Arguments", Overloads.Trim());
                     }
                 }
             }
@@ -131,6 +131,8 @@ namespace CarrotBot.Commands
             else
             {
                 eb.WithDescription($"Listing top-level commands and groups. Use `{Program.commandPrefix}help <command/group>` to see subcommands or usage details.");
+                if(Database.Guilds[ctx.Guild.Id].GuildPrefix != Program.commandPrefix)
+                    eb.WithDescription($"Listing top-level commands and groups. Use `{Database.Guilds[ctx.Guild.Id].GuildPrefix}help <command/group>` to see subcommands or usage details.\nThis server's prefix is `{Database.Guilds[ctx.Guild.Id].GuildPrefix}`. You can also use the prefix `cb%` or <@!{Program.discord.CurrentUser.Id}>.");
                 string topLevelCommands = "None";
                 string commandGroups = "None";
                 foreach(KeyValuePair<string, Command> command1 in topLevel.OrderBy(x => x.Value.Name))
@@ -172,7 +174,7 @@ namespace CarrotBot.Commands
             }
             catch(Exception e)
             {
-                await ctx.RespondAsync(e.ToString());
+                Logger.Log(e.ToString(), Logger.LogLevel.EXC);
             }
             /*var topLevel = Program.commands.RegisteredCommands.Distinct();
             var helpBuilder = ctx.CommandsNext.HelpFormatter.Create(ctx);
@@ -283,9 +285,9 @@ namespace CarrotBot.Commands
         {
             DiscordWebhookBuilder webhookBuilder = new DiscordWebhookBuilder();
             //await hook.ModifyAsync(base64avatar: ctx.Member.AvatarUrl);
-            await hook.ExecuteAsync(message);
+            await hook.ExecuteAsync(message); : BaseCommandModule
         }*/
-        [Command("say")]
+        [Command("say"), Hidden, RequireOwner]
         public async Task Say(CommandContext ctx, string message, ulong channelId = 0)
         {
             if(ctx.User.Id != 366298290377195522) return;
@@ -305,7 +307,7 @@ namespace CarrotBot.Commands
                 }
             }
         }
-        [Command("shutdown"), Hidden]
+        [Command("shutdown"), Hidden, RequireOwner]
         public async Task Shutdown(CommandContext ctx)
         {
             if(ctx.User.Id != 366298290377195522 && ctx.User.Id != 374283134243700747 && ctx.User.Id != 129329809741447168 && ctx.User.Id != 245703456382386177) return;
@@ -318,7 +320,7 @@ namespace CarrotBot.Commands
             Console.WriteLine();
             Environment.Exit(0);
         }
-        [Command("restart"), Hidden]
+        [Command("restart"), Hidden, RequireOwner]
         public async Task Restart(CommandContext ctx)
         {
             if(ctx.User.Id != 366298290377195522) return;
@@ -332,7 +334,7 @@ namespace CarrotBot.Commands
         public async Task UpdatePing(CommandContext ctx)
         {
             if(!ctx.Guild.Equals(Program.BotGuild)) return;
-            DiscordRole role = ctx.Guild.Roles.FirstOrDefault(x => x.Name == "Updoot Ping");
+            DiscordRole role = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Updoot Ping").Value;
             if(!ctx.Member.Roles.ToList().Contains(role))
             {
                 await ctx.Member.GrantRoleAsync(role, "Given by user request");
@@ -344,14 +346,14 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("Role removed.");
             }
         }
-        [Command("afk")]
-        public async Task AFK(CommandContext ctx, [RemainingText]string message = "AFK")
+        [Command("afk"), Description("Sets your AFK message.")]
+        public async Task AFK(CommandContext ctx, [RemainingText, Description("The message to set.")]string message = "AFK")
         {
             GuildUserData userData = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(ctx.User.Id);
             userData.SetAFK(message);
             try
             {
-                await ctx.Member.ModifyAsync($"[AFK] {ctx.Member.DisplayName}");
+                await ctx.Member.ModifyAsync(x => x.Nickname = $"[AFK] {ctx.Member.DisplayName}");
             }
             catch { }
             await ctx.RespondAsync($"Set your AFK: {message}");
@@ -379,7 +381,7 @@ namespace CarrotBot.Commands
             }
             catch(Exception e)
             {
-                Logger.Log(e.ToString());
+                Logger.Log(e.ToString(), Logger.LogLevel.EXC);
             }
         }
         [Command("about"), Description("Shows various information about the bot.")]
@@ -390,10 +392,17 @@ namespace CarrotBot.Commands
             eb.WithColor(Utils.CBGreen);
             eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `{Program.commandPrefix}help` for command help.");
             eb.AddField("Current Version", $"v{Utils.currentVersion}");
+            //eb.AddField("DSharpPlus Version", $"v4.0.1");
             eb.AddField("Invite/Vote Link", "https://top.gg/bot/389513870835974146", true);
             eb.AddField("Support Server", "https://discord.gg/wHPwHu7");
-
+            eb.AddField("GitHub", "https://github.com/Mrcarrot1/CarrotBot");
             await ctx.RespondAsync(embed: eb.Build());
+        }
+        [Command("setprefix"), Description("Sets the bot's prefix in this server."), RequirePermissions(Permissions.ManageGuild)]
+        public async Task SetPrefix(CommandContext ctx, string prefix)
+        {
+            Database.Guilds[ctx.Guild.Id].GuildPrefix = prefix;
+            await ctx.RespondAsync($"Set prefix for this server: `{prefix}`.");
         }
     }
 }
