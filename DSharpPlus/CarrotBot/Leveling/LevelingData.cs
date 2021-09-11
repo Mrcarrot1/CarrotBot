@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using DSharpPlus;
 using KarrotObjectNotation;
@@ -25,19 +26,28 @@ namespace CarrotBot.Leveling
             {
                 if(array.Name == "SERVERS")
                 {
-                    foreach(string item in array.Items)
+                    foreach(ulong item in array.Items)
                     {
                         KONNode serverIndex = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/Index.cb"));
-                        LevelingServer server = new LevelingServer(ulong.Parse(item));
+                        Console.WriteLine(KONWriter.Default.Write(serverIndex));
+                        LevelingServer server = new LevelingServer(item);
                         if(serverIndex.Values.ContainsKey("levelUpChannel"))
-                            server.SetLevelUpChannel(ulong.Parse(serverIndex.Values["levelUpChannel"]));
+                            server.SetLevelUpChannel((ulong)serverIndex.Values["levelUpChannel"]);
+                        if(serverIndex.Values.ContainsKey("xpCooldown"))
+                            server.XPCooldown = (int)serverIndex.Values["xpCooldown"];
+                        if(serverIndex.Values.ContainsKey("xpPerLevel"))
+                            server.XPPerLevel = (int)serverIndex.Values["xpPerLevel"];
+                        if(serverIndex.Values.ContainsKey("minXPPerMessage"))
+                            server.MinXPPerMessage = (int)serverIndex.Values["minXPPerMessage"];
+                        if(serverIndex.Values.ContainsKey("maxXPPerMessage"))
+                            server.MaxXPPerMessage = (int)serverIndex.Values["maxXPPerMessage"];
                         foreach(KONNode childNode in serverIndex.Children)
                         {
                             if(childNode.Name == "ROLES")
                             {
                                 foreach(KONNode childNode2 in childNode.Children)
                                 {
-                                    server.RoleRewards.Add(int.Parse(childNode2.Values["level"]), ulong.Parse(childNode2.Values["id"]));
+                                    server.RoleRewards.Add((int)childNode2.Values["level"], (ulong)childNode2.Values["id"]);
                                 }
                             }
                         }
@@ -45,11 +55,11 @@ namespace CarrotBot.Leveling
                         {
                             if(array1.Name == "USERS")
                             {
-                                foreach(string Item in array1.Items)
+                                foreach(ulong Item in array1.Items)
                                 {
                                     KONNode userNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/User_{Item}.cb"));
-                                    LevelingUser user = new LevelingUser(ulong.Parse(Item), int.Parse(userNode.Values["xp"]), int.Parse(userNode.Values["level"]), server, DateTimeOffset.FromUnixTimeSeconds(long.Parse(userNode.Values["lastMessageTime"])));
-                                    server.Users.Add(ulong.Parse(Item), user);
+                                    LevelingUser user = new LevelingUser(Item, (int)userNode.Values["xp"], (int)userNode.Values["level"], server, DateTimeOffset.FromUnixTimeSeconds((long)userNode.Values["lastMessageTime"]));
+                                    server.Users.Add(Item, user);
                                     server.UsersByRank.Add(user);
                                 }
                             }
@@ -59,10 +69,6 @@ namespace CarrotBot.Leveling
                     }
                 }
             }
-        }
-        public static int XPNeededForLevel(int level)
-        {
-            return (level * 150);
         }
         /// <summary>
         /// Determines whether the first user is a higher level than the second.
@@ -101,7 +107,7 @@ namespace CarrotBot.Leveling
             KONArray serversArray = new KONArray("SERVERS");
             foreach(KeyValuePair<ulong, LevelingServer> server in Servers)
             {
-                serversArray.Items.Add(server.Key.ToString());
+                serversArray.Items.Add(server.Key);
             }
             node.AddArray(serversArray);
             File.WriteAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb", KONWriter.Default.Write(node));
@@ -167,5 +173,30 @@ namespace CarrotBot.Leveling
             return output;
             return input.Sort(CompareUsersByLevel)
         }*/
+        public static void DeleteGuildData(ulong guildId)
+        {
+            if(Directory.Exists($@"{Utils.levelingDataPath}/Guild_{guildId}"))
+            {
+                Directory.Delete($@"{Utils.levelingDataPath}/Guild_{guildId}", true);
+            }
+            if(Servers.ContainsKey(guildId))
+            {
+                Servers.Remove(guildId);
+            }
+            FlushServerList();
+        }
+        public static void DeleteUserData(ulong userId)
+        {
+            List<LevelingServer> guilds = Servers.Values.ToList();
+            for(int i = 0; i < guilds.Count; i++)
+            {
+                if(guilds[i].Users.ContainsKey(userId))
+                {
+                    guilds[i].Users.Remove(userId);
+                    File.Delete($@"{Utils.levelingDataPath}/Server_{guilds[i].Id}/User_{userId}.cb");
+                    guilds[i].FlushData();
+                }
+            }
+        }
     }
 }

@@ -12,25 +12,25 @@ namespace CarrotBot.Data
 
         public List<ulong> RolesToAssignOnJoin { get; internal set; }
 
-        public string GuildPrefix = "%";
+        public string GuildPrefix { get; internal set; }
 
         public void FlushData(bool flushUserData = false)
         {
             if(Program.isBeta) return;
-            KONNode node = new KONNode("GUILD_DATA");
-            node.AddValue("id", Id.ToString());
+            KONNode node = new KONNode($"GUILD_{Id}");
+            node.AddValue("id", Id);
             node.AddValue("prefix", GuildPrefix);
             KONArray usersArray = new KONArray("USERS");
             foreach(KeyValuePair<ulong, GuildUserData> user in Users)
             {
-                usersArray.Items.Add(user.Key.ToString());
+                usersArray.Items.Add(user.Key);
                 if(flushUserData) user.Value.FlushData();
             }
             node.AddArray(usersArray);
             KONArray joinRolesArray = new KONArray("JOIN_ROLES");
             foreach(ulong role in RolesToAssignOnJoin)
             {
-                joinRolesArray.Items.Add(role.ToString());
+                joinRolesArray.Items.Add(role);
             }
             node.AddArray(joinRolesArray);
             File.WriteAllText($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", KONWriter.Default.Write(node));
@@ -51,6 +51,7 @@ namespace CarrotBot.Data
             Id = id;
             Users = new Dictionary<ulong, GuildUserData>();
             RolesToAssignOnJoin =  new List<ulong>();
+            GuildPrefix = "%";
             if(createIndex)
                 FlushData();
         }

@@ -5,11 +5,14 @@
 		},
 		{
 			"path": "CBMessenger"
+		},
+		{
+			"path": "CBRunningCheck"
 		}
 	],
 	"settings": {
 		"files.autoSave": "afterDelay",
-		"editor.fontSize": 12,
-		"git.autoRepositoryDetection": "openEditors"
+		"git.autoRepositoryDetection": "openEditors",
+		"editor.fontSize": 13
 	}
 }

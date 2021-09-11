@@ -15,24 +15,19 @@ namespace CarrotBot.Commands
     public class UserCommands : BaseCommandModule
     {
         [Command("userinfo"), Description("Gets info about a user")]
-        public async Task Info(CommandContext ctx, [Description("The user in question. Leave blank to return your own info.")]string userMention = null)
+        public async Task Info(CommandContext ctx, [Description("The user in question. Leave blank to return your own info."), RemainingText]string userMention = null)
         {
             try {
             ulong userId = 0;
-            try
-            {
-                if (userMention != null)
-                    userId = Utils.GetId(userMention);
-            }
-            catch(FormatException)
-            {
-                userId = ctx.Guild.Members.FirstOrDefault(x => (x.Value.Username == userMention || x.Value.Nickname == userMention)).Value.Id;
-            }
             var member = ctx.Member;
             try
             {
-                if (userId != 0)
-                    member = ctx.Guild.GetMemberAsync(userId).Result;
+                if (userMention != null)
+                {
+                    member = ctx.Guild.FindMemberAsync(userMention).Result;
+                    userId = member.Id;
+                }
+                    
             }
             catch
             {
@@ -41,7 +36,7 @@ namespace CarrotBot.Commands
             }
             var user = ctx.User;
             if(userId != 0)
-                user = await Program.discord.GetUserAsync(userId);
+                user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
             Logger.Log($"User info command: processing user {user.Username}");
             string type = "User";
             if (user.IsBot)
@@ -93,7 +88,7 @@ namespace CarrotBot.Commands
             }
             catch(Exception e)
             {
-                Logger.Log(e.ToString(), Logger.LogLevel.EXC);
+                Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
             }
         }
     }

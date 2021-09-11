@@ -17,8 +17,13 @@ namespace CarrotBot.Commands
         [Command("clear"), RequirePermissions(Permissions.ManageMessages), RequireUserPermissions(Permissions.ManageMessages), Description("Removes the last *n* messages.")]
         public async Task Clear(CommandContext ctx, [Description("The number of messages to remove.")]int messages)
         {
+            if(messages > 1000 || messages < 1) 
+            {
+                await ctx.RespondAsync("Please enter a number between 1 and 1000.");
+                return;
+            }
             var messagesList = ctx.Channel.GetMessagesAsync(messages + 1).Result;
-            foreach(DiscordMessage msg in messagesList)
+            foreach(DiscordMessage msg in messagesList.Where(x => !x.Pinned))
             {
                 await msg.DeleteAsync();
             }
@@ -91,7 +96,7 @@ namespace CarrotBot.Commands
         public async Task Unban(CommandContext ctx, [Description("The user to unban.")]string userMention, [RemainingText, Description("The reason for unbanning the user.")]string reason = null)
         {
             ulong userId = Utils.GetId(userMention);
-            DiscordUser user = await Program.discord.GetUserAsync(userId);
+            DiscordUser user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
             try
             {
                 await user.UnbanAsync(ctx.Guild, reason);

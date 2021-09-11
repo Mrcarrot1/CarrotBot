@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System.Linq;
@@ -28,31 +29,40 @@ namespace CarrotBot.Conversation
         public DiscordMessage EmbedMessage { get; set; }
         public async Task DeleteMessage(bool includeOriginal = true)
         {
-            if(includeOriginal)
-                await originalMessage.DeleteAsync();
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            //This try-catch simply serves to make sure that we don't try to delete a message that already has been.
+            //Otherwise, that would be a fairly big issue.
             try
             {
-                eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
-                eb.WithDescription(liveFeedMessage.Embeds[0].Description);
-                if(liveFeedMessage.Embeds[0].Fields != null)
+                if(includeOriginal)
+                await originalMessage.DeleteAsync();
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                try
                 {
-                    foreach(DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                    eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
+                    eb.WithDescription(liveFeedMessage.Embeds[0].Description);
+                    if(liveFeedMessage.Embeds[0].Fields != null)
                     {
-                        eb.AddField(f.Name, f.Value);
+                        foreach(DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                        {
+                            eb.AddField(f.Name, f.Value);
+                        }
                     }
+                    eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
+                    eb.WithColor(DiscordColor.Red);
+                    await liveFeedMessage.ModifyAsync(embed: eb.Build());
                 }
-                eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
-                eb.WithColor(DiscordColor.Red);
-                await liveFeedMessage.ModifyAsync(embed: eb.Build());
+                catch(Exception e) 
+                { 
+                    await Program.Mrcarrot.SendMessageAsync($"{e.ToString()}");
+                }
+                foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
+                {
+                    await msg.Value.DeleteAsync();
+                }
             }
-            catch(Exception e) 
-            { 
-                await Program.Mrcarrot.SendMessageAsync($"{e.ToString()}");
-            }
-            foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
+            catch
             {
-                await msg.Value.DeleteAsync();
+
             }
             /*if(includeOriginal)
                 await originalMessage.DeleteAsync();
@@ -119,6 +129,15 @@ namespace CarrotBot.Conversation
             {
                 eb2.WithImageUrl(originalMessage.Attachments[0].Url);
                 eb2.AddField("Attachment URL", originalMessage.Attachments[0].Url);
+            }
+            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+            foreach(Match match in URLRegex.Matches(originalMessage.Content))
+            {
+                if(Utils.IsImageUrl(match.Value))
+                {
+                    eb2.WithImageUrl(match.Value);
+                    break;
+                }
             }
             DiscordEmbed embed = eb2.Build();
             foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)

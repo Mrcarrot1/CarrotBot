@@ -38,20 +38,20 @@ namespace CarrotBot.Data
         public void FlushData()
         {
             if(Program.isBeta) return;
-            KONNode userNode = new KONNode("GUILD_USER_DATA");
-            userNode.AddValue("id", Id.ToString());
-            userNode.AddValue("isAFK", IsAFK.ToString());
+            KONNode userNode = new KONNode($"GUILD_{GuildId}_USER_{Id}");
+            userNode.AddValue("id", Id);
+            userNode.AddValue("isAFK", IsAFK);
             if(IsAFK)
             {
-                userNode.AddValue("AFKTime", AFKTime.ToUnixTimeMilliseconds().ToString());
+                userNode.AddValue("AFKTime", AFKTime.ToUnixTimeMilliseconds());
                 userNode.AddValue("AFKMessage", AFKMessage);
             }
             foreach(var warning in Warnings)
             {
                 KONNode warningNode = new KONNode("WARNING");
                 warningNode.AddValue("message", warning.Item1);
-                warningNode.AddValue("time", warning.Item2.ToUnixTimeMilliseconds().ToString());
-                warningNode.AddValue("warnedBy", warning.Item3.ToString());
+                warningNode.AddValue("time", warning.Item2.ToUnixTimeMilliseconds());
+                warningNode.AddValue("warnedBy", warning.Item3);
                 userNode.AddChild(warningNode);
             }
             File.WriteAllText($@"{Utils.localDataPath}/Guild_{GuildId}/User_{Id}.cb", KONWriter.Default.Write(userNode));

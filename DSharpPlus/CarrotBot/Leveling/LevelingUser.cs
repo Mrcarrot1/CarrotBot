@@ -14,7 +14,8 @@ namespace CarrotBot.Leveling
         public int Level { get; internal set; }
         public int CurrentXP { get; internal set; }
         public DateTimeOffset LastMessageTimestamp { get; internal set; }
-        private TimeSpan messageInterval = new TimeSpan(0, 0, 60);
+        private TimeSpan messageInterval { get; set; }
+        public bool MentionForLevelUp { get; internal set; }
 
         public int TotalXP 
         {
@@ -23,7 +24,7 @@ namespace CarrotBot.Leveling
                 int output = CurrentXP;
                 for(int i = Level; i > 0; i--)
                 {
-                    output += i * 150;
+                    output += i * Server.XPPerLevel;
                 }
                 return output;
             }
@@ -31,7 +32,8 @@ namespace CarrotBot.Leveling
 
         public async Task HandleMessage(DiscordMessage msg)
         {
-            if(msg.Content.StartsWith('%')) return;
+            messageInterval = new TimeSpan(0, 0, Server.XPCooldown);
+            if(msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix)) return;
             if(DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
             {
                 if(msg.Channel.Guild.Id == 824824193001979924)
@@ -46,8 +48,8 @@ namespace CarrotBot.Leveling
                         Dripcoin.AddBalance(msg.Author.Id, 1);
                     }
                 }
-                CurrentXP += 5;
-                if(CurrentXP >= LevelingData.XPNeededForLevel(Level + 1))
+                CurrentXP += Server.GetMessageXP();
+                if(CurrentXP >= Server.XPNeededForLevel(Level + 1))
                 {
                     Level++;
                     CurrentXP = 0;
@@ -62,11 +64,16 @@ namespace CarrotBot.Leveling
                         eb.Description += $"\nYou have unlocked the <@&{Server.RoleRewards[Level]}> role!";
                         await msg.Channel.Guild.GetMemberAsync(msg.Author.Id).Result.GrantRoleAsync(msg.Channel.Guild.GetRole(Server.RoleRewards[Level]));
                     }
+                    if(Server.LevelUpMessages.ContainsKey(Level))
+                    {
+                        eb.Description += $"\n{Server.LevelUpMessages[Level]}";
+                    }
                     Server.SortUsersByRank();
+                    string content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;
                     if(Server.LevelUpChannel == null)
-                        await msg.RespondAsync(embed: eb.Build());
+                        await msg.RespondAsync(content, eb.Build());
                     else
-                        await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync($"<@!{msg.Author.Id}>", embed: eb.Build());
+                        await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync(content, eb.Build());
                 }
                 LastMessageTimestamp = DateTimeOffset.Now;
                 FlushData();
@@ -76,10 +83,11 @@ namespace CarrotBot.Leveling
         {
             if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_USER");
-            node.Values.Add("id", Id.ToString());
-            node.Values.Add("xp", CurrentXP.ToString());
-            node.Values.Add("level", Level.ToString());
-            node.Values.Add("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds().ToString());
+            node.AddValue("id", Id);
+            node.AddValue("xp", CurrentXP);
+            node.AddValue("level", Level);
+            node.AddValue("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds());
+            node.AddValue("mentionForLevelUp", MentionForLevelUp);
             File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", KONWriter.Default.Write(node));
         }
         public LevelingUser(ulong id, LevelingServer server)

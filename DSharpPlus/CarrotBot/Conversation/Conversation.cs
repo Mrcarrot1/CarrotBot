@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Text.RegularExpressions;
+using System.Net.Http;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System.IO;
@@ -16,6 +18,8 @@ namespace CarrotBot.Conversation
         public static DiscordChannel embedsChannel = null;
         public static async Task CarryOutConversation(DiscordMessage message)
         {
+            try
+            {
             ulong userId = message.Author.Id;
             bool channelIsInConversation = false;
             string Server = "";
@@ -45,7 +49,18 @@ namespace CarrotBot.Conversation
                 await user.SendMessageAsync("You have been banned from participating in the CarrotBot Multi-Server Conversation.\nContact an administrator if you believe this to be a mistake.");
                 return;
             }
-            if (ConversationData.LastMessage != null && false)
+            //Check for certain offensive words-
+            //For obvious reasons, these are not in the source code. They are kept locally in the database.
+            //For a list, contact Mrcarrot.
+            foreach(string str in ConversationData.BannedWords)
+            {
+                if(message.Content.ToLower().Contains(str))
+                {
+                    await message.DeleteAsync();
+                    await user.SendMessageAsync("Your message has been removed for containing an offensive word.\nContact a CarrotBot administrator if you believe this to be a mistake");
+                }
+            }
+            /*if (ConversationData.LastMessage != null)
             {
                 if (ConversationData.LastMessage.Author.Id == userId && ConversationData.LastMessage.originalChannel.Id == originalChannel.Id)
                 {
@@ -83,7 +98,7 @@ namespace CarrotBot.Conversation
                     }
 
                 }
-            }
+            }*/
             DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
             eb2.WithColor(DiscordColor.LightGray);
             if (ConversationData.VerifiedUsers.Contains(userId))
@@ -140,47 +155,75 @@ namespace CarrotBot.Conversation
                 eb2.WithImageUrl(message.Attachments[0].ProxyUrl);
                 eb2.Description += $"\n[Attachment Link]({message.Attachments[0].ProxyUrl})";
             }
+            if(message.Stickers.Count > 0)
+            {
+                eb2.WithImageUrl(message.Stickers.First().StickerUrl);
+            }
+            //Scan the message for image URLs and set the first one found to the embed's thumbnail URL
+            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+            foreach(Match match in URLRegex.Matches(message.Content))
+            {
+                if(Utils.IsImageUrl(match.Value))
+                {
+                    eb2.WithImageUrl(match.Value);
+                    break;
+                }
+            }
             DiscordEmbed embed = eb2.Build();
             for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
                 if (message.Channel.Id != ConversationData.ConversationChannels[i].Id)
                 {
-                    var channel = Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
-
-                    /*bool Embed = false;
-                    if (message.Embeds.Count > 0)
-                        Embed = true;
+                    //Check if the guild in question has a shard associated with it-
+                    //If it doesn't, the guild has most likely either been deleted or removed the bot.
+                    //So we remove the guild from the database.
+                    var shard = Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId);
+                    if(shard == null)
+                    {
+                        Logger.Log($"Conversation: Shard not found for guild {ConversationData.ConversationChannels[i].GuildId}. Assuming invalid guild.", Logger.CBLogLevel.WRN);
+                        ConversationData.ConversationChannels.RemoveAt(i);
+                        ConversationData.WriteDatabase();
+                        i--;
+                        continue;
+                    }
+                    //Then we do the same for the channel-
+                    //This requires a slightly different approach as GetChannelAsync throws an exception instead of returning null if the channel is not found.
                     try
                     {
-                        if (!Embed)
-                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend));
-                        else
-                            msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(messageToSend, false, message.Embeds[0] as DiscordEmbed));
-                    }*/
-                    try
-                    {
+                        var channel = shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
                         msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(embed: embed));
                     }
-                    catch (Exception e)
+                    catch (DSharpPlus.Exceptions.NotFoundException e)
                     {
-                        await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {channel.Id}:\n{e.ToString()}");
+                        Logger.Log($"Conversation: Channel not found for server {ConversationData.ConversationChannels[i].Server}. Assuming invalid channel.", Logger.CBLogLevel.ERR);
+                        Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
+                        ConversationData.ConversationChannels.RemoveAt(i);
+                        ConversationData.WriteDatabase();
+                        i--;
+                        continue;
                     }
 
                     Thread.Sleep(1);
                 }
             }
-            ConversationData.ConversationMessages.Add(msgObject.Id, msgObject);
-            ConversationData.ConversationMessagesByOrigId.Add(message.Id, msgObject);
-            msgObject.PreviousMessage = ConversationData.LastMessage;
-            ConversationData.LastMessage = msgObject;
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-            eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
-            eb.WithDescription(message.Content);
-            eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
-            eb.WithColor(DiscordColor.Green);
-            msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
-            msgObject.Embed = embed;
-            msgObject.EmbedMessage = await embedsChannel.SendMessageAsync(embed: embed);
+
+                ConversationData.ConversationMessages.Add(msgObject.Id, msgObject);
+                ConversationData.ConversationMessagesByOrigId.Add(message.Id, msgObject);
+                msgObject.PreviousMessage = ConversationData.LastMessage;
+                ConversationData.LastMessage = msgObject;
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+                eb.WithDescription(message.Content);
+                eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
+                eb.WithColor(DiscordColor.Green);
+                msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
+                msgObject.Embed = embed;
+                msgObject.EmbedMessage = await embedsChannel.SendMessageAsync(embed: embed);
+            }
+            catch(Exception e)
+            {
+                await Program.Mrcarrot.SendMessageAsync(e.ToString());
+            }
         }
         public static async Task SendConversationMessage(string msg)
         {
@@ -189,7 +232,7 @@ namespace CarrotBot.Conversation
             {
                 try
                 {
-                    await Program.discord.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result.SendMessageAsync(msg);
+                    await Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId).GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result.SendMessageAsync(msg);
                 }
                 catch (Exception e)
                 {

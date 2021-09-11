@@ -15,6 +15,12 @@ namespace CarrotBot.Leveling
         public Dictionary<int, ulong> RoleRewards { get; internal set; }
         public List<ulong> NoXPChannels { get; internal set; }
         public ulong? LevelUpChannel { get; internal set; }
+        public bool MentionForLevelUp { get; internal set; }
+        public Dictionary<int, string> LevelUpMessages { get; internal set; }
+        public int XPCooldown { get; internal set; }
+        public int XPPerLevel { get; internal set; }
+        public int MinXPPerMessage { get; internal set; }
+        public int MaxXPPerMessage { get; internal set; }
 
         public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime,  int xp = 5, int level = 0)
         {
@@ -32,6 +38,11 @@ namespace CarrotBot.Leveling
             Users = new Dictionary<ulong, LevelingUser>();
             UsersByRank = new List<LevelingUser>();
             RoleRewards = new Dictionary<int, ulong>();
+            LevelUpMessages = new Dictionary<int, string>();
+            XPCooldown = 60;
+            XPPerLevel = 150;
+            MinXPPerMessage = 5;
+            MaxXPPerMessage = 5;
             if(!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
                 Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");        
         }
@@ -43,22 +54,35 @@ namespace CarrotBot.Leveling
         {
             if(Program.isBeta) return;
             KONNode node = new KONNode("LEVELING_SERVER");
-            node.Values.Add("id", Id.ToString());
+            node.AddValue("id", Id);
             if(LevelUpChannel != null)
-                node.AddValue("levelUpChannel", LevelUpChannel.ToString());
+                node.AddValue("levelUpChannel", (ulong)LevelUpChannel);
+            node.AddValue("xpCooldown", XPCooldown);
+            node.AddValue("xpPerLevel", XPPerLevel);
+            node.AddValue("minXPPerMessage", MinXPPerMessage);
+            node.AddValue("maxXPPerMessage", MaxXPPerMessage);
             KONNode rolesNode = new KONNode("ROLES");
             foreach(KeyValuePair<int, ulong> role in RoleRewards)
             {
                 KONNode roleNode = new KONNode("ROLE");
-                roleNode.AddValue("id", role.Value.ToString());
-                roleNode.AddValue("level", role.Key.ToString());
+                roleNode.AddValue("id", role.Value);
+                roleNode.AddValue("level", role.Key);
                 rolesNode.AddChild(roleNode);
             }
             node.AddChild(rolesNode);
+            KONNode levelUpMsgNode = new KONNode("LEVEL_UP_MESSAGES");
+            foreach(KeyValuePair<int, string> message in LevelUpMessages)
+            {
+                KONNode messageNode = new KONNode("MESSAGE");
+                messageNode.AddValue("level", message.Key);
+                messageNode.AddValue("message", message.Value);
+                levelUpMsgNode.AddChild(messageNode);
+            }
+            node.AddChild(levelUpMsgNode);
             KONArray usersArray = new KONArray("USERS");
             foreach(LevelingUser user in UsersByRank)
             {
-                usersArray.Items.Add(user.Id.ToString());
+                usersArray.AddItem(user.Id);
             }
             node.AddArray(usersArray);
             File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", KONWriter.Default.Write(node));
@@ -66,6 +90,15 @@ namespace CarrotBot.Leveling
         public void SetLevelUpChannel(ulong? channelId)
         {
             LevelUpChannel = channelId;
+        }
+        public int XPNeededForLevel(int level)
+        {
+            return (level * XPPerLevel);
+        }
+        private static Random rnd = new Random();
+        public int GetMessageXP()
+        {
+            return rnd.Next(MinXPPerMessage, MaxXPPerMessage + 1);
         }
     }
 }
