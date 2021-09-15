@@ -49,10 +49,10 @@ namespace CarrotBot.Leveling
                     }
                 }
                 CurrentXP += Server.GetMessageXP();
-                if(CurrentXP >= Server.XPNeededForLevel(Level + 1))
+                while(CurrentXP >= Server.XPNeededForLevel(Level + 1))
                 {
                     Level++;
-                    CurrentXP = 0;
+                    CurrentXP -= Server.XPNeededForLevel(Level);
                     DiscordEmbedBuilder eb =  new DiscordEmbedBuilder
                     {
                         Description = $"Congratulations <@{msg.Author.Id}> !\nYou have advanced to level **{Level}**!",
