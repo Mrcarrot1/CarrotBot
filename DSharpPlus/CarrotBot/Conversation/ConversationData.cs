@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using DSharpPlus.Entities;
 using KarrotObjectNotation;
@@ -19,6 +20,8 @@ namespace CarrotBot.Conversation
         public static List<ulong> BannedUsers = new List<ulong>();
         public static List<ulong> Moderators = new List<ulong>();
         public static List<ulong> Administrators = new List<ulong>();
+        public static List<ulong> SuperAdministrators = new List<ulong>();
+
         public static List<ulong> VerifiedUsers = new List<ulong>();
         public static Dictionary<ulong, PreVerifiedUser> PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
         public static List<string> BannedWords = new List<string>();
@@ -48,6 +51,7 @@ namespace CarrotBot.Conversation
             PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
             AcceptedUsers = new List<ulong>();
             Administrators = new List<ulong>();
+            SuperAdministrators = new List<ulong>();
             Moderators = new List<ulong>();
             BannedUsers = new List<ulong>();
             VerifiedUsers = new List<ulong>();
@@ -82,6 +86,18 @@ namespace CarrotBot.Conversation
                     {
                         if(!AcceptedUsers.Contains(item))
                             AcceptedUsers.Add(item);
+                    }
+                }
+                if(array.Name == "SUPER_ADMINISTRATORS")
+                {
+                    foreach(ulong item in array.Items)
+                    {
+                        if(!SuperAdministrators.Contains(item))
+                            SuperAdministrators.Add(item);
+                    }
+                    if(!SuperAdministrators.Any())
+                    {
+                        SuperAdministrators.Add(Program.Mrcarrot.Id);
                     }
                 }
                 if(array.Name == "ADMINISTRATORS")

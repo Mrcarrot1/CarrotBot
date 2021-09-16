@@ -106,7 +106,7 @@ namespace CarrotBot.Conversation
                 await ctx.RespondAsync($"Something went wrong. Please ensure that you are using the channel hashtag or ID and that the channel exists in this server.\nIf you are adding a channel in another server, please use `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addchannel <server Id> <channel Id> <server name>`.");
             }
         }
-        [Command("addchannel"), Description("Used to add your channel to the conversation"), RequireConversationPermissions(ConversationPermissions.Admin)]
+        [Command("addchannel"), Description("Used to add your channel to the conversation.")]
         public async Task AddChannel(CommandContext ctx, [Description("The guild the channel is in.")]ulong guildId, [Description("The channel to connect to the conversation")]string channel, [RemainingText, Description("What the conversation should call your server")]string name)
         {
             try
