@@ -29,7 +29,7 @@ namespace CarrotBot.Conversation
                 case ConversationPermissions.Admin:
                     return Task.FromResult(ConversationData.Administrators.Contains(ctx.User.Id));
                 case ConversationPermissions.SuperAdmin:
-                    return Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id);
+                    return Task.FromResult(ConversationData.SuperAdministrators.Contains(ctx.User.Id));
                 case ConversationPermissions.Developer:
                     return(Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id));
             }

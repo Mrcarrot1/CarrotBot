@@ -118,6 +118,8 @@ namespace CarrotBot.Commands
             else
                 eb.WithDescription($"Warned <@!{userId}>. No reason given.");
             GuildUserData user = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
+            if(reason == "" || reason == null)
+                reason = "No reason given.";
             user.AddWarning(reason, ctx.User.Id);
             user.FlushData();
             await ctx.RespondAsync(embed: eb.Build());

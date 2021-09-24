@@ -11,7 +11,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.2.5";
+        private static readonly string version = "1.2.6";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";

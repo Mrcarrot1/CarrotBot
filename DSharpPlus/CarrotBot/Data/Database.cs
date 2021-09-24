@@ -58,9 +58,14 @@ namespace CarrotBot.Data
                                     {
                                         if(node.Name == "WARNING")
                                         {
-                                            user.Warnings.Add(new Tuple<string, DateTimeOffset, ulong>((string)node.Values["reason"], 
-                                            DateTimeOffset.FromUnixTimeMilliseconds((long)node.Values["time"]), 
-                                            (ulong)node.Values["warnedBy"]));
+                                            if(node.Values.ContainsKey("message"))
+                                                user.Warnings.Add(new Tuple<string, DateTimeOffset, ulong>((string)node.Values["message"], 
+                                                DateTimeOffset.FromUnixTimeMilliseconds((long)node.Values["time"]), 
+                                                (ulong)node.Values["warnedBy"]));
+                                            else
+                                                user.Warnings.Add(new Tuple<string, DateTimeOffset, ulong>("No reason given.", 
+                                                DateTimeOffset.FromUnixTimeMilliseconds((long)node.Values["time"]), 
+                                                (ulong)node.Values["warnedBy"]));
                                         }
                                     }
                                     guild.Users.Add(user.Id, user);
