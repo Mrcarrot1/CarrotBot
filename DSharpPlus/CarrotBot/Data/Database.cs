@@ -25,7 +25,7 @@ namespace CarrotBot.Data
             Guilds = new Dictionary<ulong, GuildData>();
             RootNodes = new List<KONNode>();
             if(Program.isBeta) return;
-            DatabaseNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.localDataPath}/Database.cb"));
+            DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Database.cb")));
             RootNodes.Add(DatabaseNode);
             foreach(KONArray array in DatabaseNode.Arrays)
             {
@@ -33,7 +33,7 @@ namespace CarrotBot.Data
                 {
                     foreach(ulong item in array.Items)
                     {
-                        KONNode guildNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb"));
+                        KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb")));
                         RootNodes.Add(guildNode);
                         Logger.Log(KONWriter.Default.Write(guildNode));
                         GuildData guild = new GuildData(item);
@@ -44,7 +44,8 @@ namespace CarrotBot.Data
                             {
                                 foreach(ulong item1 in array1.Items)
                                 {
-                                    KONNode userNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb"));
+                                    bool ok  = Utils.TryLoadDatabaseNode($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb", out KONNode userNode);
+                                    if(!ok) continue;
                                     Console.WriteLine(KONWriter.Default.Write(userNode));
                                     RootNodes.Add(userNode);
                                     GuildUserData user = new GuildUserData(item1, guild.Id);

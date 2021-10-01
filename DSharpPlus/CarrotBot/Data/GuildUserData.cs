@@ -54,7 +54,7 @@ namespace CarrotBot.Data
                 warningNode.AddValue("warnedBy", warning.Item3);
                 userNode.AddChild(warningNode);
             }
-            File.WriteAllText($@"{Utils.localDataPath}/Guild_{GuildId}/User_{Id}.cb", KONWriter.Default.Write(userNode));
+            File.WriteAllText($@"{Utils.localDataPath}/Guild_{GuildId}/User_{Id}.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(userNode)));
         }
         
         public GuildUserData(ulong id, ulong guildId, bool createFile = false)

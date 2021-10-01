@@ -14,7 +14,7 @@ namespace CarrotBot.Leveling
         public static void LoadDatabase()
         {
             Servers = new Dictionary<ulong, LevelingServer>();
-            KONNode node = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb"));
+            KONNode node = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb")));
             /*foreach(KONNode childNode in node.Children)
             {
                 if(childNode.Name == "SERVER")
@@ -28,7 +28,7 @@ namespace CarrotBot.Leveling
                 {
                     foreach(ulong item in array.Items)
                     {
-                        KONNode serverIndex = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/Index.cb"));
+                        KONNode serverIndex = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/Index.cb")));
                         Console.WriteLine(KONWriter.Default.Write(serverIndex));
                         LevelingServer server = new LevelingServer(item);
                         if(serverIndex.Values.ContainsKey("levelUpChannel"))
@@ -57,7 +57,8 @@ namespace CarrotBot.Leveling
                             {
                                 foreach(ulong Item in array1.Items)
                                 {
-                                    KONNode userNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/User_{Item}.cb"));
+                                    bool ok  = Utils.TryLoadDatabaseNode($@"{Utils.levelingDataPath}/Server_{item}/User_{Item}.cb", out KONNode userNode);
+                                    if(!ok) continue;
                                     LevelingUser user = new LevelingUser(Item, (int)userNode.Values["xp"], (int)userNode.Values["level"], server, DateTimeOffset.FromUnixTimeSeconds((long)userNode.Values["lastMessageTime"]));
                                     server.Users.Add(Item, user);
                                     server.UsersByRank.Add(user);

@@ -76,6 +76,7 @@ namespace CarrotBot.Commands
                         }
                         eb.AddField("Commands", subcommands);
                     }
+                    //eb.AddField("Settings Helper", "Configuring leveling using individual commands not your speed? Try out the new [leveling settings helper](https://carrotbot.calebmharper.com/LevelingHelper) beta!");
                     await ctx.RespondAsync(eb.Build());
                     return;
                 }

@@ -4,14 +4,17 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
 using System.Net;
+using System.Text;
+using System.Security.Cryptography;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
+using KarrotObjectNotation;
 
 namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.2.7";
+        private static readonly string version = "1.2.8";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";
@@ -169,7 +172,7 @@ namespace CarrotBot
         /// Designed as an exception-free wrapper around Substring.
         /// </summary>
         /// <param name="input"></param>
-        /// <param name="startIndex"></param>
+        /// <param name="startIndex"></param>43B581
         /// <returns></returns>
         public static string SafeSubstring(this string input, int startIndex)
         {
@@ -193,6 +196,24 @@ namespace CarrotBot
             if(startIndex >= input.Length) return "";
             else if(startIndex + length > input.Length) return input.Substring(startIndex, input.Length - startIndex);
             else return input.Substring(startIndex, length);
+        }
+        public static bool TryLoadDatabaseNode(string inputPath, out KONNode output)
+        {
+            if(!File.Exists(inputPath))
+            {
+                output = null;
+                return false;
+            }
+            //If the file was last written to over 30 days ago, the data has expired and will be removed.
+            //So we return nothing and delete the file.
+            //Usually, the calling scope should also contain code to remove the reference to the file from wherever it was.
+            if(DateTime.Now - File.GetLastWriteTime(inputPath) > new TimeSpan(30, 0, 0, 0))
+            {
+                output = null;
+                File.Delete(inputPath);
+                return false;
+            }
+            return KONParser.Default.TryParse(SensitiveInformation.DecryptDataFile(File.ReadAllText(inputPath)), out output);
         }
     }
 }

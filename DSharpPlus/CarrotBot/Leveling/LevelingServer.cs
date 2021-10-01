@@ -85,7 +85,7 @@ namespace CarrotBot.Leveling
                 usersArray.AddItem(user.Id);
             }
             node.AddArray(usersArray);
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", KONWriter.Default.Write(node));
+            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
         public void SetLevelUpChannel(ulong? channelId)
         {

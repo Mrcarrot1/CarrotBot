@@ -44,7 +44,7 @@ namespace CarrotBot.Conversation
         }
         public static void LoadDatabase()
         {
-            KONNode databaseNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb"));
+            KONNode databaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb")));
             Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).Result;
             Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).Result;
             ConversationChannels = new List<ConversationChannel>();
@@ -226,7 +226,7 @@ namespace CarrotBot.Conversation
             databaseNode.AddArray(moderators);
             databaseNode.AddArray(bannedUsers);
             databaseNode.AddArray(verifiedUsers);
-            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", KONWriter.Default.Write(databaseNode));
+            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(databaseNode)));
         }
         public static void DeleteUserData(ulong userId)
         {

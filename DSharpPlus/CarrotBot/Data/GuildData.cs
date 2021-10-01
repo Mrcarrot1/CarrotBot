@@ -33,7 +33,7 @@ namespace CarrotBot.Data
                 joinRolesArray.Items.Add(role);
             }
             node.AddArray(joinRolesArray);
-            File.WriteAllText($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", KONWriter.Default.Write(node));
+            File.WriteAllText($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
 
         public GuildUserData GetOrCreateUserData(ulong userId)
