@@ -29,7 +29,6 @@ namespace CarrotBot.Leveling
                     foreach(ulong item in array.Items)
                     {
                         KONNode serverIndex = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.levelingDataPath}/Server_{item}/Index.cb")));
-                        Console.WriteLine(KONWriter.Default.Write(serverIndex));
                         LevelingServer server = new LevelingServer(item);
                         if(serverIndex.Values.ContainsKey("levelUpChannel"))
                             server.SetLevelUpChannel((ulong)serverIndex.Values["levelUpChannel"]);

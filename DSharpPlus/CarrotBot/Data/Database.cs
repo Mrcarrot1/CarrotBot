@@ -35,7 +35,6 @@ namespace CarrotBot.Data
                     {
                         KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb")));
                         RootNodes.Add(guildNode);
-                        Logger.Log(KONWriter.Default.Write(guildNode));
                         GuildData guild = new GuildData(item);
                         guild.GuildPrefix = (string)guildNode.Values["prefix"];
                         foreach(KONArray array1 in guildNode.Arrays)
