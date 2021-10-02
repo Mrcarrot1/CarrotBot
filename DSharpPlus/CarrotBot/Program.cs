@@ -60,13 +60,69 @@ namespace CarrotBot
             Database.Load();
             if(!isBeta)
                 Dripcoin.LoadData();
-            discord.MessageCreated += CommandHandler;
-            discord.MessageCreated += HandleMessage;
-            discord.Ready += Ready;
-            discord.MessageUpdated += MessageUpdated;
-            discord.MessageDeleted += MessageDeleted;
-            discord.GuildMemberAdded += MemberJoined;
-            discord.GuildDeleted += GuildRemoved;
+            discord.MessageCreated += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await CommandMessageHandler(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.MessageCreated += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await MainMessageHandler(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.Ready += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await ReadyHandler(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.MessageUpdated += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await MessageUpdated(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.MessageDeleted += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await MessageDeleted(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.GuildMemberAdded += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await MemberJoined(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.GuildDeleted += (s, e) =>
+            {
+                _ = Task.Run(async () =>
+                {
+                    await GuildRemoved(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
             await discord.StartAsync();
 
             
@@ -207,46 +263,53 @@ namespace CarrotBot
         }
         static async Task CommandMessageHandler(DiscordClient client, MessageCreateEventArgs e)
         {
-            if(e.Author.IsBot) return;
-            var cnext = client.GetCommandsNext();
-            var msg = e.Message;
-            var cmdStart = -1;
-            //If beta, ignore any other prefix
-            if(isBeta)
+            try
             {
-                cmdStart = msg.GetStringPrefixLength("b%");
-            }
-            else
-            {
-                cmdStart = msg.GetStringPrefixLength(Database.GetOrCreateGuildData(e.Guild.Id).GuildPrefix);
-                //Special case for help command- the bot's status says %help, so you can run it like that anywhere
-                if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
-
-                //Check for default prefixes if no guild-specific prefix was found
-                if(cmdStart == -1)
+                if(e.Author.IsBot) return;
+                var cnext = client.GetCommandsNext();
+                var msg = e.Message;
+                var cmdStart = -1;
+                //If beta, ignore any other prefix
+                if(isBeta)
                 {
-                    cmdStart = msg.GetStringPrefixLength("cb%");
+                    cmdStart = msg.GetStringPrefixLength("b%");
+                }
+                else
+                {
+                    cmdStart = msg.GetStringPrefixLength(Database.GetOrCreateGuildData(e.Guild.Id).GuildPrefix);
+                    //Special case for help command- the bot's status says %help, so you can run it like that anywhere
+                    if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
+
+                    //Check for default prefixes if no guild-specific prefix was found
                     if(cmdStart == -1)
-                        cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
-                } 
+                    {
+                        cmdStart = msg.GetStringPrefixLength("cb%");
+                        if(cmdStart == -1)
+                            cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
+                    } 
+                }
+
+                //If no valid prefixes, exit
+                if(cmdStart == -1) return;
+
+                // Retrieve prefix.
+                var prefix = msg.Content.Substring(0, cmdStart);
+
+                // Retrieve full command string.
+                var cmdString = msg.Content.Substring(cmdStart);
+
+                var command = cnext.FindCommand(cmdString, out var args);
+
+                var ctx = cnext.CreateContext(msg, prefix, command, args);
+                
+                await cnext.ExecuteCommandAsync(ctx);
+
+                return;
             }
-
-            //If no valid prefixes, exit
-            if(cmdStart == -1) return;
-
-            // Retrieve prefix.
-            var prefix = msg.Content.Substring(0, cmdStart);
-
-            // Retrieve full command string.
-            var cmdString = msg.Content.Substring(cmdStart);
-
-            var command = cnext.FindCommand(cmdString, out var args);
-
-            var ctx = cnext.CreateContext(msg, prefix, command, args);
-            
-            await cnext.ExecuteCommandAsync(ctx);
-
-            return;
+            catch(Exception ee)
+            {
+                Logger.Log(ee.ToString(), Logger.CBLogLevel.EXC);
+            }
         }
         static async Task GuildRemoved(DiscordClient client, GuildDeleteEventArgs e)
         {
