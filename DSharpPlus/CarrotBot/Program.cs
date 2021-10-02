@@ -60,15 +60,7 @@ namespace CarrotBot
             Database.Load();
             if(!isBeta)
                 Dripcoin.LoadData();
-            discord.MessageCreated += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await CommandMessageHandler(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
+            discord.MessageCreated += CommandHandler;
             discord.MessageCreated += (s, e) =>
             {
                 _ = Task.Run(async () =>
@@ -87,42 +79,10 @@ namespace CarrotBot
 
                 return Task.CompletedTask;
             };
-            discord.MessageUpdated += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MessageUpdated(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.MessageDeleted += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MessageDeleted(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.GuildMemberAdded += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MemberJoined(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.GuildDeleted += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await GuildRemoved(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
+            discord.MessageUpdated += MessageUpdated;
+            discord.MessageDeleted += MessageDeleted;
+            discord.GuildMemberAdded += MemberJoined;
+            discord.GuildDeleted += GuildRemoved;
             await discord.StartAsync();
 
             
@@ -259,10 +219,6 @@ namespace CarrotBot
         }
         static async Task CommandHandler(DiscordClient client, MessageCreateEventArgs e)
         {
-            await CommandMessageHandler(client, e);
-        }
-        static async Task CommandMessageHandler(DiscordClient client, MessageCreateEventArgs e)
-        {
             try
             {
                 if(e.Author.IsBot) return;
@@ -273,6 +229,8 @@ namespace CarrotBot
                 if(isBeta)
                 {
                     cmdStart = msg.GetStringPrefixLength("b%");
+                    if(cmdStart == -1)
+                        cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
                 }
                 else
                 {
