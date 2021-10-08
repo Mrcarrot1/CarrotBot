@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Diagnostics;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -83,6 +84,7 @@ namespace CarrotBot
             discord.MessageDeleted += MessageDeleted;
             discord.GuildMemberAdded += MemberJoined;
             discord.GuildDeleted += GuildRemoved;
+            discord.ClientErrored += HandleClientError;
             await discord.StartAsync();
 
             
@@ -123,6 +125,24 @@ namespace CarrotBot
         static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
         {
             await MainMessageHandler(client, e);
+        }
+        static Task HandleClientError(DiscordClient client, ClientErrorEventArgs e)
+        {
+            if(e.EventName == "HearbeatFailure")
+            {
+                Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
+                Environment.Exit(0);
+            }
+            return Task.CompletedTask;
+        }
+        static Task HandleSocketError(DiscordClient client, ClientErrorEventArgs e)
+        {
+            if(e.EventName == "HearbeatFailure")
+            {
+                Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
+                Environment.Exit(0);
+            }
+            return Task.CompletedTask;
         }
         static async Task MainMessageHandler(DiscordClient client, MessageCreateEventArgs e)
         {
