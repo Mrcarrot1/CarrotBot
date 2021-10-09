@@ -112,7 +112,7 @@ namespace CarrotBot.Data
                 guildsArray.AddItem(guildData.Id);
             }
             DatabaseNode.AddArray(guildsArray);
-            File.WriteAllText($@"{Utils.localDataPath}/Database.cb", KONWriter.Default.Write(DatabaseNode));
+            File.WriteAllText($@"{Utils.localDataPath}/Database.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(DatabaseNode)));
             if(flushAll)
             {
                 foreach(KeyValuePair<ulong, GuildData> guild in Guilds)

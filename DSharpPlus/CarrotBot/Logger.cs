@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Threading;
+using System.Diagnostics;
 using ZipFile = System.IO.Compression.ZipFile;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -38,6 +39,11 @@ namespace CarrotBot
                 Setup();
             File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
             Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
+            if(logLevel == LogLevel.Critical)
+            {
+                Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
+                Environment.Exit(0);
+            }
         }
         public IDisposable BeginScope<TState>(TState state)
         {

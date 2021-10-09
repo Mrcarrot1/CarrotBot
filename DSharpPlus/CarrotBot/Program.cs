@@ -18,7 +18,7 @@ namespace CarrotBot
     {
         //Set to true to run beta
         //Additional check added to make sure the binaries in production never run on the beta account
-        public static readonly bool isBeta = Environment.UserName == "mrcarrot";
+        public static readonly bool isBeta = false; //Environment.UserName == "mrcarrot";
         //Set to true to enable certain debug features such as more verbose logs
         private static readonly bool debug = true;
 
