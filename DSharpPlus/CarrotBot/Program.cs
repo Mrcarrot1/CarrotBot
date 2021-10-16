@@ -55,7 +55,7 @@ namespace CarrotBot
                 Token = token,
                 TokenType = TokenType.Bot,
                 MinimumLogLevel = isBeta ? Microsoft.Extensions.Logging.LogLevel.Debug : Microsoft.Extensions.Logging.LogLevel.Information,
-                Intents = DiscordIntents.All,
+                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
                 LoggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new CBLoggerProvider()))
             });
             Database.Load();

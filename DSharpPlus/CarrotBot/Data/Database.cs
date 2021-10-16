@@ -45,7 +45,6 @@ namespace CarrotBot.Data
                                 {
                                     bool ok  = Utils.TryLoadDatabaseNode($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb", out KONNode userNode);
                                     if(!ok) continue;
-                                    Console.WriteLine(KONWriter.Default.Write(userNode));
                                     RootNodes.Add(userNode);
                                     GuildUserData user = new GuildUserData(item1, guild.Id);
                                     user.IsAFK = (bool)userNode.Values["isAFK"];

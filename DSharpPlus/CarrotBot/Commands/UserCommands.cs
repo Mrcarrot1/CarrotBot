@@ -57,28 +57,6 @@ namespace CarrotBot.Commands
             eb.AddField("Type", $"{type}", true);
             if(!ctx.Channel.IsPrivate)
             {
-                string status = "";
-                try
-                {
-                    status = member.Presence.Status.ToString();
-                    if (member.Presence.Status == UserStatus.Online)
-                        eb.Color = DiscordColor.Green;
-                    if (member.Presence.Status == UserStatus.Idle)
-                        eb.Color = DiscordColor.Yellow;
-                    if (member.Presence.Status == UserStatus.DoNotDisturb)
-                        eb.Color = DiscordColor.Red;
-                    if (member.Presence.Status == UserStatus.Offline || user.Presence.Status == UserStatus.Invisible)
-                        eb.Color = DiscordColor.DarkGray;
-                }
-                catch
-                {
-                    eb.Color = DiscordColor.DarkGray;
-                    status = "Offline";
-                }
-                
-                if (status == "DoNotDisturb")
-                    status = "Do Not Disturb";
-                eb.AddField("Status", $"{status}", true);
                 string nick = member.Nickname;
                 if(nick == null || nick == "")
                     nick = member.Username;
