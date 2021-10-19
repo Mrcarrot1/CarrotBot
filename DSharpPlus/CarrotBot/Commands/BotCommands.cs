@@ -8,6 +8,9 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using System.IO.Compression;
+using System.Net;
+using System.IO;
 
 namespace CarrotBot.Commands
 {
@@ -35,6 +38,17 @@ namespace CarrotBot.Commands
         {
             await Program.Mrcarrot.SendMessageAsync($"Feature suggested by {ctx.User.Username}#{ctx.User.Discriminator}: {feature}");
             await ctx.RespondAsync("Feature suggested.");
+        }
+        [Command("remoteupdate"), RequireOwner]
+        public async Task RemoteUpdate(CommandContext ctx, string fileUrl = null)
+        {
+            if(fileUrl == null)
+                fileUrl = ctx.Message.Attachments.First().Url;
+            WebClient client = new WebClient();
+            await client.DownloadFileTaskAsync(new Uri(fileUrl), $@"{Utils.localDataPath}/Update.zip");
+            string updatesPath = Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName + @"/CBUpdates";
+            ZipFile.ExtractToDirectory($@"{Utils.localDataPath}/Update.zip", updatesPath);
+            await ctx.RespondAsync("Downloaded updates to be applied at next system restart.");
         }
     }
 }
