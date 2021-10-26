@@ -39,7 +39,7 @@ namespace CarrotBot.Commands
             await Program.Mrcarrot.SendMessageAsync($"Feature suggested by {ctx.User.Username}#{ctx.User.Discriminator}: {feature}");
             await ctx.RespondAsync("Feature suggested.");
         }
-        [Command("remoteupdate"), RequireOwner]
+        //[Command("remoteupdate"), RequireOwner]
         public async Task RemoteUpdate(CommandContext ctx, string fileUrl = null)
         {
             if(fileUrl == null)

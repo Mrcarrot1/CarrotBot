@@ -14,7 +14,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.2.16";
+        private static readonly string version = "1.2.18";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";
@@ -23,6 +23,9 @@ namespace CarrotBot
         public static string levelingDataPath = $@"{localDataPath}/Leveling";
 
         public static DiscordColor CBGreen = new DiscordColor(15, 157, 88);
+
+        public static int GuildCount = 0;
+
         public static DiscordColor CBOrange = new DiscordColor(245, 124, 0);
         public static ulong GetId(string mention)
         {
@@ -166,6 +169,17 @@ namespace CarrotBot
             }
             // Return cost.
             return d[n, m];
+        }
+
+        /// <summary>
+        /// Compares this string to another string and returns the Levenshtein distance between them.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="compareTo"></param>
+        /// <returns></returns>
+        public static int Compare(this string input, string compareTo)
+        {
+            return CompareStrings(input, compareTo);
         }
         /// <summary>
         /// Retrieves a substring from this instance, or empty if the start index is out of range.

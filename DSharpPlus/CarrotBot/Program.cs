@@ -18,7 +18,7 @@ namespace CarrotBot
     {
         //Set to true to run beta
         //Additional check added to make sure the binaries in production never run on the beta account
-        public static readonly bool isBeta = false; //Environment.UserName == "mrcarrot";
+        public static readonly bool isBeta = Environment.UserName == "mrcarrot";
         //Set to true to enable certain debug features such as more verbose logs
         private static readonly bool debug = true;
 
@@ -208,7 +208,12 @@ namespace CarrotBot
                 BotGuild = discord.GetShard(388339196978266114).GetGuildAsync(388339196978266114).Result;
                 Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
                 Logger.Log("Connection ready");
-                await discord.UpdateStatusAsync(new DiscordActivity($"in {client.Guilds.Count} servers | {commandPrefix}help", ActivityType.Playing));
+                Utils.GuildCount = 0;
+                foreach(DiscordClient shard in discord.ShardClients.Values)
+                {
+                    Utils.GuildCount += shard.Guilds.Count;
+                }
+                await discord.UpdateStatusAsync(new DiscordActivity($"in {Utils.GuildCount} servers | {commandPrefix}help", ActivityType.Playing));
 
                 if(firstRun)
                 {
@@ -254,17 +259,35 @@ namespace CarrotBot
                 }
                 else
                 {
-                    cmdStart = msg.GetStringPrefixLength(Database.GetOrCreateGuildData(e.Guild.Id).GuildPrefix);
-                    //Special case for help command- the bot's status says %help, so you can run it like that anywhere
-                    if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
-
-                    //Check for default prefixes if no guild-specific prefix was found
-                    if(cmdStart == -1)
+                    if(!e.Channel.IsPrivate)
                     {
-                        cmdStart = msg.GetStringPrefixLength("cb%");
+                        cmdStart = msg.GetStringPrefixLength(Database.GetOrCreateGuildData(e.Guild.Id).GuildPrefix);
+                        //Special case for help command- the bot's status says %help, so you can run it like that anywhere
+                        if(msg.Content.Trim().StartsWith($"{commandPrefix}help")) cmdStart = msg.GetStringPrefixLength(commandPrefix);
+
+                        //Check for default prefixes if no guild-specific prefix was found
                         if(cmdStart == -1)
-                            cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
-                    } 
+                        {
+                            cmdStart = msg.GetStringPrefixLength("cb%");
+                            if(cmdStart == -1)
+                                cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
+                        } 
+                    }
+                    else
+                    {
+                        cmdStart = msg.GetStringPrefixLength(commandPrefix);
+
+                        //Check for default prefixes if no guild-specific prefix was found
+                        if(cmdStart == -1)
+                        {
+                            cmdStart = msg.GetStringPrefixLength("cb%");
+                            if(cmdStart == -1)
+                                cmdStart = msg.GetMentionPrefixLength(client.CurrentUser);
+                        }
+                        //If in DMs, check for all the prefixes first, but if none are found, interpret the message as a command anyway
+                        if(cmdStart == -1)
+                            cmdStart = 0;
+                    }
                 }
 
                 //If no valid prefixes, exit
