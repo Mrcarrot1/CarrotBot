@@ -47,6 +47,7 @@ namespace CarrotBot.Data
 
         public GuildData(ulong id, bool createIndex = false)
         {
+            
             Directory.CreateDirectory($@"{Utils.localDataPath}/Guild_{id}"); //Make sure the directory exists to store data in
             Id = id;
             Users = new Dictionary<ulong, GuildUserData>();

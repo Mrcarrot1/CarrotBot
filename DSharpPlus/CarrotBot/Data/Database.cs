@@ -37,6 +37,7 @@ namespace CarrotBot.Data
                         RootNodes.Add(guildNode);
                         GuildData guild = new GuildData(item);
                         guild.GuildPrefix = (string)guildNode.Values["prefix"];
+                        guild.GuildPrefix = guild.GuildPrefix.Replace(@"\", "");
                         foreach(KONArray array1 in guildNode.Arrays)
                         {
                             if(array1.Name == "USERS")
@@ -102,9 +103,6 @@ namespace CarrotBot.Data
         {
             if(Program.isBeta) return;
             DatabaseNode = new KONNode("DATABASE");
-            DatabaseNode.AddValue("botToken", SensitiveInformation.botToken);
-            DatabaseNode.AddValue("betaToken", SensitiveInformation.betaToken);
-            DatabaseNode.AddValue("catAPIKey", SensitiveInformation.catAPIKey);
             KONArray guildsArray = new KONArray("GUILDS");
             foreach(GuildData guildData in Guilds.Values)
             {
