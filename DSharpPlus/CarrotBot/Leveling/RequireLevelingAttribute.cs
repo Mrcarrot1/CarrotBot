@@ -8,7 +8,7 @@ using DSharpPlus.CommandsNext.Attributes;
 namespace CarrotBot.Leveling
 {
     /// <summary>
-    /// Used to require that leveling be enabled(default) or disabled to run a command. Always returns false for a DM channel.
+    /// Used to require that leveling be enabled(default) or disabled to run a command. Always fails for a DM channel.
     /// </summary>
     public class RequireLevelingAttribute : CheckBaseAttribute
     {

@@ -127,6 +127,15 @@ namespace CarrotBot.Conversation
             string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
             string Footer = $"Via {Server}";
 
+            if(Program.BotGuild.Members.ContainsKey(userId))
+            {
+                if(Program.BotGuild.Members[userId].Roles.Any(x => x.Id == 907824766168203295))
+                {
+                    eb2.WithColor(Utils.CBOrange);
+                    Footer = $"Patreon Supporter ・ {Footer}";
+                }
+            }
+
             if (userId == 366298290377195522)
             {
                 Title = $"[DEV] {Title}";
@@ -145,6 +154,9 @@ namespace CarrotBot.Conversation
                 eb2.WithColor(DiscordColor.HotPink);
                 Footer = $"Conversation Moderator ・ {Footer}";
             }
+
+            
+
             //eb2.WithTitle(Title);
             eb2.WithAuthor(Title, iconUrl: user.AvatarUrl);
 
@@ -193,7 +205,7 @@ namespace CarrotBot.Conversation
                         var channel = shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
                         msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(embed: embed));
                     }
-                    catch (DSharpPlus.Exceptions.NotFoundException e)
+                    catch (Exception e)
                     {
                         Logger.Log($"Conversation: Channel not found for server {ConversationData.ConversationChannels[i].Server}. Assuming invalid channel.", Logger.CBLogLevel.ERR);
                         Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);

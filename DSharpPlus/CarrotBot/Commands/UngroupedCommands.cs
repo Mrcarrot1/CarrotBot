@@ -181,6 +181,10 @@ namespace CarrotBot.Commands
                 {
                     Command cmd = command1.Value;
 
+                    var candidateFailedChecks = await cmd.RunChecksAsync(ctx, true).ConfigureAwait(false);
+                    if (candidateFailedChecks.Any())
+                        continue;
+
                     if(!ctx.Channel.IsPrivate)
                     {
                         if((cmd.Name == "rank" || cmd.Name == "leaderboard" || cmd.Name == "disableleveling") && !Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
