@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
-using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Security.Cryptography;
 using DSharpPlus.Entities;
@@ -14,7 +14,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.2.20";
+        private static readonly string version = "1.2.24";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";
@@ -36,7 +36,8 @@ namespace CarrotBot
                     .Replace(">", "")
                     .Replace("!", "")
                     .Replace("@", "")
-                    .Replace("#", "");
+                    .Replace("#", "")
+                    .Replace("&", "");
                 ulong output = ulong.Parse(mention);
                 return output;
             }
@@ -60,13 +61,9 @@ namespace CarrotBot
         }
         public static bool IsImageUrl(string URL)
         {
-            var req = (HttpWebRequest)HttpWebRequest.Create(URL);
-            req.Method = "HEAD";
-            using (var resp = req.GetResponse())
-            {
-                return resp.ContentType.ToLower(CultureInfo.InvariantCulture)
-                        .StartsWith("image/");
-            }
+            HttpClient client = new HttpClient();
+            var resp = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, URL)).Result;
+            return resp.Content.Headers.ContentType.MediaType.StartsWith("image/");
         }
         public static Task<DiscordMember> FindMemberAsync(this DiscordGuild guild, string user)
         {
@@ -221,13 +218,15 @@ namespace CarrotBot
             //If the file was last written to over 30 days ago, the data has expired and will be removed.
             //So we return nothing and delete the file.
             //Usually, the calling scope should also contain code to remove the reference to the file from wherever it was.
-            if(DateTime.Now - File.GetLastWriteTime(inputPath) > new TimeSpan(30, 0, 0, 0))
+            //Also check for files marked as persistent- these shouldn't be removed.
+            string DecryptedContents = SensitiveInformation.DecryptDataFile(File.ReadAllText(inputPath));
+            if(DateTime.Now - File.GetLastWriteTime(inputPath) > new TimeSpan(30, 0, 0, 0) && !DecryptedContents.StartsWith("//PERSISTENT"))
             {
                 output = null;
                 File.Delete(inputPath);
                 return false;
             }
-            return KONParser.Default.TryParse(SensitiveInformation.DecryptDataFile(File.ReadAllText(inputPath)), out output);
+            return KONParser.Default.TryParse(DecryptedContents, out output);
         }
     }
 }

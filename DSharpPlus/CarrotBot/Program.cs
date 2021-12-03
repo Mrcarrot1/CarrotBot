@@ -8,6 +8,8 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using CarrotBot.Leveling;
 using CarrotBot.Data;
 using Microsoft.Extensions.Logging;
@@ -111,6 +113,10 @@ namespace CarrotBot
                 commands.Value.RegisterCommands<Conversation.ConversationCommands>();
             }
             discord.GetShard(824824193001979924).GetCommandsNext().RegisterCommands<DripcoinCommands>();
+
+            //await discord.UseSlashCommandsAsync();
+
+            
 
             await Task.Delay(-1);
         }

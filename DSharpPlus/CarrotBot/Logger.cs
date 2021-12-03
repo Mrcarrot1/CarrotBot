@@ -28,8 +28,8 @@ namespace CarrotBot
                 Setup();
             //ISocketMessageChannel channel = Program.client.GetChannel(490551836323872779) as ISocketMessageChannel;
             File.AppendAllText(logPath, $"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
-            Console.WriteLine(Message);
-            Thread.Sleep(75);
+            Console.WriteLine($"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
+            //Thread.Sleep(75);
             //if (channel != null)
             //  channel.SendMessageAsync($"{DateTime.Now}: {Message.Replace(DateTime.Now.ToString("HH:mm:ss"), "")}");
         }

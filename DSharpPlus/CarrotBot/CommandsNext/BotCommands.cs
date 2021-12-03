@@ -9,12 +9,12 @@ using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using System.IO.Compression;
-using System.Net;
+using System.Net.Http;
 using System.IO;
 
 namespace CarrotBot.Commands
 {
-    [Group("bot"), Description("Commands for various CarrotBot functions")]
+    [Group("bot"), Description("Commands for various CarrotBot-related functions")]
     public class BotCommands : BaseCommandModule
     {
         [Command("server"), Description("Provides the link to the CarrotBot Discord server")]
@@ -40,15 +40,15 @@ namespace CarrotBot.Commands
             await ctx.RespondAsync("Feature suggested.");
         }
         //[Command("remoteupdate"), RequireOwner]
-        public async Task RemoteUpdate(CommandContext ctx, string fileUrl = null)
+        /*public async Task RemoteUpdate(CommandContext ctx, string fileUrl = null)
         {
             if(fileUrl == null)
                 fileUrl = ctx.Message.Attachments.First().Url;
-            WebClient client = new WebClient();
+            HttpClient client = new HttpClient();
             await client.DownloadFileTaskAsync(new Uri(fileUrl), $@"{Utils.localDataPath}/Update.zip");
             string updatesPath = Directory.GetParent(Directory.GetParent(Environment.CurrentDirectory).FullName).FullName + @"/CBUpdates";
             ZipFile.ExtractToDirectory($@"{Utils.localDataPath}/Update.zip", updatesPath);
             await ctx.RespondAsync("Downloaded updates to be applied at next system restart.");
-        }
+        }*/
     }
 }

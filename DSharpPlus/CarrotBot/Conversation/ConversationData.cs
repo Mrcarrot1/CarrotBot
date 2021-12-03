@@ -15,6 +15,7 @@ namespace CarrotBot.Conversation
         public static List<ConversationChannel> ConversationChannels = new List<ConversationChannel>();
         public static Dictionary<ulong, ConversationMessage> ConversationMessages = new Dictionary<ulong, ConversationMessage>();
         public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOrigId = new Dictionary<ulong, ConversationMessage>();
+        public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOutId = new Dictionary<ulong, ConversationMessage>();
         public static Dictionary<ulong, DiscordEmbed> ConversationEmbeds = new Dictionary<ulong, DiscordEmbed>();
         public static List<ulong> AcceptedUsers = new List<ulong>();
         public static List<ulong> BannedUsers = new List<ulong>();

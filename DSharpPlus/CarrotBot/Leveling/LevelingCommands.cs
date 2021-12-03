@@ -60,7 +60,7 @@ namespace CarrotBot.Leveling
                     await ctx.RespondAsync("Either this server hasn't set up ranking, or that user isn't ranked!");
             }
         }
-        [Command("addlevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Adds a role to be granted to a user when they reach a certain level."), LevelingCommandAttribute]
+        [Command("addlevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Adds a role to be granted to a user when they reach a certain level."), LevelingCommandAttribute, RequireLeveling]
         public async Task AddLevelRole(CommandContext ctx, [Description("The level at which to grant the role.")]int level, [Description("The role to grant.")]string role)
         {
             if(!LevelingData.Servers.ContainsKey(ctx.Guild.Id))

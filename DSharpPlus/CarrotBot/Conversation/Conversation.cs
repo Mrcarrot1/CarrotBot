@@ -171,6 +171,7 @@ namespace CarrotBot.Conversation
             {
                 eb2.WithImageUrl(message.Stickers.First().StickerUrl);
             }
+
             //Scan the message for image URLs and set the first one found to the embed's thumbnail URL
             Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
             foreach(Match match in URLRegex.Matches(message.Content))
@@ -182,6 +183,53 @@ namespace CarrotBot.Conversation
                 }
             }
             DiscordEmbed embed = eb2.Build();
+
+            ConversationMessage RefMsg = null;
+            if(message.ReferencedMessage != null && message.MessageType == MessageType.Reply)
+            {
+                var replyMsg = message.ReferencedMessage;
+                if(replyMsg.Author.Id == Program.discord.CurrentUser.Id)
+                {
+                    if(ConversationData.ConversationMessagesByOutId.ContainsKey(replyMsg.Id))
+                    {
+                        RefMsg = ConversationData.ConversationMessagesByOutId[replyMsg.Id];
+                    }
+                }
+                else
+                {
+                    if(ConversationData.ConversationMessagesByOrigId.ContainsKey(replyMsg.Id))
+                    {
+                        RefMsg = ConversationData.ConversationMessagesByOrigId[replyMsg.Id];
+                    }
+                }
+            }
+            if(RefMsg != null)
+            {
+                try
+                {
+                    try
+                    {
+                        if(message.ChannelId != RefMsg.originalChannel.Id)
+                            await RefMsg.originalMessage.RespondAsync(embed: embed);
+                    }
+                    catch { throw; }
+                    foreach(DiscordMessage message1 in RefMsg.ChannelMessages.Values)
+                    {
+                        try
+                        {
+                            if(message.ChannelId != message1.ChannelId)
+                                await message1.RespondAsync(embed: embed);
+                            Thread.Sleep(1);
+                        }
+                        catch { throw; }
+                    }
+                }
+                catch(Exception e)
+                {
+                    Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
+                }
+            }
+            
             for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
             {
                 if (message.Channel.Id != ConversationData.ConversationChannels[i].Id)
@@ -203,7 +251,12 @@ namespace CarrotBot.Conversation
                     try
                     {
                         var channel = shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
-                        msgObject.ChannelMessages.Add(channel.Id, await channel.SendMessageAsync(embed: embed));
+                        if(RefMsg == null || (!RefMsg.ChannelMessages.Any(x => x.Value.ChannelId == channel.Id) && RefMsg.originalChannel.Id != channel.Id))
+                        {
+                            var outMessage = await channel.SendMessageAsync(embed: embed);
+                            msgObject.ChannelMessages.Add(channel.Id, outMessage);
+                            ConversationData.ConversationMessagesByOutId.Add(outMessage.Id, msgObject);
+                        }
                     }
                     catch (Exception e)
                     {

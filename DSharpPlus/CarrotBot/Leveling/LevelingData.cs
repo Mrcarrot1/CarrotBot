@@ -14,7 +14,7 @@ namespace CarrotBot.Leveling
         public static void LoadDatabase()
         {
             Servers = new Dictionary<ulong, LevelingServer>();
-            KONNode node = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb")));
+            KONNode node = KONParser.Default.Parse(File.ReadAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb"));
             /*foreach(KONNode childNode in node.Children)
             {
                 if(childNode.Name == "SERVER")
@@ -110,7 +110,7 @@ namespace CarrotBot.Leveling
                 serversArray.Items.Add(server.Key);
             }
             node.AddArray(serversArray);
-            File.WriteAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb", KONWriter.Default.Write(node));
+            File.WriteAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb", "//PERSISTENT\n" + KONWriter.Default.Write(node));
         }
         public static void FlushAllData()
         {
