@@ -44,10 +44,10 @@ namespace CarrotBot.Conversation
             //Next 2 digits- date, e.g. 15 = 15th
             //The remaining digits are a sequential stream of numbers
             //e.g. 20210315000000000045 is the 45th message on 15 March 2021
-            //There will always be 12 digits following the date
+            //There will always be 9 digits following the date
             //This allows for a larger number of messages than can be practically sent while leaving zero chance of overflowing the ulong
             //And also allowing the conversation to continue working until at least 2100, by which time I will most likely be dead :)
-            string Date = $"{DateTime.Now.ToString("yyyyMMdd")}000000000000";
+            string Date = $"{DateTime.Now.ToString("yyyyMMdd")}000000000";
             currentMessageIndex += 1;
             return ulong.Parse(Date) + currentMessageIndex;
         }
