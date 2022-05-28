@@ -9,7 +9,7 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
- 
+
 namespace CarrotBot.Conversation
 {
     [Group("conversation"), Description("Commands for interacting with the CarrotBot Multi-Server Conversation")]
@@ -18,14 +18,14 @@ namespace CarrotBot.Conversation
         [Command("start"), RequireConversationPermissions(ConversationPermissions.SuperAdmin)]
         public async Task StartConversation(CommandContext ctx, bool loadDatabase = true)
         {
-            if(ctx.User.Id != 366298290377195522) return;
-            if(Program.conversation)
+            if (ctx.User.Id != 366298290377195522) return;
+            if (Program.conversation)
             {
                 await ctx.RespondAsync("Conversation is already started. Use `conversation stop` to stop.");
                 return;
             }
-            
-            if(loadDatabase) ConversationData.LoadDatabase();
+
+            if (loadDatabase) ConversationData.LoadDatabase();
             await Conversation.SendConversationMessage("The CarrotBot Multi-Server Conversation is now active!\nRemember: you must accept the terms (%conversation acceptterms) to enter!");
             Program.conversation = true;
             await ctx.RespondAsync("Started conversation.");
@@ -33,8 +33,8 @@ namespace CarrotBot.Conversation
         [Command("stop"), RequireConversationPermissions(ConversationPermissions.SuperAdmin)]
         public async Task StopConversation(CommandContext ctx)
         {
-            if(ctx.User.Id != 366298290377195522) return;
-            if(!Program.conversation)
+            if (ctx.User.Id != 366298290377195522) return;
+            if (!Program.conversation)
             {
                 await ctx.RespondAsync("Conversation is already stopped. Use `conversation start` to start.");
                 return;
@@ -46,26 +46,49 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Stopped conversation.");
         }
         [Command("sendmessage"), RequireConversationPermissions(ConversationPermissions.Admin)]
-        public async Task SendMessage(CommandContext ctx, [RemainingText]string message)
+        public async Task SendMessage(CommandContext ctx, [RemainingText] string message)
         {
-            if(ctx.User.Id != 366298290377195522) return;
+            if (ctx.User.Id != 366298290377195522) return;
             await Conversation.SendConversationMessage(message);
         }
         [Command("acceptterms"), Description("Used to accept the Conversation's terms of service")]
         public async Task AcceptTerms(CommandContext ctx, bool accept = false)
         {
-            if(accept)
+            if (accept)
             {
-                await ctx.RespondAsync("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.");
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                eb.WithTitle("Terms Accepted");
+                eb.WithDescription("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo opt out of these terms in future, use `conversation optout`.");
+                eb.WithColor(Utils.CBGreen);
+                await ctx.RespondAsync(embed: eb.Build());
                 ConversationData.AcceptedUsers.Add(ctx.User.Id);
                 ConversationData.WriteDatabase();
             }
             else
             {
-                await ctx.RespondAsync("You are about to accept the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.");
-                await ctx.RespondAsync("Type `%conversation acceptterms true` to accept.");
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                eb.WithTitle("Conversation Terms");
+                eb.WithDescription("You are about to accept the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used by others.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo accept these terms, use `conversation acceptterms true`.");
+                eb.WithColor(Utils.CBOrange);
+                await ctx.RespondAsync(embed: eb.Build());
             }
         }
+
+        [Command("optout"), Description("Used to opt out of the Conversation's terms of service.")]
+        public async Task OptOut(CommandContext ctx)
+        {
+            if (ConversationData.AcceptedUsers.Contains(ctx.User.Id))
+            {
+                ConversationData.AcceptedUsers.RemoveAll(x => x == ctx.User.Id);
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                eb.WithTitle("Opted Out");
+                eb.WithDescription("You have successfully opted out from the CarrotBot Multi-Server Conversation Terms of Service.\nFrom this point forward, no message data will be stored or shared.");
+                eb.WithColor(Utils.CBGreen);
+                await ctx.RespondAsync(eb.Build());
+            }
+
+        }
+
         [Command("reload"), RequireConversationPermissions(ConversationPermissions.Developer)]
         public async Task ReloadDatabase(CommandContext ctx)
         {
@@ -79,16 +102,16 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Wrote conversation database to disk.");
         }
         [Command("addchannel"), Description("Used to add your channel to the conversation"), RequireUserPermissions(Permissions.ManageChannels)]
-        public async Task AddChannel(CommandContext ctx, [Description("The channel to connect to the conversation")]string channel, [RemainingText, Description("What the conversation should call your server")]string name)
+        public async Task AddChannel(CommandContext ctx, [Description("The channel to connect to the conversation")] string channel, [RemainingText, Description("What the conversation should call your server")] string name)
         {
             try
             {
-                if(name == null || name == "")
+                if (name == null || name == "")
                 {
                     name = ctx.Guild.Name;
                 }
                 ulong Id = Utils.GetId(channel);
-                if(ConversationData.Administrators.Contains(ctx.User.Id))
+                if (ConversationData.Administrators.Contains(ctx.User.Id))
                 {
                     ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name, ctx.Guild.Id));
                     ConversationData.WriteDatabase();
@@ -107,16 +130,16 @@ namespace CarrotBot.Conversation
             }
         }
         [Command("addchannelwgid"), Description("Used to add your channel to the conversation."), Hidden]
-        public async Task AddChannel(CommandContext ctx, [Description("The guild the channel is in.")]ulong guildId, [Description("The channel to connect to the conversation")]string channel, [RemainingText, Description("What the conversation should call your server")]string name)
+        public async Task AddChannel(CommandContext ctx, [Description("The guild the channel is in.")] ulong guildId, [Description("The channel to connect to the conversation")] string channel, [RemainingText, Description("What the conversation should call your server")] string name)
         {
             try
             {
-                if(name == null || name == "")
+                if (name == null || name == "")
                 {
                     name = ctx.Guild.Name;
                 }
                 ulong Id = Utils.GetId(channel);
-                if(ConversationData.Administrators.Contains(ctx.User.Id))
+                if (ConversationData.Administrators.Contains(ctx.User.Id))
                 {
                     ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name, guildId));
                     ConversationData.WriteDatabase();
@@ -146,11 +169,11 @@ namespace CarrotBot.Conversation
         public async Task BanUser(CommandContext ctx, string user)
         {
             ulong Id = Utils.GetId(user);
-            if(!ConversationData.Moderators.Contains(Id))
+            if (!ConversationData.Moderators.Contains(Id))
             {
                 ConversationData.BannedUsers.Add(Id);
                 ConversationData.WriteDatabase();
-                foreach(ConversationMessage msg in ConversationData.ConversationMessages.Values.Where(x => x.originalMessage.Author.Id == Id))
+                foreach (ConversationMessage msg in ConversationData.ConversationMessages.Values.Where(x => x.originalMessage.Author.Id == Id))
                 {
                     await msg.DeleteMessage();
                 }
@@ -172,7 +195,7 @@ namespace CarrotBot.Conversation
         {
             ulong Id = Utils.GetId(user);
             DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
-            if(!confirm)
+            if (!confirm)
             {
                 await ctx.RespondAsync($"About to add {duser.Username}#{duser.Discriminator} as a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
             }
@@ -188,7 +211,7 @@ namespace CarrotBot.Conversation
         {
             ulong Id = Utils.GetId(user);
             DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
-            if(!confirm)
+            if (!confirm)
             {
                 await ctx.RespondAsync($"About to remove {duser.Username}#{duser.Discriminator} from being a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
             }

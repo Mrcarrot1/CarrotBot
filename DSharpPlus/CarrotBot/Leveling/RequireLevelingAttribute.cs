@@ -20,9 +20,9 @@ namespace CarrotBot.Leveling
 
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
-            if(ctx.Channel.IsPrivate) return Task.FromResult(false);
+            if (ctx.Channel.IsPrivate) return Task.FromResult(false);
 
-            if(LevelingData.Servers.ContainsKey(ctx.Guild.Id)) return Task.FromResult(Enabled);
+            if (LevelingData.Servers.ContainsKey(ctx.Guild.Id)) return Task.FromResult(Enabled);
 
             return Task.FromResult(!Enabled);
         }

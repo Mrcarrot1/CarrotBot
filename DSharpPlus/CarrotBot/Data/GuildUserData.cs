@@ -37,16 +37,16 @@ namespace CarrotBot.Data
 
         public void FlushData()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode userNode = new KONNode($"GUILD_{GuildId}_USER_{Id}");
             userNode.AddValue("id", Id);
             userNode.AddValue("isAFK", IsAFK);
-            if(IsAFK)
+            if (IsAFK)
             {
                 userNode.AddValue("AFKTime", AFKTime.ToUnixTimeMilliseconds());
                 userNode.AddValue("AFKMessage", AFKMessage);
             }
-            foreach(var warning in Warnings)
+            foreach (var warning in Warnings)
             {
                 KONNode warningNode = new KONNode("WARNING");
                 warningNode.AddValue("message", warning.Item1);
@@ -56,7 +56,7 @@ namespace CarrotBot.Data
             }
             File.WriteAllText($@"{Utils.localDataPath}/Guild_{GuildId}/User_{Id}.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(userNode)));
         }
-        
+
         public GuildUserData(ulong id, ulong guildId, bool createFile = false)
         {
             Id = id;
@@ -64,7 +64,7 @@ namespace CarrotBot.Data
             IsAFK = false;
             AFKMessage = null;
             Warnings = new List<Tuple<string, DateTimeOffset, ulong>>();
-            if(createFile)
+            if (createFile)
                 FlushData();
         }
     }

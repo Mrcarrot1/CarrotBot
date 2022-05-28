@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "CBRunningCheck"
+		},
+		{
+			"path": "../../../cbcat"
 		}
 	],
 	"settings": {

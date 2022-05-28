@@ -8,3 +8,5 @@ all:
 update-now:
 	make all
 	ssh pi@raspberrypi 'sudo reboot'
+run-beta:
+	dotnet run -r linux-x64

@@ -22,9 +22,9 @@ namespace CarrotBot.Leveling
         public int MinXPPerMessage { get; internal set; }
         public int MaxXPPerMessage { get; internal set; }
 
-        public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime,  int xp = 5, int level = 0)
+        public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime, int xp = 5, int level = 0)
         {
-            LevelingUser output =  new LevelingUser(id, xp, level, this, lastMessageTime);
+            LevelingUser output = new LevelingUser(id, xp, level, this, lastMessageTime);
 
             Users.Add(id, output);
             UsersByRank.Add(output);
@@ -39,12 +39,14 @@ namespace CarrotBot.Leveling
             UsersByRank = new List<LevelingUser>();
             RoleRewards = new Dictionary<int, ulong>();
             LevelUpMessages = new Dictionary<int, string>();
+            NoXPChannels = new List<ulong>();
+            MentionForLevelUp = false;
             XPCooldown = 60;
             XPPerLevel = 150;
             MinXPPerMessage = 5;
             MaxXPPerMessage = 5;
-            if(!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
-                Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");        
+            if (!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
+                Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");
         }
         public void SortUsersByRank()
         {
@@ -52,35 +54,50 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode node = new KONNode("LEVELING_SERVER");
             node.AddValue("id", Id);
-            if(LevelUpChannel != null)
+            if (LevelUpChannel != null)
                 node.AddValue("levelUpChannel", (ulong)LevelUpChannel);
             node.AddValue("xpCooldown", XPCooldown);
             node.AddValue("xpPerLevel", XPPerLevel);
             node.AddValue("minXPPerMessage", MinXPPerMessage);
             node.AddValue("maxXPPerMessage", MaxXPPerMessage);
-            KONNode rolesNode = new KONNode("ROLES");
-            foreach(KeyValuePair<int, ulong> role in RoleRewards)
+            if (RoleRewards.Count > 0)
             {
-                KONNode roleNode = new KONNode("ROLE");
-                roleNode.AddValue("id", role.Value);
-                roleNode.AddValue("level", role.Key);
-                rolesNode.AddChild(roleNode);
+                KONNode rolesNode = new KONNode("ROLES");
+                foreach (KeyValuePair<int, ulong> role in RoleRewards)
+                {
+                    KONNode roleNode = new KONNode("ROLE");
+                    roleNode.AddValue("id", role.Value);
+                    roleNode.AddValue("level", role.Key);
+                    rolesNode.AddChild(roleNode);
+                }
+                node.AddChild(rolesNode);
             }
-            node.AddChild(rolesNode);
-            KONNode levelUpMsgNode = new KONNode("LEVEL_UP_MESSAGES");
-            foreach(KeyValuePair<int, string> message in LevelUpMessages)
+            if (LevelUpMessages.Count > 0)
             {
-                KONNode messageNode = new KONNode("MESSAGE");
-                messageNode.AddValue("level", message.Key);
-                messageNode.AddValue("message", message.Value);
-                levelUpMsgNode.AddChild(messageNode);
+                KONNode levelUpMsgNode = new KONNode("LEVEL_UP_MESSAGES");
+                foreach (KeyValuePair<int, string> message in LevelUpMessages)
+                {
+                    KONNode messageNode = new KONNode("MESSAGE");
+                    messageNode.AddValue("level", message.Key);
+                    messageNode.AddValue("message", message.Value);
+                    levelUpMsgNode.AddChild(messageNode);
+                }
+                node.AddChild(levelUpMsgNode);
             }
-            node.AddChild(levelUpMsgNode);
+            if (NoXPChannels.Count > 0)
+            {
+                KONArray noXPChannelsArray = new KONArray("NO_XP_CHANNELS");
+                foreach (ulong channel in NoXPChannels)
+                {
+                    noXPChannelsArray.AddItem(channel);
+                }
+                node.AddArray(noXPChannelsArray);
+            }
             KONArray usersArray = new KONArray("USERS");
-            foreach(LevelingUser user in UsersByRank)
+            foreach (LevelingUser user in UsersByRank)
             {
                 usersArray.AddItem(user.Id);
             }

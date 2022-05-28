@@ -17,12 +17,12 @@ namespace CarrotBot.Leveling
         private TimeSpan messageInterval { get; set; }
         public bool MentionForLevelUp { get; internal set; }
 
-        public int TotalXP 
+        public int TotalXP
         {
             get
             {
                 int output = CurrentXP;
-                for(int i = Level; i > 0; i--)
+                for (int i = Level; i > 0; i--)
                 {
                     output += i * Server.XPPerLevel;
                 }
@@ -32,13 +32,14 @@ namespace CarrotBot.Leveling
 
         public async Task HandleMessage(DiscordMessage msg)
         {
+            if (Server.NoXPChannels.Contains(msg.ChannelId)) return;
             messageInterval = new TimeSpan(0, 0, Server.XPCooldown);
-            if(msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix)) return;
-            if(DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
+            if (msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix) || (Program.isBeta && msg.Content.StartsWith("b%"))) return;
+            if (DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
             {
-                if(msg.Channel.Guild.Id == 824824193001979924)
+                if (msg.Channel.Guild.Id == 824824193001979924)
                 {
-                    if(Dripcoin.UserBalances.ContainsKey(msg.Author.Id))
+                    if (Dripcoin.UserBalances.ContainsKey(msg.Author.Id))
                     {
                         Dripcoin.AddBalance(msg.Author.Id, 1);
                     }
@@ -49,28 +50,28 @@ namespace CarrotBot.Leveling
                     }
                 }
                 CurrentXP += Server.GetMessageXP();
-                while(CurrentXP >= Server.XPNeededForLevel(Level + 1))
+                if (CurrentXP >= Server.XPNeededForLevel(Level + 1))
                 {
-                    Level++;
-                    CurrentXP -= Server.XPNeededForLevel(Level);
-                    DiscordEmbedBuilder eb =  new DiscordEmbedBuilder
+                    Level += GetLevelIncrease(Level, CurrentXP, out int xpUsed);
+                    CurrentXP -= xpUsed;
+                    DiscordEmbedBuilder eb = new DiscordEmbedBuilder
                     {
                         Description = $"Congratulations <@{msg.Author.Id}> !\nYou have advanced to level **{Level}**!",
                         Title = "Level Up",
                         Color = Utils.CBOrange
                     };
-                    if(Server.RoleRewards.ContainsKey(Level))
+                    if (Server.RoleRewards.ContainsKey(Level))
                     {
                         eb.Description += $"\nYou have unlocked the <@&{Server.RoleRewards[Level]}> role!";
                         await msg.Channel.Guild.GetMemberAsync(msg.Author.Id).Result.GrantRoleAsync(msg.Channel.Guild.GetRole(Server.RoleRewards[Level]));
                     }
-                    if(Server.LevelUpMessages.ContainsKey(Level))
+                    if (Server.LevelUpMessages.ContainsKey(Level))
                     {
                         eb.Description += $"\n{Server.LevelUpMessages[Level]}";
                     }
                     Server.SortUsersByRank();
                     string content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;
-                    if(Server.LevelUpChannel == null)
+                    if (Server.LevelUpChannel == null)
                         await msg.RespondAsync(content, eb.Build());
                     else
                         await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync(content, eb.Build());
@@ -81,7 +82,7 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode node = new KONNode("LEVELING_USER");
             node.AddValue("id", Id);
             node.AddValue("xp", CurrentXP);
@@ -116,6 +117,18 @@ namespace CarrotBot.Leveling
             Server = server;
             LastMessageTimestamp = lastMessageTime;
             FlushData();
+        }
+        private int GetLevelIncrease(int startingLevel, int xp, out int xpUsed)
+        {
+            int output = 0;
+            xpUsed = 0;
+            while (xp >= Server.XPNeededForLevel(startingLevel + output + 1))
+            {
+                output++;
+                xp -= Server.XPNeededForLevel(startingLevel + output);
+                xpUsed += Server.XPNeededForLevel(startingLevel + output);
+            }
+            return output;
         }
     }
 }

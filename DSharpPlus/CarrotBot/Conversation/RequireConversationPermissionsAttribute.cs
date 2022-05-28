@@ -20,7 +20,7 @@ namespace CarrotBot.Conversation
 
         public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
         {
-            switch(RequiredPermissions)
+            switch (RequiredPermissions)
             {
                 case ConversationPermissions.Verified:
                     return Task.FromResult(ConversationData.VerifiedUsers.Contains(ctx.User.Id));
@@ -31,7 +31,7 @@ namespace CarrotBot.Conversation
                 case ConversationPermissions.SuperAdmin:
                     return Task.FromResult(ConversationData.SuperAdministrators.Contains(ctx.User.Id));
                 case ConversationPermissions.Developer:
-                    return(Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id));
+                    return (Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id));
             }
             return Task.FromResult(false);
         }

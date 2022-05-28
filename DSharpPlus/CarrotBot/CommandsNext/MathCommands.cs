@@ -39,10 +39,20 @@ namespace CarrotBot.Commands
         {
             await ctx.RespondAsync($"{Math.Sqrt(num)}");
         }
-        [Command("round")]
+        [Command("round"), Description("Rounds a number to the nearest integer.")]
         public async Task Round(CommandContext ctx, double value)
         {
             await ctx.RespondAsync($"{Math.Round(value)}");
+        }
+        [Command("round"), Description("Rounds a number to the specified number of digits.")]
+        public async Task Round(CommandContext ctx, double value, int digits)
+        {
+            await ctx.RespondAsync($"{Math.Round(value, digits)}");
+        }
+        [Command("pow"), Description("Returns the y power of x.")]
+        public async Task Pow(CommandContext ctx, double x, double y)
+        {
+            await ctx.RespondAsync($"{Math.Pow(x, y)}");
         }
     }
 }

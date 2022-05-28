@@ -3,18 +3,18 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp6.0</TargetFramework>
-    <Version>1.2.24</Version>
+    <Version>1.3.0</Version>
 
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <Configuration>Release</Configuration>
+    <Configuration>Debug</Configuration>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.1.0" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.1.0" />
+    <PackageReference Include="DSharpPlus" Version="4.2.0" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.2.0" />
     <PackageReference Include="IDoEverything.DSharpPlus.SlashCommands" Version="1.7.6" />
     <PackageReference Include="KarrotObjectNotation" Version="1.1.3" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />

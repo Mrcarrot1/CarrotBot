@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
@@ -15,6 +15,8 @@ namespace CarrotBot
     {
         public static bool firstRun = true;
         public static string logPath = "";
+
+        private static int exceptionCount = 0;
         public static void Setup()
         {
             firstRun = false;
@@ -28,18 +30,31 @@ namespace CarrotBot
                 Setup();
             //ISocketMessageChannel channel = Program.client.GetChannel(490551836323872779) as ISocketMessageChannel;
             File.AppendAllText(logPath, $"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
+            if (level == CBLogLevel.ERR) Console.ForegroundColor = ConsoleColor.DarkYellow;
+            if (level == CBLogLevel.WRN) Console.ForegroundColor = ConsoleColor.Yellow;
+            if (level == CBLogLevel.EXC) Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
+            Console.ForegroundColor = ConsoleColor.White;
+            if (level == CBLogLevel.EXC)
+            {
+                exceptionCount++;
+                if (exceptionCount > 25 && Program.Mrcarrot != null)
+                {
+                    Program.Mrcarrot.SendMessageAsync("WARNING: EXPERIENCED MORE THAN 25 EXCEPTIONS");
+                    exceptionCount = 0;
+                }
+            }
             //Thread.Sleep(75);
             //if (channel != null)
             //  channel.SendMessageAsync($"{DateTime.Now}: {Message.Replace(DateTime.Now.ToString("HH:mm:ss"), "")}");
         }
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            if(firstRun)
+            if (firstRun)
                 Setup();
             File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
             Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
-            if(logLevel == LogLevel.Critical)
+            if (logLevel == LogLevel.Critical)
             {
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
                 Environment.Exit(0);
@@ -53,25 +68,25 @@ namespace CarrotBot
         {
             return true;
         }
-        string GetShortLogLevel(LogLevel logLevel) 
+        string GetShortLogLevel(LogLevel logLevel)
         {
-			switch (logLevel) 
+            switch (logLevel)
             {
-				case LogLevel.Trace:
-					return "TRCE";
-				case LogLevel.Debug:
-					return "DBUG";
-				case LogLevel.Information:
-					return "INFO";
-				case LogLevel.Warning:
-					return "WARN";
-				case LogLevel.Error:
-					return "ERR";
-				case LogLevel.Critical:
-					return "CRIT";
-			}
-			return logLevel.ToString().ToUpper();
-		}
+                case LogLevel.Trace:
+                    return "TRCE";
+                case LogLevel.Debug:
+                    return "DBUG";
+                case LogLevel.Information:
+                    return "INFO";
+                case LogLevel.Warning:
+                    return "WARN";
+                case LogLevel.Error:
+                    return "ERR";
+                case LogLevel.Critical:
+                    return "CRIT";
+            }
+            return logLevel.ToString().ToUpper();
+        }
         public enum CBLogLevel
         {
             LOG,
@@ -88,7 +103,7 @@ namespace CarrotBot
         }
         public void Dispose()
         {
-            
+
         }
     }
 }
