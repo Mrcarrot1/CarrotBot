@@ -1,0 +1,25 @@
+//CarrotBot Conversation message data file format.
+//Revised 27th January 2022.
+//When parsing, be sure to:
+//  A)Check if the file is more than 30 days old, and delete it if it is. (Utils.TryLoadDatabaseNode)
+//  B)Create the appropriate references to the message in the following locations:
+//      * Conversation.ConversationData.ConversationMessages
+//      * Conversation.ConversationData.ConversationMessagesByOrigId
+//      * Conversation.ConversationData.ConversationMessagesByOutId
+CONVERSATION_MESSAGES
+{
+    date = 211203 //YYMMDD
+    MESSAGE
+    {
+        &^CBId = 211203000000000002 //Internal CB message ID
+        &^originalChannel = 490564187345518594 //Original channel ID
+        &^originalId = 916353418862415933 //Discord message ID for the original message
+        //Array of Discord message IDs for messages sent in other channels with this message's content
+        CHANNEL_MESSAGES
+        {
+            &^490627345871536168 = 916353419034386464 //Key is channel ID(NOTE: WILL BE READ AS STRING), value is message ID
+            &^490666549305278474 = 916353424310829136
+            //Other messages continue
+        }
+    }
+}
