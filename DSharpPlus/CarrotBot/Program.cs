@@ -5,6 +5,7 @@
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
@@ -136,7 +137,7 @@ namespace CarrotBot
             //Save the conversation message data every 5 minutes
             if (!isBeta)
             {
-                var conversationSaveTimer = new System.Threading.Timer(e => Conversation.ConversationData.WriteMessageData(), null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
+                var conversationSaveTimer = new System.Threading.Timer(e => Conversation.ConversationData.WriteMessageData(), new AutoResetEvent(false), 18000000, 18000000); //Wait 5 minutes, then run every 5 minutes
             }
             await Task.Delay(-1);
         }
