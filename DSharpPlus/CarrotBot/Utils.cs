@@ -14,7 +14,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.0";
+        private static readonly string version = "1.3.1";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -24,11 +24,11 @@ namespace CarrotBot
         public static string conversationDataPath = $@"{localDataPath}/Conversation";
         public static string levelingDataPath = $@"{localDataPath}/Leveling";
 
-        public static DiscordColor CBGreen = new DiscordColor(15, 157, 88);
+        public static readonly DiscordColor CBGreen = new DiscordColor(15, 157, 88);
 
         public static int GuildCount = 0;
 
-        public static DiscordColor CBOrange = new DiscordColor(245, 124, 0);
+        public static readonly DiscordColor CBOrange = new DiscordColor(245, 124, 0);
         public static ulong GetId(string mention)
         {
             try
@@ -242,6 +242,28 @@ namespace CarrotBot
 
             //As a catch-all, just return the type's normal name otherwise
             return type.ToString();
+        }
+
+        /// <summary>
+        /// A convenient way to send a response in embed form in one line of code.
+        /// If more advanced features are needed, just stop being so lazy and use a DiscordEmbedBuilder.
+        /// <para>&#160;</para>
+        /// As a note, this comment was written to me(Mrcarrot), as I am the only person who actually works on this codebase(at least for now), and this method was written exclusively because I am lazy.
+        /// Aren't extension methods great? *laughs at Java devs*
+        /// <para>&#160;</para>
+        /// I might be going insane.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public static async Task RespondEmbedAsync(this CommandContext ctx, string title, string content, DiscordColor? color = null)
+        {
+            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            eb.WithTitle(title);
+            eb.WithDescription(content);
+            eb.WithColor(color == null ? CBGreen : (DiscordColor)color);
+            await ctx.RespondAsync(embed: eb.Build());
         }
     }
 }

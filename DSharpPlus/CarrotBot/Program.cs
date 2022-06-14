@@ -1,6 +1,6 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
-//DATABASE_WRITE_PROTECTED is used for then the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
+//DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
 //#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
