@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using DSharpPlus.Entities;
 using KarrotObjectNotation;
@@ -14,107 +15,207 @@ namespace CarrotBot.Conversation
         public static List<ConversationChannel> ConversationChannels = new List<ConversationChannel>();
         public static Dictionary<ulong, ConversationMessage> ConversationMessages = new Dictionary<ulong, ConversationMessage>();
         public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOrigId = new Dictionary<ulong, ConversationMessage>();
+        public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOutId = new Dictionary<ulong, ConversationMessage>();
         public static Dictionary<ulong, DiscordEmbed> ConversationEmbeds = new Dictionary<ulong, DiscordEmbed>();
         public static List<ulong> AcceptedUsers = new List<ulong>();
         public static List<ulong> BannedUsers = new List<ulong>();
         public static List<ulong> Moderators = new List<ulong>();
         public static List<ulong> Administrators = new List<ulong>();
+        public static List<ulong> SuperAdministrators = new List<ulong>();
+
         public static List<ulong> VerifiedUsers = new List<ulong>();
         public static Dictionary<ulong, PreVerifiedUser> PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
+        public static List<string> BannedWords = new List<string>();
         private static ulong currentMessageIndex = 0;
+
+        public static bool MessageDataChangedSinceLastWrite { get; internal set; }
+
+
+        /// <summary>
+        /// The last time the message data for this run was written to disk
+        /// </summary>
+        public static DateTimeOffset lastMessagesWriteTime = Utils.startTime;
 
         public static ulong GenerateMessageId()
         {
             //Message ID meaning:
-            //First 2 digits- year, e.g. 21 = 2021
+            //First 4 digits- year, e.g. 2021
             //Next 2 digits- month, e.g. 03 = March
             //Next 2 digits- date, e.g. 15 = 15th
             //The remaining digits are a sequential stream of numbers
-            //e.g. 210315000000000045 is the 45th message on March 15, 2021
-            //There will always be 12 digits following the date
+            //e.g. 20210315000000000045 is the 45th message on 15 March 2021
+            //There will always be 9 digits following the date
             //This allows for a larger number of messages than can be practically sent while leaving zero chance of overflowing the ulong
             //And also allowing the conversation to continue working until at least 2100, by which time I will most likely be dead :)
-            string Date = $"{DateTime.Now.ToString("yyMMdd")}000000000000";
+            string Date = $"{DateTime.Now.ToString("yyyyMMdd")}000000000";
             currentMessageIndex += 1;
             return ulong.Parse(Date) + currentMessageIndex;
         }
         public static void LoadDatabase()
         {
-            KONNode databaseNode = KONParser.Default.Parse(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb"));
-            Conversation.liveFeedChannel = Program.discord.GetChannelAsync(818960559625732096).Result;
-            Conversation.embedsChannel = Program.discord.GetChannelAsync(824473207608049684).Result;
+            KONNode databaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb")));
+            Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).Result;
+            Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).Result;
             ConversationChannels = new List<ConversationChannel>();
             PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
             AcceptedUsers = new List<ulong>();
             Administrators = new List<ulong>();
+            SuperAdministrators = new List<ulong>();
             Moderators = new List<ulong>();
             BannedUsers = new List<ulong>();
             VerifiedUsers = new List<ulong>();
-            foreach(KONNode childNode in databaseNode.Children)
+            foreach (KONNode childNode in databaseNode.Children)
             {
-                if(childNode.Name == "CHANNELS")
+                if (childNode.Name == "CHANNELS")
                 {
-                    foreach(KONNode childNode2 in childNode.Children)
+                    foreach (KONNode childNode2 in childNode.Children)
                     {
-                        if(childNode2.Name == "CHANNEL")
+                        if (childNode2.Name == "CHANNEL")
                         {
-                            bool ok = ulong.TryParse(childNode2.Values["id"], out ulong Id);
-                            if (ok)
-                                ConversationChannels.Add(new ConversationChannel(Id, childNode2.Values["name"]));
+                            ConversationChannels.Add(new ConversationChannel((ulong)childNode2.Values["id"], (string)childNode2.Values["name"], (ulong)childNode2.Values["guildId"]));
                         }
                     }
                 }
-                if(childNode.Name == "PREVERIFIED_USERS")
+                if (childNode.Name == "PREVERIFIED_USERS")
                 {
-                    foreach(KONNode childNode2 in childNode.Children)
+                    foreach (KONNode childNode2 in childNode.Children)
                     {
-                        if(childNode2.Name == "USER")
+                        if (childNode2.Name == "USER")
                         {
-                            PreVerifiedUsers.Add(ulong.Parse(childNode2.Values["id"]), new PreVerifiedUser(ulong.Parse(childNode2.Values["id"]), int.Parse(childNode2.Values["messages"]), long.Parse(childNode2.Values["lastMessageTime"])));
+                            PreVerifiedUsers.Add((ulong)childNode2.Values["id"], new PreVerifiedUser((ulong)childNode2.Values["id"], (int)childNode2.Values["messages"], (long)childNode2.Values["lastMessageTime"]));
                         }
                     }
                 }
             }
-            foreach(KONArray array in databaseNode.Arrays)
+            foreach (KONArray array in databaseNode.Arrays)
             {
-                if(array.Name == "ACCEPTED_USERS")
+                if (array.Name == "ACCEPTED_USERS")
                 {
-                    foreach(string str in array.Items)
+                    foreach (ulong item in array.Items)
                     {
-                        if(!AcceptedUsers.Contains(ulong.Parse(str)))
-                            AcceptedUsers.Add(ulong.Parse(str));
+                        if (!AcceptedUsers.Contains(item))
+                            AcceptedUsers.Add(item);
                     }
                 }
-                if(array.Name == "ADMINISTRATORS")
+                if (array.Name == "SUPER_ADMINISTRATORS")
                 {
-                    foreach(string str in array.Items)
+                    foreach (ulong item in array.Items)
                     {
-                        if(!Administrators.Contains(ulong.Parse(str)))
-                            Administrators.Add(ulong.Parse(str));
+                        if (!SuperAdministrators.Contains(item))
+                            SuperAdministrators.Add(item);
+                    }
+                    if (!SuperAdministrators.Any())
+                    {
+                        SuperAdministrators.Add(Program.Mrcarrot.Id);
                     }
                 }
-                if(array.Name == "MODERATORS")
+                if (array.Name == "ADMINISTRATORS")
                 {
-                    foreach(string str in array.Items)
+                    foreach (ulong item in array.Items)
                     {
-                        if(!Moderators.Contains(ulong.Parse(str)))
-                            Moderators.Add(ulong.Parse(str));
+                        if (!Administrators.Contains(item))
+                            Administrators.Add(item);
                     }
                 }
-                if(array.Name == "BANNED_USERS")
+                if (array.Name == "MODERATORS")
                 {
-                    foreach(string str in array.Items)
+                    foreach (ulong item in array.Items)
                     {
-                        if(!BannedUsers.Contains(ulong.Parse(str)))
-                            BannedUsers.Add(ulong.Parse(str));
+                        if (!Moderators.Contains(item))
+                            Moderators.Add(item);
                     }
                 }
-                if(array.Name == "VERIFIED_USERS")
+                if (array.Name == "BANNED_USERS")
                 {
-                    foreach(string str in array.Items)
+                    foreach (ulong item in array.Items)
                     {
-                        if(!VerifiedUsers.Contains(ulong.Parse(str)))
-                            VerifiedUsers.Add(ulong.Parse(str));
+                        if (!BannedUsers.Contains(item))
+                            BannedUsers.Add(item);
+                    }
+                }
+                if (array.Name == "VERIFIED_USERS")
+                {
+                    foreach (ulong item in array.Items)
+                    {
+                        if (!VerifiedUsers.Contains(item))
+                            VerifiedUsers.Add(item);
+                    }
+                }
+                if (Directory.Exists($@"{Utils.conversationDataPath}/Messages"))
+                {
+                    foreach (string file in Directory.GetFiles($@"{Utils.conversationDataPath}/Messages"))
+                    {
+                        if (Utils.TryLoadDatabaseNode(file, out KONNode msgsNode))
+                        {
+                            Logger.Log($"Loading conversation messages for {msgsNode.Values["date"]}");
+                            foreach (KONNode node in msgsNode.Children)
+                            {
+                                try
+                                {
+                                    if (node.Name == "MESSAGE")
+                                    {
+                                        try
+                                        {
+                                            ulong CBId = (ulong)node.Values["CBId"];
+                                            ulong originalChannelId = (ulong)node.Values["originalChannel"];
+                                            ulong originalId = (ulong)node.Values["originalId"];
+                                            DiscordMessage originalMsg = null;
+                                            ConversationChannel originalChannel = null;
+                                            DiscordMember author = null;
+                                            if (ConversationChannels.Any(x => x.Id == originalChannelId))
+                                            {
+                                                originalChannel = ConversationChannels.FirstOrDefault(x => x.Id == originalChannelId);
+                                                DiscordChannel origChn = Program.discord.GetShard(originalChannel.GuildId).GetChannelAsync(originalChannelId).Result;
+                                                originalMsg = origChn.GetMessageAsync(originalId).Result;
+                                                author = origChn.Guild.GetMemberAsync(originalMsg.Author.Id).Result;
+                                            }
+                                            ConversationMessage message = new ConversationMessage(CBId, originalMsg, author, originalChannel);
+                                            message.thisRun = false;
+                                            foreach (KONNode childNode in node.Children)
+                                            {
+                                                if (childNode.Name == "CHANNEL_MESSAGES")
+                                                {
+                                                    foreach (KeyValuePair<string, object> chnMsg in childNode.Values)
+                                                    {
+                                                        try
+                                                        {
+                                                            if (ConversationChannels.Any(x => x.Id.ToString() == chnMsg.Key))
+                                                            {
+                                                                //TODO: Grab the message object from the correct channel and add it to the ConversationMessage object   DONE
+                                                                //Also add the correct entry to ConversationMessagesByOutId                                             DONE
+                                                                //Also make sure that none of this shit can throw unhandled exceptions                                  DONE
+                                                                //Also make sure to write the code that actually stores this information on disk                        DONE
+                                                                //Also make sure that no code that might be affected by this change can throw unhandled exceptions      DONE (PROBABLY)
+                                                                ulong msgId = (ulong)chnMsg.Value;
+                                                                ConversationChannel channel1 = ConversationChannels.FirstOrDefault(x => x.Id.ToString() == chnMsg.Key);
+                                                                DiscordChannel channel = Program.discord.GetShard(channel1.GuildId).GetChannelAsync(channel1.Id).Result;
+                                                                DiscordMessage msg = channel.GetMessageAsync(msgId).Result;
+                                                                message.ChannelMessages.Add(channel1.Id, msg);
+                                                                ConversationMessagesByOutId.Add(msgId, message);
+                                                            }
+                                                        }
+                                                        catch (Exception e)
+                                                        {
+                                                            Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            ConversationMessages.Add(CBId, message);
+                                            ConversationMessagesByOrigId.Add(originalId, message);
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
+                                        }
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -156,61 +257,111 @@ namespace CarrotBot.Conversation
         }
         public static void WriteDatabase()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode databaseNode = new KONNode("CONVERSATION_DATABASE");
 
             KONNode channelsNode = new KONNode("CHANNELS");
-            foreach(ConversationChannel channel in ConversationChannels)
+            foreach (ConversationChannel channel in ConversationChannels)
             {
                 KONNode channelNode = new KONNode("CHANNEL");
-                channelNode.Values.Add("id", channel.Id.ToString());
-                channelNode.Values.Add("name", channel.Server);
+                channelNode.AddValue("id", channel.Id);
+                channelNode.AddValue("name", channel.CallSign);
+                channelNode.AddValue("guildId", channel.GuildId);
                 channelsNode.AddChild(channelNode);
             }
             databaseNode.AddChild(channelsNode);
 
             KONNode preVerifiedUsersNode = new KONNode("PREVERIFIED_USERS");
-            foreach(PreVerifiedUser user in PreVerifiedUsers.Values)
+            foreach (PreVerifiedUser user in PreVerifiedUsers.Values)
             {
                 KONNode userNode = new KONNode("USER");
-                userNode.AddValue("id", user.Id.ToString());
-                userNode.AddValue("messages", user.MessagesSent.ToString());
-                userNode.AddValue("lastMessageTime", user.LastMessageSentTime.ToUnixTimeSeconds().ToString());
+                userNode.AddValue("id", user.Id);
+                userNode.AddValue("messages", user.MessagesSent);
+                userNode.AddValue("lastMessageTime", user.LastMessageSentTime.ToUnixTimeSeconds());
                 preVerifiedUsersNode.AddChild(userNode);
             }
             databaseNode.AddChild(preVerifiedUsersNode);
 
             KONArray acceptedUsers = new KONArray("ACCEPTED_USERS");
-            foreach(ulong user in AcceptedUsers)
+            foreach (ulong user in AcceptedUsers)
             {
-                acceptedUsers.Items.Add(user.ToString());
+                acceptedUsers.AddItem(user);
             }
             KONArray administrators = new KONArray("ADMINISTRATORS");
-            foreach(ulong user in Administrators)
+            foreach (ulong user in Administrators)
             {
-                administrators.Items.Add(user.ToString());
+                administrators.AddItem(user);
             }
             KONArray moderators = new KONArray("MODERATORS");
-            foreach(ulong user in Moderators)
+            foreach (ulong user in Moderators)
             {
-                moderators.Items.Add(user.ToString());
+                moderators.AddItem(user);
             }
             KONArray bannedUsers = new KONArray("BANNED_USERS");
-            foreach(ulong user in BannedUsers)
+            foreach (ulong user in BannedUsers)
             {
-                bannedUsers.Items.Add(user.ToString());
+                bannedUsers.AddItem(user);
             }
             KONArray verifiedUsers = new KONArray("VERIFIED_USERS");
-            foreach(ulong user in VerifiedUsers)
+            foreach (ulong user in VerifiedUsers)
             {
-                verifiedUsers.Items.Add(user.ToString());
+                verifiedUsers.AddItem(user);
             }
             databaseNode.AddArray(acceptedUsers);
             databaseNode.AddArray(administrators);
             databaseNode.AddArray(moderators);
             databaseNode.AddArray(bannedUsers);
             databaseNode.AddArray(verifiedUsers);
-            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", KONWriter.Default.Write(databaseNode));
+            File.WriteAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(databaseNode)));
+        }
+
+
+        /// <summary>
+        /// Writes the current message data to disk
+        /// </summary>
+        public static void WriteMessageData(bool midnightOverride = false)
+        {
+            if (!MessageDataChangedSinceLastWrite) return;
+            //If it's less than 5 minutes from midnight and the override wasn't set, don't write data.
+            //The override is only ever set by the Conversation message handler, which takes over from the automatic writing at 23:55
+            if ((DateTimeOffset.Now + new TimeSpan(0, 5, 0)).Day > DateTimeOffset.Now.Day && !midnightOverride) return;
+            if (!Directory.Exists($@"{Utils.conversationDataPath}/Messages"))
+                Directory.CreateDirectory($@"{Utils.conversationDataPath}/Messages");
+            KONNode node = new KONNode("CONVERSATION_MESSAGES");
+            node.AddValue("date", Utils.yyMMdd);
+            foreach (ConversationMessage message in ConversationMessages.Values)
+            {
+                if (!message.thisRun) continue;
+                KONNode msgNode = new KONNode("MESSAGE");
+                msgNode.AddValue("CBId", message.Id);
+                msgNode.AddValue("originalChannel", message.originalChannel.Id);
+                msgNode.AddValue("originalId", message.originalMessage.Id);
+                KONNode channelMessages = new KONNode("CHANNEL_MESSAGES");
+                foreach (KeyValuePair<ulong, DiscordMessage> chnMsg in message.ChannelMessages)
+                {
+                    channelMessages.AddValue(chnMsg.Key.ToString(), chnMsg.Value);
+                }
+                msgNode.AddChild(channelMessages);
+                node.AddChild(msgNode);
+            }
+            File.WriteAllText($@"{Utils.conversationDataPath}/Messages/{Utils.startTime.ToUnixTimeSeconds()}.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
+            lastMessagesWriteTime = DateTimeOffset.Now;
+            MessageDataChangedSinceLastWrite = false;
+        }
+        public static void DeleteUserData(ulong userId)
+        {
+            if (AcceptedUsers.Contains(userId))
+            {
+                AcceptedUsers.Remove(userId);
+            }
+            if (VerifiedUsers.Contains(userId))
+            {
+                VerifiedUsers.Remove(userId);
+            }
+            if (PreVerifiedUsers.ContainsKey(userId))
+            {
+                PreVerifiedUsers.Remove(userId);
+            }
         }
     }
 }

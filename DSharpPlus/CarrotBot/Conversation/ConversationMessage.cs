@@ -7,6 +7,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using System.Linq;
@@ -15,6 +16,10 @@ namespace CarrotBot.Conversation
 {
     public class ConversationMessage
     {
+        /// <summary>
+        /// Internal CB Id of the message- NOT A DISCORD MESSAGE ID
+        /// </summary>
+        /// <value></value>
         public ulong Id { get; } //Id in CB's internal system- NOT A DISCORD MESSAGE ID
         public DiscordMessage originalMessage { get; }
         public DiscordMessage liveFeedMessage { get; set; }
@@ -26,33 +31,46 @@ namespace CarrotBot.Conversation
         public ConversationMessage PreviousMessage { get; set; }
         public ConversationMessage NextMessage { get; set; }
         public DiscordMessage EmbedMessage { get; set; }
+        /// <summary>
+        /// Specifies whether the message was sent since the last time the bot started.
+        /// </summary>
+        public bool thisRun = true;
         public async Task DeleteMessage(bool includeOriginal = true)
         {
-            if(includeOriginal)
-                await originalMessage.DeleteAsync();
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            //This try-catch simply serves to make sure that we don't try to delete a message that already has been.
+            //Otherwise, that would be a fairly big issue.
             try
             {
-                eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
-                eb.WithDescription(liveFeedMessage.Embeds[0].Description);
-                if(liveFeedMessage.Embeds[0].Fields != null)
+                if (includeOriginal)
+                    await originalMessage.DeleteAsync();
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                try
                 {
-                    foreach(DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                    eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
+                    eb.WithDescription(liveFeedMessage.Embeds[0].Description);
+                    if (liveFeedMessage.Embeds[0].Fields != null)
                     {
-                        eb.AddField(f.Name, f.Value);
+                        foreach (DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                        {
+                            eb.AddField(f.Name, f.Value);
+                        }
                     }
+                    eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
+                    eb.WithColor(DiscordColor.Red);
+                    await liveFeedMessage.ModifyAsync(embed: eb.Build());
                 }
-                eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
-                eb.WithColor(DiscordColor.Red);
-                await liveFeedMessage.ModifyAsync(embed: eb.Build());
+                catch (Exception e)
+                {
+                    await Program.Mrcarrot.SendMessageAsync($"{e.ToString()}");
+                }
+                foreach (KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
+                {
+                    await msg.Value.DeleteAsync();
+                }
             }
-            catch(Exception e) 
-            { 
-                await Program.Mrcarrot.SendMessageAsync($"{e.ToString()}");
-            }
-            foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
+            catch
             {
-                await msg.Value.DeleteAsync();
+
             }
             /*if(includeOriginal)
                 await originalMessage.DeleteAsync();
@@ -120,8 +138,17 @@ namespace CarrotBot.Conversation
                 eb2.WithImageUrl(originalMessage.Attachments[0].Url);
                 eb2.AddField("Attachment URL", originalMessage.Attachments[0].Url);
             }
+            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+            foreach (Match match in URLRegex.Matches(originalMessage.Content))
+            {
+                if (Utils.IsImageUrl(match.Value))
+                {
+                    eb2.WithImageUrl(match.Value);
+                    break;
+                }
+            }
             DiscordEmbed embed = eb2.Build();
-            foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
+            foreach (KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
             {
                 //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
                 await msg.Value.ModifyAsync(embed: embed);
@@ -155,28 +182,28 @@ namespace CarrotBot.Conversation
         public void DecrementIndex()
         {
             IndexInEmbed -= 1;
-            if(NextMessage != null)
+            if (NextMessage != null)
             {
-                if(NextMessage.IndexInEmbed > 0)
+                if (NextMessage.IndexInEmbed > 0)
                     NextMessage.DecrementIndex();
             }
         }
         public void UpdateEmbed(bool singleDirection, bool goForward)
         {
             Embed = EmbedMessage.Embeds[0];
-            if(!singleDirection)
+            if (!singleDirection)
             {
-                if(NextMessage != null)
+                if (NextMessage != null)
                     NextMessage.UpdateEmbed(true, true);
-                if(PreviousMessage != null)
+                if (PreviousMessage != null)
                     NextMessage.UpdateEmbed(true, false);
                 return;
             }
-            if(goForward && NextMessage != null)
+            if (goForward && NextMessage != null)
             {
                 NextMessage.UpdateEmbed(true, true);
             }
-            if(!goForward && PreviousMessage != null)
+            if (!goForward && PreviousMessage != null)
             {
                 PreviousMessage.UpdateEmbed(true, false);
             }

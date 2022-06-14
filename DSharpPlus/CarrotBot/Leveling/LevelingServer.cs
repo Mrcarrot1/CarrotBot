@@ -15,10 +15,16 @@ namespace CarrotBot.Leveling
         public Dictionary<int, ulong> RoleRewards { get; internal set; }
         public List<ulong> NoXPChannels { get; internal set; }
         public ulong? LevelUpChannel { get; internal set; }
+        public bool MentionForLevelUp { get; internal set; }
+        public Dictionary<int, string> LevelUpMessages { get; internal set; }
+        public int XPCooldown { get; internal set; }
+        public int XPPerLevel { get; internal set; }
+        public int MinXPPerMessage { get; internal set; }
+        public int MaxXPPerMessage { get; internal set; }
 
-        public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime,  int xp = 5, int level = 0)
+        public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime, int xp = 5, int level = 0)
         {
-            LevelingUser output =  new LevelingUser(id, xp, level, this, lastMessageTime);
+            LevelingUser output = new LevelingUser(id, xp, level, this, lastMessageTime);
 
             Users.Add(id, output);
             UsersByRank.Add(output);
@@ -32,8 +38,15 @@ namespace CarrotBot.Leveling
             Users = new Dictionary<ulong, LevelingUser>();
             UsersByRank = new List<LevelingUser>();
             RoleRewards = new Dictionary<int, ulong>();
-            if(!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
-                Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");        
+            LevelUpMessages = new Dictionary<int, string>();
+            NoXPChannels = new List<ulong>();
+            MentionForLevelUp = false;
+            XPCooldown = 60;
+            XPPerLevel = 150;
+            MinXPPerMessage = 5;
+            MaxXPPerMessage = 5;
+            if (!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
+                Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");
         }
         public void SortUsersByRank()
         {
@@ -41,31 +54,68 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode node = new KONNode("LEVELING_SERVER");
-            node.Values.Add("id", Id.ToString());
-            if(LevelUpChannel != null)
-                node.AddValue("levelUpChannel", LevelUpChannel.ToString());
-            KONNode rolesNode = new KONNode("ROLES");
-            foreach(KeyValuePair<int, ulong> role in RoleRewards)
+            node.AddValue("id", Id);
+            if (LevelUpChannel != null)
+                node.AddValue("levelUpChannel", (ulong)LevelUpChannel);
+            node.AddValue("xpCooldown", XPCooldown);
+            node.AddValue("xpPerLevel", XPPerLevel);
+            node.AddValue("minXPPerMessage", MinXPPerMessage);
+            node.AddValue("maxXPPerMessage", MaxXPPerMessage);
+            if (RoleRewards.Count > 0)
             {
-                KONNode roleNode = new KONNode("ROLE");
-                roleNode.AddValue("id", role.Value.ToString());
-                roleNode.AddValue("level", role.Key.ToString());
-                rolesNode.AddChild(roleNode);
+                KONNode rolesNode = new KONNode("ROLES");
+                foreach (KeyValuePair<int, ulong> role in RoleRewards)
+                {
+                    KONNode roleNode = new KONNode("ROLE");
+                    roleNode.AddValue("id", role.Value);
+                    roleNode.AddValue("level", role.Key);
+                    rolesNode.AddChild(roleNode);
+                }
+                node.AddChild(rolesNode);
             }
-            node.AddChild(rolesNode);
-            KONArray usersArray = new KONArray("USERS");
-            foreach(LevelingUser user in UsersByRank)
+            if (LevelUpMessages.Count > 0)
             {
-                usersArray.Items.Add(user.Id.ToString());
+                KONNode levelUpMsgNode = new KONNode("LEVEL_UP_MESSAGES");
+                foreach (KeyValuePair<int, string> message in LevelUpMessages)
+                {
+                    KONNode messageNode = new KONNode("MESSAGE");
+                    messageNode.AddValue("level", message.Key);
+                    messageNode.AddValue("message", message.Value);
+                    levelUpMsgNode.AddChild(messageNode);
+                }
+                node.AddChild(levelUpMsgNode);
+            }
+            if (NoXPChannels.Count > 0)
+            {
+                KONArray noXPChannelsArray = new KONArray("NO_XP_CHANNELS");
+                foreach (ulong channel in NoXPChannels)
+                {
+                    noXPChannelsArray.AddItem(channel);
+                }
+                node.AddArray(noXPChannelsArray);
+            }
+            KONArray usersArray = new KONArray("USERS");
+            foreach (LevelingUser user in UsersByRank)
+            {
+                usersArray.AddItem(user.Id);
             }
             node.AddArray(usersArray);
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", KONWriter.Default.Write(node));
+            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Id}/Index.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
         public void SetLevelUpChannel(ulong? channelId)
         {
             LevelUpChannel = channelId;
+        }
+        public int XPNeededForLevel(int level)
+        {
+            return (level * XPPerLevel);
+        }
+        private static Random rnd = new Random();
+        public int GetMessageXP()
+        {
+            return rnd.Next(MinXPPerMessage, MaxXPPerMessage + 1);
         }
     }
 }

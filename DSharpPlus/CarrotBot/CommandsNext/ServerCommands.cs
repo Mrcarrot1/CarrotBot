@@ -28,7 +28,7 @@ namespace CarrotBot.Commands
         [Command("info")]
         public async Task Info(CommandContext ctx)
         {
-            if(ctx.Channel.IsPrivate)
+            if (ctx.Channel.IsPrivate)
             {
                 await ctx.RespondAsync("You need to be in a server to use this command!");
                 return;
@@ -39,7 +39,7 @@ namespace CarrotBot.Commands
             eb.WithThumbnail(ctx.Guild.IconUrl);
             eb.WithTitle("Server Info");
             //eb.WithDescription($"Name: {ctx.Guild.Name}\nOwner: <@{ctx.Guild.Owner.Id}>\nCreated at: ({ctx.Guild.CreationTimestamp.ToUniversalTime().ToString()} UTC)\nChannels: {ctx.Guild.Channels.Count}");
-            
+
             eb.AddField("Name", $"{ctx.Guild.Name}");
             eb.AddField("Owned By", $"<@!{ctx.Guild.Owner.Id}>", true);
             eb.AddField("Created At", $"<t:{ctx.Guild.CreationTimestamp.ToUnixTimeSeconds()}:R> ({ctx.Guild.CreationTimestamp.ToUniversalTime()} UTC)");
@@ -47,11 +47,11 @@ namespace CarrotBot.Commands
             int textChannels = 0;
             int voiceChannels = 0;
             int categories = 0;
-            foreach(DiscordChannel channel in ctx.Guild.Channels.Values)
+            foreach (DiscordChannel channel in ctx.Guild.Channels.Values)
             {
-                if(channel.Type is ChannelType.Text or ChannelType.News) textChannels++;
-                if(channel.Type == ChannelType.Voice) voiceChannels++;
-                if(channel.Type == ChannelType.Category) categories++;
+                if (channel.Type is ChannelType.Text or ChannelType.News) textChannels++;
+                if (channel.Type == ChannelType.Voice) voiceChannels++;
+                if (channel.Type == ChannelType.Category) categories++;
             }
             eb.AddField("Text Channels", $"{textChannels}", true);
             eb.AddField("Voice Channels", $"{voiceChannels}", true);

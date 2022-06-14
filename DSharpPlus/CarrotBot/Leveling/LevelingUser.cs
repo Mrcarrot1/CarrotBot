@@ -14,16 +14,17 @@ namespace CarrotBot.Leveling
         public int Level { get; internal set; }
         public int CurrentXP { get; internal set; }
         public DateTimeOffset LastMessageTimestamp { get; internal set; }
-        private TimeSpan messageInterval = new TimeSpan(0, 0, 60);
+        private TimeSpan messageInterval { get; set; }
+        public bool MentionForLevelUp { get; internal set; }
 
-        public int TotalXP 
+        public int TotalXP
         {
             get
             {
                 int output = CurrentXP;
-                for(int i = Level; i > 0; i--)
+                for (int i = Level; i > 0; i--)
                 {
-                    output += i * 150;
+                    output += i * Server.XPPerLevel;
                 }
                 return output;
             }
@@ -31,12 +32,14 @@ namespace CarrotBot.Leveling
 
         public async Task HandleMessage(DiscordMessage msg)
         {
-            if(msg.Content.StartsWith('%')) return;
-            if(DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
+            if (Server.NoXPChannels.Contains(msg.ChannelId)) return;
+            messageInterval = new TimeSpan(0, 0, Server.XPCooldown);
+            if (msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix) || (Program.isBeta && msg.Content.StartsWith("b%"))) return;
+            if (DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
             {
-                if(msg.Channel.Guild.Id == 824824193001979924)
+                if (msg.Channel.Guild.Id == 824824193001979924)
                 {
-                    if(Dripcoin.UserBalances.ContainsKey(msg.Author.Id))
+                    if (Dripcoin.UserBalances.ContainsKey(msg.Author.Id))
                     {
                         Dripcoin.AddBalance(msg.Author.Id, 1);
                     }
@@ -46,27 +49,32 @@ namespace CarrotBot.Leveling
                         Dripcoin.AddBalance(msg.Author.Id, 1);
                     }
                 }
-                CurrentXP += 5;
-                if(CurrentXP >= LevelingData.XPNeededForLevel(Level + 1))
+                CurrentXP += Server.GetMessageXP();
+                if (CurrentXP >= Server.XPNeededForLevel(Level + 1))
                 {
-                    Level++;
-                    CurrentXP = 0;
-                    DiscordEmbedBuilder eb =  new DiscordEmbedBuilder
+                    Level += GetLevelIncrease(Level, CurrentXP, out int xpUsed);
+                    CurrentXP -= xpUsed;
+                    DiscordEmbedBuilder eb = new DiscordEmbedBuilder
                     {
                         Description = $"Congratulations <@{msg.Author.Id}> !\nYou have advanced to level **{Level}**!",
                         Title = "Level Up",
                         Color = Utils.CBOrange
                     };
-                    if(Server.RoleRewards.ContainsKey(Level))
+                    if (Server.RoleRewards.ContainsKey(Level))
                     {
                         eb.Description += $"\nYou have unlocked the <@&{Server.RoleRewards[Level]}> role!";
                         await msg.Channel.Guild.GetMemberAsync(msg.Author.Id).Result.GrantRoleAsync(msg.Channel.Guild.GetRole(Server.RoleRewards[Level]));
                     }
+                    if (Server.LevelUpMessages.ContainsKey(Level))
+                    {
+                        eb.Description += $"\n{Server.LevelUpMessages[Level]}";
+                    }
                     Server.SortUsersByRank();
-                    if(Server.LevelUpChannel == null)
-                        await msg.RespondAsync(embed: eb.Build());
+                    string content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;
+                    if (Server.LevelUpChannel == null)
+                        await msg.RespondAsync(content, eb.Build());
                     else
-                        await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync($"<@!{msg.Author.Id}>", embed: eb.Build());
+                        await msg.Channel.Guild.Channels[(ulong)Server.LevelUpChannel].SendMessageAsync(content, eb.Build());
                 }
                 LastMessageTimestamp = DateTimeOffset.Now;
                 FlushData();
@@ -74,13 +82,14 @@ namespace CarrotBot.Leveling
         }
         public void FlushData()
         {
-            if(Program.isBeta) return;
+            if (Program.doNotWrite) return;
             KONNode node = new KONNode("LEVELING_USER");
-            node.Values.Add("id", Id.ToString());
-            node.Values.Add("xp", CurrentXP.ToString());
-            node.Values.Add("level", Level.ToString());
-            node.Values.Add("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds().ToString());
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", KONWriter.Default.Write(node));
+            node.AddValue("id", Id);
+            node.AddValue("xp", CurrentXP);
+            node.AddValue("level", Level);
+            node.AddValue("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds());
+            node.AddValue("mentionForLevelUp", MentionForLevelUp);
+            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
         public LevelingUser(ulong id, LevelingServer server)
         {
@@ -108,6 +117,18 @@ namespace CarrotBot.Leveling
             Server = server;
             LastMessageTimestamp = lastMessageTime;
             FlushData();
+        }
+        private int GetLevelIncrease(int startingLevel, int xp, out int xpUsed)
+        {
+            int output = 0;
+            xpUsed = 0;
+            while (xp >= Server.XPNeededForLevel(startingLevel + output + 1))
+            {
+                output++;
+                xp -= Server.XPNeededForLevel(startingLevel + output);
+                xpUsed += Server.XPNeededForLevel(startingLevel + output);
+            }
+            return output;
         }
     }
 }
