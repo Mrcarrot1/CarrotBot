@@ -69,7 +69,7 @@ namespace CarrotBot.Leveling
                         DiscordMember member = await guild.GetMemberAsync(msg.Author.Id);
                         DiscordRole role = guild.GetRole(Server.RoleRewards[Level]);
                         await member.GrantRoleAsync(role);
-                        if (Server.CumulativeRoles)
+                        if (!Server.CumulativeRoles)
                         {
                             if (Server.RoleRewards.Keys.Count > 1)
                             {
