@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
@@ -33,6 +34,7 @@ namespace CarrotBot.Leveling
         public async Task HandleMessage(DiscordMessage msg)
         {
             if (Server.NoXPChannels.Contains(msg.ChannelId)) return;
+            if (msg.MessageType == DSharpPlus.MessageType.GuildMemberJoin) return;
             messageInterval = new TimeSpan(0, 0, Server.XPCooldown);
             if (msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix) || (Program.isBeta && msg.Content.StartsWith("b%"))) return;
             if (DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
@@ -63,7 +65,28 @@ namespace CarrotBot.Leveling
                     if (Server.RoleRewards.ContainsKey(Level))
                     {
                         eb.Description += $"\nYou have unlocked the <@&{Server.RoleRewards[Level]}> role!";
-                        await msg.Channel.Guild.GetMemberAsync(msg.Author.Id).Result.GrantRoleAsync(msg.Channel.Guild.GetRole(Server.RoleRewards[Level]));
+                        DiscordGuild guild = msg.Channel.Guild;
+                        DiscordMember member = await guild.GetMemberAsync(msg.Author.Id);
+                        DiscordRole role = guild.GetRole(Server.RoleRewards[Level]);
+                        await member.GrantRoleAsync(role);
+                        if (Server.CumulativeRoles)
+                        {
+                            if (Server.RoleRewards.Keys.Count > 1)
+                            {
+                                int index = Server.RoleRewards.Keys.ToList().IndexOf(Level);
+                                if (index > 0)
+                                {
+                                    for (int i = index - 1; i >= 0; i--)
+                                    {
+                                        ulong roleId = Server.RoleRewards[Server.RoleRewards.Keys.ToArray()[i]];
+                                        if (member.Roles.ToList().Any(x => x.Id == roleId))
+                                        {
+                                            await member.RevokeRoleAsync(guild.GetRole(roleId));
+                                        } 
+                                    }
+                                }
+                            }
+                        }
                     }
                     if (Server.LevelUpMessages.ContainsKey(Level))
                     {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using KarrotObjectNotation;
+using System.Text.RegularExpressions;
 
 namespace CarrotBot.Data
 {
@@ -14,9 +15,9 @@ namespace CarrotBot.Data
 
         public string GuildPrefix { get; internal set; }
 
-        public List<System.Text.RegularExpressions.Regex> JoinFilters { get; internal set; }
+        public List<JoinFilter> JoinFilters { get; internal set; }
 
-        public List<string> JoinBlacklist { get; internal set; }
+        public List<JoinBlacklist> JoinBlacklists { get; internal set; }
 
         public void FlushData(bool flushUserData = false)
         {
@@ -40,19 +41,25 @@ namespace CarrotBot.Data
             }
             node.AddArray(joinRolesArray);
 
-            KONArray regexFiltersArray = new KONArray("JOIN_FILTERS");
-            foreach (System.Text.RegularExpressions.Regex regex in JoinFilters)
+            KONNode regexFiltersNode = new KONNode("JOIN_FILTERS");
+            foreach (JoinFilter filter in JoinFilters)
             {
-                regexFiltersArray.AddItem(regex.ToString());
+                KONNode filterNode = new KONNode("FILTER");
+                filterNode.AddValue("regex", filter.Regex.ToString());
+                filterNode.AddValue("ban", filter.Ban);
+                regexFiltersNode.AddChild(filterNode);
             }
-            node.AddArray(regexFiltersArray);
+            node.AddChild(regexFiltersNode);
 
-            KONArray joinBlacklistArray = new KONArray("JOIN_BLACKLIST");
-            foreach (string s in JoinBlacklist)
+            KONNode joinBlacklistsNode = new KONNode("JOIN_BLACKLISTS");
+            foreach (JoinBlacklist blacklist in JoinBlacklists)
             {
-                joinBlacklistArray.AddItem(s);
+                KONNode blacklistNode = new KONNode("BLACKLIST");
+                blacklistNode.AddValue("username", blacklist.Username);
+                blacklistNode.AddValue("ban", blacklist.Ban);
+                joinBlacklistsNode.AddChild(blacklistNode);
             }
-            node.AddArray(joinBlacklistArray);
+            node.AddChild(joinBlacklistsNode);
 
             File.WriteAllText($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
@@ -73,8 +80,8 @@ namespace CarrotBot.Data
             Id = id;
             Users = new Dictionary<ulong, GuildUserData>();
             RolesToAssignOnJoin = new List<ulong>();
-            JoinFilters = new List<System.Text.RegularExpressions.Regex>();
-            JoinBlacklist = new List<string>();
+            JoinFilters = new List<JoinFilter>();
+            JoinBlacklists = new List<JoinBlacklist>();
             GuildPrefix = "%";
             if (createIndex)
                 FlushData();
@@ -87,6 +94,40 @@ namespace CarrotBot.Data
         public void RemoveJoinRole(ulong Id)
         {
             RolesToAssignOnJoin.RemoveAll(x => x.Equals(Id));
+        }
+    }
+
+    public class JoinFilter
+    {
+        public Regex Regex { get; internal set; }
+        public bool Ban { get; internal set; }
+
+        public JoinFilter(string regex, bool ban)
+        {
+            Regex = new Regex(regex);
+            Ban = ban;
+        }
+
+        public override string ToString()
+        {
+            return $"{Regex.ToString()} (" + (Ban ? "ban" : "kick") + ")";
+        }
+    }
+
+    public class JoinBlacklist
+    {
+        public string Username { get; internal set; }
+        public bool Ban { get; internal set; }
+
+        public JoinBlacklist(string username, bool ban)
+        {
+            Username = username;
+            Ban = ban;
+        }
+
+        public override string ToString()
+        {
+            return $"{Username} (" + (Ban ? "ban" : "kick") + ")";
         }
     }
 }

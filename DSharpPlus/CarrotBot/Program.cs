@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-//#define BETA
+#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -129,6 +129,8 @@ namespace CarrotBot
                 commands.Value.RegisterCommands<Commands.UserCommands>();
                 commands.Value.RegisterCommands<Leveling.LevelingCommands>();
                 commands.Value.RegisterCommands<Conversation.ConversationCommands>();
+                commands.Value.RegisterCommands<Commands.JoinBlacklistCommands>();
+                commands.Value.RegisterCommands<Commands.JoinFilterCommands>();
             }
             discord.GetShard(824824193001979924).GetCommandsNext().RegisterCommands<DripcoinCommands>();
 
@@ -148,14 +150,66 @@ namespace CarrotBot
             {
                 await e.Member.GrantRoleAsync(e.Guild.GetRole(roleId));
             }
-            foreach (Regex regex in guildData.JoinFilters)
+            foreach (JoinFilter filter in guildData.JoinFilters)
             {
-                if (regex.IsMatch(e.Member.Username))
+                if (filter.Regex.IsMatch(e.Member.Username))
                 {
-                    await e.Member.BanAsync();
+                    if (filter.Ban)
+                    {
+                        try
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                            eb.WithColor(DiscordColor.Red);
+                            eb.WithDescription($"You have been banned from {e.Guild.Name} by automatic username filter.");
+                            await e.Member.SendMessageAsync(embed: eb.Build());
+                        }
+                        catch { }
+                        await e.Member.BanAsync(reason: "Username regex filter");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                            eb.WithColor(DiscordColor.Red);
+                            eb.WithDescription($"You have been kicked from {e.Guild.Name} by automatic username filter.");
+                            await e.Member.SendMessageAsync(embed: eb.Build());
+                        }
+                        catch { }
+                        await e.Member.RemoveAsync(reason: "Username regex filter");
+                    }
                 }
             }
-            if (guildData.JoinBlacklist.Contains(e.Member.Username)) await e.Member.BanAsync();
+            foreach (JoinBlacklist blacklist in guildData.JoinBlacklists)
+            {
+                if (blacklist.Username == e.Member.Username)
+                {
+                    if (blacklist.Ban)
+                    {
+                        try
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                            eb.WithColor(DiscordColor.Red);
+                            eb.WithDescription($"You have been banned from {e.Guild.Name} by exact username blacklist.");
+                            await e.Member.SendMessageAsync(embed: eb.Build());
+                        }
+                        catch { }
+                        await e.Member.BanAsync(reason: "Username blacklisted");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                            eb.WithColor(DiscordColor.Red);
+                            eb.WithDescription($"You have been kicked from {e.Guild.Name} by exact username blacklist.");
+                            await e.Member.SendMessageAsync(embed: eb.Build());
+                        }
+                        catch { }
+                        await e.Member.RemoveAsync(reason: "Username blacklisted");
+                    }
+                }
+            }
         }
         static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
         {
@@ -332,9 +386,33 @@ namespace CarrotBot
                 var prefix = msg.Content.Substring(0, cmdStart);
 
                 // Retrieve full command string.
-                var cmdString = msg.Content.Substring(cmdStart);
+                var cmdString = msg.Content.Substring(cmdStart).Trim();
 
                 var command = cnext.FindCommand(cmdString, out var args);
+
+                string[] args2 = (args == null) ? new string[0] : Utils.TokenizeString(args);
+                int argsCount = (args2 == null) ? 0 : args2.Length;
+
+                Console.WriteLine($"User has entered command {command.QualifiedName} with {argsCount} arguments:");
+                for (int i = 0; i < argsCount; i++)
+                {
+                    Console.WriteLine(args2[i]);
+                }
+
+                if (command.Overloads.Any())
+                {
+                    if (!((command.Overloads.Any(x => !x.Arguments.Any()) || command.Overloads.Any(x => x.Arguments.First().IsOptional)) && argsCount == 0))
+                    {
+                        //If the user has entered an incorrect number of parameters, pretend they've just run %help <command>
+                        if (!command.Overloads.Any(x => x.Arguments.Count == argsCount) && command.QualifiedName != "help")
+                        {
+                            if (cnext.RegisteredCommands.Any(x => cmdString.StartsWith(x.Value.QualifiedName)))
+                            {
+                                command = cnext.FindCommand($"help {command.QualifiedName}", out args);
+                            }
+                        }
+                    }
+                }
 
                 var ctx = cnext.CreateContext(msg, prefix, command, args);
 
