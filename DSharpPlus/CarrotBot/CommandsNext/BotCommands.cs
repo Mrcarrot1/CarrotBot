@@ -25,7 +25,7 @@ namespace CarrotBot.Commands
         [Command("invite"), Description("Provides the link to invite CarrotBot to a server")]
         public async Task BotInvite(CommandContext ctx)
         {
-            await ctx.RespondAsync("Invite CarrotBot to your server at:\nhttps://top.gg/bot/389513870835974146");
+            await ctx.RespondAsync("Invite CarrotBot to your server at:\nhttps://discord.bots.gg/bots/389513870835974146");
         }
         [Command("reportbug"), Description("Reports a bug with the bot")]
         public async Task ReportBug(CommandContext ctx, [RemainingText, Description("A description of the bug you are experiencing.")] string bug)

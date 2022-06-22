@@ -431,6 +431,7 @@ namespace CarrotBot.Leveling
             eb.AddField("XP Per Level", $"{lvlServer.XPPerLevel}", true);
             eb.AddField("Min XP Per Message", $"{lvlServer.MinXPPerMessage}");
             eb.AddField("Max XP Per Message", $"{lvlServer.MaxXPPerMessage}", true);
+            eb.AddField("Cumulative Roles", $"{lvlServer.CumulativeRoles}");
             if (lvlServer.NoXPChannels.Count > 0)
             {
                 string noXPChannels = "";
@@ -477,11 +478,6 @@ namespace CarrotBot.Leveling
         [Command("resetlevelsettings"), Description("Resets leveling settings to their defaults."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
         public async Task ResetLevelSettings(CommandContext ctx, bool confirm = false)
         {
-            if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
-            {
-                await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
-                return;
-            }
             if (confirm)
             {
                 try
@@ -508,6 +504,14 @@ namespace CarrotBot.Leveling
             {
                 await ctx.RespondEmbedAsync("Confirm Reset", "Are you sure? This action will **irreversibly** reset all leveling settings to the defaults.\nUse `resetlevelsettings true` to continue.", Utils.CBOrange);
             }
+        }
+
+        [Command("setcumulativeroles"), Description("Sets whether level-up roles should be cumulative(combine) or the default(replace)."), LevelingCommand, RequireLeveling, RequireUserPermissions(Permissions.ManageGuild)]
+        public async Task SetCumulativeRoles(CommandContext ctx, [Description("Whether the roles should be cumulative or not.")]bool cumulative)
+        {
+            LevelingData.Servers[ctx.Guild.Id].CumulativeRoles = cumulative;
+            LevelingData.Servers[ctx.Guild.Id].FlushData();
+            await ctx.RespondAsync($"Set cumulative roles to **{cumulative}**.");
         }
     }
 }

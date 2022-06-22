@@ -40,6 +40,8 @@ namespace CarrotBot.Leveling
                             server.MinXPPerMessage = (int)serverIndex.Values["minXPPerMessage"];
                         if (serverIndex.Values.ContainsKey("maxXPPerMessage"))
                             server.MaxXPPerMessage = (int)serverIndex.Values["maxXPPerMessage"];
+                        if (serverIndex.Values.ContainsKey("cumulativeRoles"))
+                            server.CumulativeRoles = (bool)serverIndex.Values["cumulativeRoles"];
                         foreach (KONNode childNode in serverIndex.Children)
                         {
                             if (childNode.Name == "ROLES")

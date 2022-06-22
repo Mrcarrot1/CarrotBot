@@ -21,6 +21,7 @@ namespace CarrotBot.Leveling
         public int XPPerLevel { get; internal set; }
         public int MinXPPerMessage { get; internal set; }
         public int MaxXPPerMessage { get; internal set; }
+        public bool CumulativeRoles { get; internal set; }
 
         public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime, int xp = 5, int level = 0)
         {
@@ -63,6 +64,7 @@ namespace CarrotBot.Leveling
             node.AddValue("xpPerLevel", XPPerLevel);
             node.AddValue("minXPPerMessage", MinXPPerMessage);
             node.AddValue("maxXPPerMessage", MaxXPPerMessage);
+            node.AddValue("cumulativeRoles", CumulativeRoles);
             if (RoleRewards.Count > 0)
             {
                 KONNode rolesNode = new KONNode("ROLES");

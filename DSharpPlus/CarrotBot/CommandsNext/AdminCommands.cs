@@ -171,34 +171,6 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("I couldn't find that role. Make sure you're using the role's Id or mention!");
             }
         }
-        [Command("addjoinfilter"), RequirePermissions(Permissions.BanMembers, false), Description("Adds a regex filter to autoban members joining the server.")]
-        public async Task AddJoinFilter(CommandContext ctx, [Description("Regex filter to autoban."), RemainingText] string filter)
-        {
-            try
-            {
-                GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
-                guildData.JoinFilters.Add(new System.Text.RegularExpressions.Regex(filter));
-                guildData.FlushData();
-                await ctx.RespondAsync("Successfully added regex filter.");
-            }
-            catch
-            {
-                await ctx.RespondAsync("Something went wrong. Make sure your filter is a valid regular expression!");
-            }
-        }
-        [Command("addjoinblacklist"), RequirePermissions(Permissions.BanMembers, false), Description("Adds an exact blacklist to autoban members joining the server.")]
-        public async Task AddJoinBlacklist(CommandContext ctx, [RemainingText, Description("The username to ban.")] string blacklist)
-        {
-            try
-            {
-                GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
-                guildData.JoinBlacklist.Add(blacklist);
-                guildData.FlushData();
-            }
-            catch
-            {
-                await ctx.RespondAsync("Something went wrong.");
-            }
-        }
+
     }
 }

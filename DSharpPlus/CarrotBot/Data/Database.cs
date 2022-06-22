@@ -84,16 +84,52 @@ namespace CarrotBot.Data
                                 }
                                 if (array1.Name == "JOIN_FILTERS")
                                 {
-                                    foreach (string item1 in array1.Items)
+                                    foreach (string item1 in array1)
                                     {
-                                        guild.JoinFilters.Add(new System.Text.RegularExpressions.Regex(item1));
+                                        guild.JoinFilters.Add(new JoinFilter(item1, true));
                                     }
                                 }
                                 if (array1.Name == "JOIN_BLACKLIST")
                                 {
                                     foreach (string item1 in array1.Items)
                                     {
-                                        guild.JoinBlacklist.Add(item1);
+                                        guild.JoinBlacklists.Add(new JoinBlacklist(item1, true));
+                                    }
+                                }
+                            }
+                            foreach(KONNode node in guildNode.Children)
+                            {
+                                if (node.Name == "JOIN_FILTERS")
+                                {
+                                    foreach (KONNode node1 in node.Children)
+                                    {
+                                        JoinFilter filter = new JoinFilter("(?!.*)", false); //If there's a problem reading it, just add a new filter with a regex designed to have 0 valid matches
+                                        if (node1.Values.ContainsKey("regex"))
+                                        {
+                                            filter.Regex = new System.Text.RegularExpressions.Regex((string)node1.Values["regex"]);
+                                        }
+                                        if (node1.Values.ContainsKey("ban"))
+                                        {
+                                            filter.Ban = (bool)node1.Values["ban"];
+                                        }
+                                        guild.JoinFilters.Add(filter);
+                                    }
+                                }
+
+                                if (node.Name == "JOIN_BLACKLISTS")
+                                {
+                                    foreach (KONNode node1 in node.Children)
+                                    {
+                                        JoinBlacklist blacklist = new JoinBlacklist("", false);
+                                        if (node1.Values.ContainsKey("username"))
+                                        {
+                                            blacklist.Username = (string)node1.Values["username"];
+                                        }
+                                        if (node1.Values.ContainsKey("ban"))
+                                        {
+                                            blacklist.Ban = (bool)node1.Values["ban"];
+                                        }
+                                        guild.JoinBlacklists.Add(blacklist);
                                     }
                                 }
                             }

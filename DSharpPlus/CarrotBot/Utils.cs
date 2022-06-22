@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Security.Cryptography;
@@ -14,7 +15,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.1";
+        private static readonly string version = "1.3.2";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -264,6 +265,53 @@ namespace CarrotBot
             eb.WithDescription(content);
             eb.WithColor(color == null ? CBGreen : (DiscordColor)color);
             await ctx.RespondAsync(embed: eb.Build());
+        }
+
+        public static string[] TokenizeString(string str)
+        {
+            List<string> output = new List<string>();
+            string currentToken = "";
+            for (int i = 0; i < str.Length; i++)
+            {
+                char c = str[i];
+                if (char.IsWhiteSpace(c))
+                {
+                    if (currentToken != "")
+                    {
+                        output.Add(currentToken);
+                        currentToken = "";
+                    }
+                }
+                if (c == '"' || c == '\'')
+                {
+                    if (currentToken != "")
+                    {
+                        output.Add(currentToken);
+                        currentToken = "";
+                    }      
+                    currentToken += c;
+                    do 
+                    {
+                        i++;
+                        if (i == str.Length)
+                        {
+                            foreach(string s in currentToken.Split(' '))
+                            {
+                                output.Add(s);
+                            }
+                            break;
+                        }
+                        currentToken += str[i];
+                    } while (str[i] != c);
+                    output.Add(currentToken);
+                    currentToken = "";
+                    continue;
+                }
+                currentToken += c;
+            }
+            if (currentToken != "")
+                output.Add(currentToken);
+            return output.ToArray();
         }
     }
 }

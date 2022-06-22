@@ -136,9 +136,10 @@ namespace CarrotBot.Commands
                             eb.AddField("Subcommands", subcommands);
                         }
                     }
-                    else
+                    else if (cmd != null)
                     {
-                        eb.WithDescription($"`{cmd.QualifiedName}`: {cmd.Description}");
+                        eb.WithDescription($"`{cmd.QualifiedName}`:" +
+                        $"{cmd.Description}");
                         if (cmd.Description == null)
                         {
                             eb.WithDescription($"`{cmd.QualifiedName}`");
@@ -177,7 +178,11 @@ namespace CarrotBot.Commands
                                 }
                                 Overloads += $"\n{argstr}";
                             }
-                            eb.AddField("Arguments", Overloads.Trim());
+                            eb.AddField("Parameters", Overloads.Trim());
+                        }
+                        else
+                        {
+                            eb.AddField("Parameters", "*None.*");
                         }
                     }
                 }
