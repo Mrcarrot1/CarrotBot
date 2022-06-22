@@ -393,12 +393,6 @@ namespace CarrotBot
                 string[] args2 = (args == null) ? new string[0] : Utils.TokenizeString(args);
                 int argsCount = (args2 == null) ? 0 : args2.Length;
 
-                Console.WriteLine($"User has entered command {command.QualifiedName} with {argsCount} arguments:");
-                for (int i = 0; i < argsCount; i++)
-                {
-                    Console.WriteLine(args2[i]);
-                }
-
                 if (command.Overloads.Any())
                 {
                     if (!((command.Overloads.Any(x => !x.Arguments.Any()) || command.Overloads.Any(x => x.Arguments.First().IsOptional)) && argsCount == 0))
