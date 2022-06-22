@@ -185,6 +185,10 @@ namespace CarrotBot.Commands
                             eb.AddField("Parameters", "*None.*");
                         }
                     }
+                    else
+                    {
+                        eb.WithDescription("*Command not found.*");
+                    }
                 }
                 //List all commands if no input
                 else
