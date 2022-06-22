@@ -362,3 +362,5 @@ MigrationBackup/
 *token*
 *[Bb]eta*
 DSharpPlus/Data
+*.code-workspace
+*Makefile
