@@ -70,7 +70,7 @@ namespace CarrotBot.Commands
             await ctx.RespondAsync(embed: eb.Build());
         }
 
-        [Command("remove"), Description("Removes a regex join filter.")]
+        [Command("remove"), Description("Removes a regex join filter."), RequirePermissions(Permissions.BanMembers)]
         public async Task RemoveFilter(CommandContext ctx, [Description("The numeric ID of the filter to remove.")] int filterId)
         {
             try
@@ -94,7 +94,7 @@ namespace CarrotBot.Commands
         [Group("modify"), Description("Commands for modifying a regex join filter.")]
         public class JoinFilterModificationCommands : BaseCommandModule
         {
-            [Command("ban"), Description("Sets whether the filter should ban users(as opposed to kicking them).")]
+            [Command("ban"), Description("Sets whether the filter should ban users(as opposed to kicking them)."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyBan(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("Whether the filter should ban users.")] bool ban)
             {
                 try
@@ -112,7 +112,7 @@ namespace CarrotBot.Commands
                 }
             }
 
-            [Command("regex"), Description("Used to modify the regex used in the filter.")]
+            [Command("regex"), Description("Used to modify the regex used in the filter."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyRegex(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The regex the filter should use.")] string regex)
             {
                 try
@@ -187,7 +187,7 @@ namespace CarrotBot.Commands
 
         }
 
-        [Command("remove"), Description("Removes an exact join blacklist.")]
+        [Command("remove"), Description("Removes an exact join blacklist."), RequirePermissions(Permissions.BanMembers)]
         public async Task RemoveFilter(CommandContext ctx, [Description("The numeric ID of the blacklist to remove.")] int blacklistId)
         {
             try
@@ -211,7 +211,7 @@ namespace CarrotBot.Commands
         [Group("modify"), Description("Commands for modifying an exact join blacklist.")]
         public class JoinFilterModificationCommands : BaseCommandModule
         {
-            [Command("ban"), Description("Sets whether the blacklist entry should ban users(as opposed to kicking them).")]
+            [Command("ban"), Description("Sets whether the blacklist entry should ban users(as opposed to kicking them)."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyBan(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int blacklistId, [Description("Whether the entry should ban users.")] bool ban)
             {
                 try
@@ -229,7 +229,7 @@ namespace CarrotBot.Commands
                 }
             }
 
-            [Command("username"), Description("Used to modify the username that is banned.")]
+            [Command("username"), Description("Used to modify the username that is banned."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyRegex(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int blacklistId, [Description("The username to blacklist.")] string username)
             {
                 try
