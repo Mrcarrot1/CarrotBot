@@ -58,7 +58,7 @@ namespace CarrotBot.Conversation
             {
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                 eb.WithTitle("Terms Accepted");
-                eb.WithDescription("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo opt out of these terms in future, use `conversation optout`.");
+                eb.WithDescription("You have accepted the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nMessages sent in the conversation will be logged on Discord for conversation moderators and administrators but not stored locally. Messages sent outside the conversation will not.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo opt out of these terms in future, use `conversation optout`.");
                 eb.WithColor(Utils.CBGreen);
                 await ctx.RespondAsync(embed: eb.Build());
                 ConversationData.AcceptedUsers.Add(ctx.User.Id);
@@ -68,7 +68,7 @@ namespace CarrotBot.Conversation
             {
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                 eb.WithTitle("Conversation Terms");
-                eb.WithDescription("You are about to accept the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used by others.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo accept these terms, use `conversation acceptterms true`.");
+                eb.WithDescription("You are about to accept the terms of the CarrotBot multi-server conversation.\nBy entering the conversation, you agree to have your message data read and/or used by others, who may or may not have agreed to these terms.\nMrcarrot(the creator of CarrotBot) is not responsible for the contents of the conversation or any ways in which your data may be used.\nMessages sent in the conversation will be logged on Discord for conversation moderators and administrators but not stored locally. Messages sent outside the conversation will not.\nPlease be aware that CarrotBot does not save or cache the contents of your messages locally.\nAdditionally, messages outside of the conversation will not be shared.\nTo accept these terms, use `conversation acceptterms true`.");
                 eb.WithColor(Utils.CBOrange);
                 await ctx.RespondAsync(embed: eb.Build());
             }
