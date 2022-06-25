@@ -15,7 +15,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.3";
+        private static readonly string version = "1.3.4";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -30,6 +30,11 @@ namespace CarrotBot
         public static int GuildCount = 0;
 
         public static readonly DiscordColor CBOrange = new DiscordColor(245, 124, 0);
+        /// <summary>
+        /// Takes a string that contains either a user ID or a user mention with ID and returns the ulong retrieved from that string, or throws a FormatException.
+        /// </summary>
+        /// <param name="mention"></param>
+        /// <returns></returns>
         public static ulong GetId(string mention)
         {
             try

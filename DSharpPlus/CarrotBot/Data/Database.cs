@@ -86,14 +86,14 @@ namespace CarrotBot.Data
                                 {
                                     foreach (string item1 in array1)
                                     {
-                                        guild.JoinFilters.Add(new JoinFilter(item1, true));
+                                        guild.JoinFilters.Add(new JoinFilter(item1, true, 0));
                                     }
                                 }
                                 if (array1.Name == "JOIN_BLACKLIST")
                                 {
                                     foreach (string item1 in array1.Items)
                                     {
-                                        guild.JoinBlacklists.Add(new JoinBlacklist(item1, true));
+                                        guild.JoinBlacklists.Add(new JoinBlacklist(item1, true, 0));
                                     }
                                 }
                             }
@@ -103,7 +103,7 @@ namespace CarrotBot.Data
                                 {
                                     foreach (KONNode node1 in node.Children)
                                     {
-                                        JoinFilter filter = new JoinFilter("(?!.*)", false); //If there's a problem reading it, just add a new filter with a regex designed to have 0 valid matches
+                                        JoinFilter filter = new JoinFilter("(?!.*)", false, 0); //If there's a problem reading it, just add a new filter with a regex designed to have 0 valid matches
                                         if (node1.Values.ContainsKey("regex"))
                                         {
                                             filter.Regex = new System.Text.RegularExpressions.Regex((string)node1.Values["regex"]);
@@ -111,6 +111,20 @@ namespace CarrotBot.Data
                                         if (node1.Values.ContainsKey("ban"))
                                         {
                                             filter.Ban = (bool)node1.Values["ban"];
+                                        }
+                                        if (node1.Values.ContainsKey("creatorId"))
+                                        {
+                                            filter.CreatorId = (ulong)node1.Values["creatorId"];
+                                        }
+                                        foreach(KONArray array1 in node1.Arrays)
+                                        {
+                                            if (array1.Name == "EXCEPTIONS")
+                                            {
+                                                foreach(ulong id in array1)
+                                                {
+                                                    filter.Exceptions.Add(id);
+                                                }
+                                            }
                                         }
                                         guild.JoinFilters.Add(filter);
                                     }
@@ -120,7 +134,7 @@ namespace CarrotBot.Data
                                 {
                                     foreach (KONNode node1 in node.Children)
                                     {
-                                        JoinBlacklist blacklist = new JoinBlacklist("", false);
+                                        JoinBlacklist blacklist = new JoinBlacklist("", false, 0);
                                         if (node1.Values.ContainsKey("username"))
                                         {
                                             blacklist.Username = (string)node1.Values["username"];
@@ -128,6 +142,20 @@ namespace CarrotBot.Data
                                         if (node1.Values.ContainsKey("ban"))
                                         {
                                             blacklist.Ban = (bool)node1.Values["ban"];
+                                        }
+                                        if (node1.Values.ContainsKey("creatorId"))
+                                        {
+                                            blacklist.CreatorId = (ulong)node1.Values["creatorId"];
+                                        }
+                                        foreach(KONArray array1 in node1.Arrays)
+                                        {
+                                            if (array1.Name == "EXCEPTIONS")
+                                            {
+                                                foreach(ulong id in array1)
+                                                {
+                                                    blacklist.Exceptions.Add(id);
+                                                }
+                                            }
                                         }
                                         guild.JoinBlacklists.Add(blacklist);
                                     }
