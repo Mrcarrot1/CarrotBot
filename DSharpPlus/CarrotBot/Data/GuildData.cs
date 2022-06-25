@@ -47,6 +47,13 @@ namespace CarrotBot.Data
                 KONNode filterNode = new KONNode("FILTER");
                 filterNode.AddValue("regex", filter.Regex.ToString());
                 filterNode.AddValue("ban", filter.Ban);
+                filterNode.AddValue("creatorId", filter.CreatorId);
+                KONArray exceptionsArray = new KONArray("EXCEPTIONS");
+                foreach (ulong exception in filter.Exceptions)
+                {
+                    exceptionsArray.AddItem(exception);
+                }
+                filterNode.AddArray(exceptionsArray);
                 regexFiltersNode.AddChild(filterNode);
             }
             node.AddChild(regexFiltersNode);
@@ -57,6 +64,13 @@ namespace CarrotBot.Data
                 KONNode blacklistNode = new KONNode("BLACKLIST");
                 blacklistNode.AddValue("username", blacklist.Username);
                 blacklistNode.AddValue("ban", blacklist.Ban);
+                blacklistNode.AddValue("creatorId", blacklist.CreatorId);
+                KONArray exceptionsArray = new KONArray("EXCEPTIONS");
+                foreach (ulong exception in blacklist.Exceptions)
+                {
+                    exceptionsArray.AddItem(exception);
+                }
+                blacklistNode.AddArray(exceptionsArray);
                 joinBlacklistsNode.AddChild(blacklistNode);
             }
             node.AddChild(joinBlacklistsNode);
@@ -101,11 +115,15 @@ namespace CarrotBot.Data
     {
         public Regex Regex { get; internal set; }
         public bool Ban { get; internal set; }
+        public ulong CreatorId { get; internal set; }
+        public List<ulong> Exceptions { get; internal set; }
 
-        public JoinFilter(string regex, bool ban)
+        public JoinFilter(string regex, bool ban, ulong creatorId)
         {
             Regex = new Regex(regex);
             Ban = ban;
+            CreatorId = creatorId;
+            Exceptions = new();
         }
 
         public override string ToString()
@@ -118,11 +136,15 @@ namespace CarrotBot.Data
     {
         public string Username { get; internal set; }
         public bool Ban { get; internal set; }
+        public ulong CreatorId { get; internal set; }
+        public List<ulong> Exceptions { get; internal set; }
 
-        public JoinBlacklist(string username, bool ban)
+        public JoinBlacklist(string username, bool ban, ulong creatorId)
         {
             Username = username;
             Ban = ban;
+            CreatorId = creatorId;
+            Exceptions = new();
         }
 
         public override string ToString()

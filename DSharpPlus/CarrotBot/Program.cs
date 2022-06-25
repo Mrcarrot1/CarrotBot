@@ -152,7 +152,7 @@ namespace CarrotBot
             }
             foreach (JoinFilter filter in guildData.JoinFilters)
             {
-                if (filter.Regex.IsMatch(e.Member.Username))
+                if (filter.Regex.IsMatch(e.Member.Username) && !filter.Exceptions.Contains(e.Member.Id))
                 {
                     if (filter.Ban)
                     {
@@ -182,7 +182,7 @@ namespace CarrotBot
             }
             foreach (JoinBlacklist blacklist in guildData.JoinBlacklists)
             {
-                if (blacklist.Username == e.Member.Username)
+                if (blacklist.Username == e.Member.Username && !blacklist.Exceptions.Contains(e.Member.Id))
                 {
                     if (blacklist.Ban)
                     {

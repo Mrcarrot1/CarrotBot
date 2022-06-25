@@ -25,7 +25,7 @@ namespace CarrotBot.Commands
                     filter = filter.SafeSubstring(1, filter.Length - 2);
                 }
                 GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
-                guildData.JoinFilters.Add(new JoinFilter(filter, ban));
+                guildData.JoinFilters.Add(new JoinFilter(filter, ban, ctx.User.Id));
                 guildData.FlushData();
                 await ctx.RespondAsync("Successfully added regex filter to " + (ban ? "ban" : "kick") + $" all new members matching `{filter}`.");
             }
@@ -34,7 +34,7 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("Something went wrong. Make sure your filter is a valid regular expression!");
             }
         }
-        [Command("list"), RequirePermissions(Permissions.ManageGuild, false), Description("Lists the regex filters for users on join.")]
+        [Command("list"), RequirePermissions(Permissions.BanMembers, false), Description("Lists the regex filters for users on join.")]
         public async Task ListJoinFilters(CommandContext ctx, [Description("The page to show.")] int page = 1)
         {
             GuildData guild = Database.GetOrCreateGuildData(ctx.Guild.Id);
@@ -68,6 +68,41 @@ namespace CarrotBot.Commands
             eb.WithColor(Utils.CBGreen);
             eb.WithFooter("Showing regex filters ・ Use `joinblacklist list` to view exact blacklist");
             await ctx.RespondAsync(embed: eb.Build());
+        }
+
+        [Command("info"), Description("Displays various information about a regex join filter."), RequirePermissions(Permissions.BanMembers)]
+        public async Task FilterInfo(CommandContext ctx, [Description("The numeric ID of the filter to view.")] int filterId)
+        {
+            try
+            {
+                GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+
+                JoinFilter filter = guildData.JoinFilters[filterId];
+                DiscordEmbedBuilder eb = new();
+
+                eb.WithTitle($"Filter {filterId} info");
+                eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+                eb.AddField("Ban?", (filter.Ban ? "Yes" : "No"), true);
+                eb.AddField("Created By", filter.CreatorId != 0 ? $"<@{filter.CreatorId}>" : "Unknown", true);
+                string exceptions = "";
+                foreach (ulong exception in filter.Exceptions)
+                {
+                    exceptions += $"<@{exception}> ";
+                }
+                if (exceptions != "")
+                    eb.AddField("Exceptions", exceptions);
+
+                eb.WithColor(Utils.CBGreen);
+
+                await ctx.RespondAsync(embed: eb.Build());
+            }
+            catch (Exception e)
+            {
+                if (e is ArgumentOutOfRangeException || e is IndexOutOfRangeException)
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                else
+                    throw;
+            }
         }
 
         [Command("remove"), Description("Removes a regex join filter."), RequirePermissions(Permissions.BanMembers)]
@@ -129,6 +164,57 @@ namespace CarrotBot.Commands
                     await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
                 }
             }
+
+            [Command("addexception"), Description("Used to add an exception to the filter rule."), RequirePermissions(Permissions.BanMembers)]
+            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to add an exception for.")] string user)
+            {
+                try
+                {
+                    GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+                    JoinFilter filter = guildData.JoinFilters[filterId];
+
+                    ulong Id = Utils.GetId(user);
+                    filter.Exceptions.Add(Id);
+                    await ctx.RespondEmbedAsync("Success", $"Successfully added an exception to the join filter for <@{Id}>.", Utils.CBGreen);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                }
+                catch (FormatException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't read a user ID from command input!", DiscordColor.Red);
+                }
+            }
+
+            [Command("removeexception"), Description("Used to add an exception to the filter rule."), RequirePermissions(Permissions.BanMembers)]
+            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string user)
+            {
+                try
+                {
+                    GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+                    JoinFilter filter = guildData.JoinFilters[filterId];
+
+                    ulong Id = Utils.GetId(user);
+                    if (filter.Exceptions.Contains(Id))
+                    {
+                        filter.Exceptions.RemoveAll(x => x == Id);
+                        await ctx.RespondEmbedAsync("Success", $"Successfully removed the exception to the join filter for <@{Id}>.", Utils.CBGreen);
+                    }
+                    else
+                    {
+                        await ctx.RespondEmbedAsync(null, $"Couldn't find an exception for <@{Id}>.", DiscordColor.Red);
+                    }
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                }
+                catch (FormatException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't read a user ID from command input!", DiscordColor.Red);
+                }
+            }
         }
     }
 
@@ -141,7 +227,7 @@ namespace CarrotBot.Commands
             try
             {
                 GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
-                guildData.JoinBlacklists.Add(new JoinBlacklist(blacklist, ban));
+                guildData.JoinBlacklists.Add(new JoinBlacklist(blacklist, ban, ctx.User.Id));
                 guildData.FlushData();
                 await ctx.RespondAsync("Successfully added blacklist entry to automatically " + (ban ? "ban" : "kick") + $" all new members with the username **{blacklist}**.");
             }
@@ -150,7 +236,7 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("Something went wrong.");
             }
         }
-        [Command("list"), RequirePermissions(Permissions.ManageGuild, false), Description("Lists the username blacklists for users on join.")]
+        [Command("list"), RequirePermissions(Permissions.BanMembers, false), Description("Lists the username blacklists for users on join.")]
         public async Task ListJoinBlacklists(CommandContext ctx, [Description("The page to show.")] int page = 1)
         {
             GuildData guild = Database.GetOrCreateGuildData(ctx.Guild.Id);
@@ -185,6 +271,41 @@ namespace CarrotBot.Commands
             eb.WithFooter("Showing exact blacklist ・ Use `joinfilters list` to view regex filters");
             await ctx.RespondAsync(embed: eb.Build());
 
+        }
+
+        [Command("info"), Description("Displays various information about a join blacklist entry."), RequirePermissions(Permissions.BanMembers)]
+        public async Task BlacklistInfo(CommandContext ctx, [Description("The numeric ID of the blacklist entry to view.")] int filterId)
+        {
+            try
+            {
+                GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+
+                JoinBlacklist blacklist = guildData.JoinBlacklists[filterId];
+                DiscordEmbedBuilder eb = new();
+
+                eb.WithTitle($"Filter {filterId} info");
+                eb.AddField("Username", $"{blacklist.Username}", true);
+                eb.AddField("Ban?", (blacklist.Ban ? "Yes" : "No"), true);
+                eb.AddField("Created By", blacklist.CreatorId != 0 ? $"<@{blacklist.CreatorId}>" : "Unknown", true);
+                string exceptions = "";
+                foreach (ulong exception in blacklist.Exceptions)
+                {
+                    exceptions += $"<@{exception}> ";
+                }
+                if (exceptions != "")
+                    eb.AddField("Exceptions", exceptions);
+
+                eb.WithColor(Utils.CBGreen);
+
+                await ctx.RespondAsync(embed: eb.Build());
+            }
+            catch (Exception e)
+            {
+                if (e is ArgumentOutOfRangeException || e is IndexOutOfRangeException)
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                else
+                    throw;
+            }
         }
 
         [Command("remove"), Description("Removes an exact join blacklist."), RequirePermissions(Permissions.BanMembers)]
@@ -244,6 +365,57 @@ namespace CarrotBot.Commands
                 catch (IndexOutOfRangeException)
                 {
                     await ctx.RespondEmbedAsync(null, "Couldn't find a blacklist entry with that number!", DiscordColor.Red);
+                }
+            }
+
+            [Command("addexception"), Description("Used to add an exception to the blacklist rule."), RequirePermissions(Permissions.BanMembers)]
+            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int blacklistId, [Description("The user ID or @-mention to add an exception for.")] string user)
+            {
+                try
+                {
+                    GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+                    JoinBlacklist blacklist = guildData.JoinBlacklists[blacklistId];
+
+                    ulong Id = Utils.GetId(user);
+                    blacklist.Exceptions.Add(Id);
+                    await ctx.RespondEmbedAsync("Success", $"Successfully added an exception to the join blacklist entry for <@{Id}>.", Utils.CBGreen);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                }
+                catch (FormatException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't read a user ID from command input!", DiscordColor.Red);
+                }
+            }
+
+            [Command("removeexception"), Description("Used to add an exception to the blacklist rule."), RequirePermissions(Permissions.BanMembers)]
+            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string user)
+            {
+                try
+                {
+                    GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+                    JoinBlacklist blacklist = guildData.JoinBlacklists[filterId];
+
+                    ulong Id = Utils.GetId(user);
+                    if (blacklist.Exceptions.Contains(Id))
+                    {
+                        blacklist.Exceptions.RemoveAll(x => x == Id);
+                        await ctx.RespondEmbedAsync("Success", $"Successfully removed the exception to the join blacklist entry for <@{Id}>.", Utils.CBGreen);
+                    }
+                    else
+                    {
+                        await ctx.RespondEmbedAsync(null, $"Couldn't find an exception for <@{Id}>.", DiscordColor.Red);
+                    }
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                }
+                catch (FormatException)
+                {
+                    await ctx.RespondEmbedAsync(null, "Couldn't read a user ID from command input!", DiscordColor.Red);
                 }
             }
         }
