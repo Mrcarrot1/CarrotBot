@@ -150,6 +150,10 @@ namespace CarrotBot.Commands
             [Command("regex"), Description("Used to modify the regex used in the filter."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyRegex(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The regex the filter should use.")] string regex)
             {
+                if (regex[0] == '`' && regex[regex.Length - 1] == '`')
+                {
+                    regex = regex.SafeSubstring(1, regex.Length - 2);
+                }
                 try
                 {
                     GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
