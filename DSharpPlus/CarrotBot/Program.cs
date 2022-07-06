@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-//#define BETA
+#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -401,7 +401,7 @@ namespace CarrotBot
 
                 if (command.Overloads.Any())
                 {
-                    if (!(((command.Overloads.Any(x => !x.Arguments.Any()) || command.Overloads.Any(x => x.Arguments.First().IsOptional)) && argsCount == 0) || command.Overloads.Any(x => x.Arguments.Last().IsCatchAll && x.Arguments.Count < argsCount)))
+                    if (!Utils.GetPossibleArgCounts(command).Contains(argsCount))
                     {
                         //If the user has entered an incorrect number of parameters, pretend they've just run %help <command>
                         if (!command.Overloads.Any(x => x.Arguments.Count == argsCount) && command.QualifiedName != "help")
