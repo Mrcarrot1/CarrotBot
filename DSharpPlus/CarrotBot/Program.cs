@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-#define BETA
+//#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -30,13 +30,13 @@ namespace CarrotBot
 #if BETA
         public static readonly bool isBeta = Environment.UserName == "mrcarrot";
 #else
-        public static readonly bool isBeta = false;
+        public static bool isBeta = false;
 #endif
 
 #if DATABASE_WRITE_PROTECTED
         public static readonly bool doNotWrite = true;
 #else
-        public static readonly bool doNotWrite = false;
+        public static bool doNotWrite = false;
 #endif
 
 
@@ -49,6 +49,8 @@ namespace CarrotBot
         public static string commandPrefix = "";
         static void Main(string[] args)
         {
+            if (args.Contains("--beta")) isBeta = true;
+            if (args.Contains("--db-write-protect")) doNotWrite = true;
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         static async Task MainAsync(string[] args)
