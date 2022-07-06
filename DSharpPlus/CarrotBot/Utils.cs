@@ -15,7 +15,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.4";
+        private static readonly string version = "1.3.5";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -316,6 +316,52 @@ namespace CarrotBot
             }
             if (currentToken != "")
                 output.Add(currentToken);
+            return output.ToArray();
+        }
+
+        public static int[] GetPossibleArgCounts(Command command)
+        {
+            List<int> output = new();
+
+            if (!command.Overloads.Any())
+            {
+                output.Add(0);
+            }
+            else
+            {
+                foreach (CommandOverload overload in command.Overloads)
+                {
+                    foreach (int ovCount in getOverloadArgCounts(overload))
+                    {
+                        output.Add(ovCount);
+                    }
+                }
+            }
+            return output.ToArray();
+        }
+
+        private static int[] getOverloadArgCounts(CommandOverload overload)
+        {
+            List<int> output = new();
+
+            if (!overload.Arguments.Any()) 
+            {
+                output.Add(0);
+            }
+            else
+            {
+                int required = 0, optional = 0;
+                foreach (CommandArgument arg in overload.Arguments)
+                {
+                    if (arg.IsOptional) optional++;
+                    else required++;
+                }
+                output.Add(required);
+                for (int i = 1; i <= optional; i++)
+                {
+                    output.Add(required + i);
+                }
+            }
             return output.ToArray();
         }
     }
