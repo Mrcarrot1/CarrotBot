@@ -24,7 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace CarrotBot
 {
-    public static class Program
+    class Program
     {
         //Additional check added to make sure the binaries in production never run on the beta account
 #if BETA
@@ -47,15 +47,14 @@ namespace CarrotBot
         public static DiscordMember Mrcarrot;
         public static DiscordGuild BotGuild;
         public static string commandPrefix = "";
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-#if !BETA
             if (args.Contains("--beta")) isBeta = true;
-#endif
-
-#if !DATABASE_WRITE_PROTECTED
             if (args.Contains("--db-write-protect")) doNotWrite = true;
-#endif
+            MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+        static async Task MainAsync(string[] args)
+        {
             //Check for do not start flag in the form of a file-
             //The beta ignores this.
             if (File.Exists($@"{Utils.localDataPath}/DO_NOT_START.cb") && !isBeta)
@@ -67,8 +66,8 @@ namespace CarrotBot
             //I know I'll probably forget how this operator works at some point
             //So it's worth explaining the code
             string token = isBeta ? SensitiveInformation.betaToken : SensitiveInformation.botToken;
-            commandPrefix = isBeta ? "b%" : "%";
             Console.Title = isBeta ? "CarrotBot Beta" : "CarrotBot";
+            commandPrefix = isBeta ? "b%" : "%";
 
 
             discord = new DiscordShardedClient(new DiscordConfiguration
@@ -122,7 +121,7 @@ namespace CarrotBot
                 EnableDefaultHelp = false,
                 UseDefaultCommandHandler = false
             });
-            foreach (var commands in discord.GetCommandsNextAsync().GetAwaiter().GetResult())
+            foreach (var commands in discord.GetCommandsNextAsync().Result)
             {
                 commands.Value.RegisterCommands<Commands.UngroupedCommands>();
                 commands.Value.RegisterCommands<Commands.AdminCommands>();
@@ -271,10 +270,9 @@ namespace CarrotBot
                     userData.RemoveAFK();
                     try
                     {
-                        DiscordMember member = await e.Guild.GetMemberAsync(e.Author.Id);
-                        await member.ModifyAsync(x =>
+                        await e.Guild.GetMemberAsync(e.Author.Id).Result.ModifyAsync(x =>
                         {
-                            x.Nickname = member.Nickname.Replace("[AFK] ", "");
+                            x.Nickname = e.Guild.GetMemberAsync(e.Author.Id).Result.Nickname.Replace("[AFK] ", "");
                         });
                     }
                     catch { }
@@ -297,8 +295,8 @@ namespace CarrotBot
         {
             try
             {
-                BotGuild = await discord.GetShard(388339196978266114).GetGuildAsync(388339196978266114);
-                Mrcarrot = await BotGuild.GetMemberAsync(366298290377195522);
+                BotGuild = discord.GetShard(388339196978266114).GetGuildAsync(388339196978266114).Result;
+                Mrcarrot = BotGuild.GetMemberAsync(366298290377195522).Result;
                 Logger.Log("Connection ready");
                 Utils.GuildCount = 0;
                 foreach (DiscordClient shard in discord.ShardClients.Values)

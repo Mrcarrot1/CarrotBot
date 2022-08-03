@@ -53,10 +53,9 @@ namespace CarrotBot.Conversation
         }
         public static void LoadDatabase()
         {
-            #nullable disable
             KONNode databaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb")));
-            Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).GetAwaiter().GetResult();
-            Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).GetAwaiter().GetResult();
+            Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).Result;
+            Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).Result;
             ConversationChannels = new List<ConversationChannel>();
             PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
             AcceptedUsers = new List<ulong>();
@@ -166,9 +165,9 @@ namespace CarrotBot.Conversation
                                             if (ConversationChannels.Any(x => x.Id == originalChannelId))
                                             {
                                                 originalChannel = ConversationChannels.FirstOrDefault(x => x.Id == originalChannelId);
-                                                DiscordChannel origChn = Program.discord.GetShard(originalChannel.GuildId).GetChannelAsync(originalChannelId).GetAwaiter().GetResult();
-                                                originalMsg = origChn.GetMessageAsync(originalId).GetAwaiter().GetResult();
-                                                author = origChn.Guild.GetMemberAsync(originalMsg.Author.Id).GetAwaiter().GetResult();
+                                                DiscordChannel origChn = Program.discord.GetShard(originalChannel.GuildId).GetChannelAsync(originalChannelId).Result;
+                                                originalMsg = origChn.GetMessageAsync(originalId).Result;
+                                                author = origChn.Guild.GetMemberAsync(originalMsg.Author.Id).Result;
                                             }
                                             ConversationMessage message = new ConversationMessage(CBId, originalMsg, author, originalChannel);
                                             message.thisRun = false;
@@ -189,8 +188,8 @@ namespace CarrotBot.Conversation
                                                                 //Also make sure that no code that might be affected by this change can throw unhandled exceptions      DONE (PROBABLY)
                                                                 ulong msgId = (ulong)chnMsg.Value;
                                                                 ConversationChannel channel1 = ConversationChannels.FirstOrDefault(x => x.Id.ToString() == chnMsg.Key);
-                                                                DiscordChannel channel = Program.discord.GetShard(channel1.GuildId).GetChannelAsync(channel1.Id).GetAwaiter().GetResult();
-                                                                DiscordMessage msg = channel.GetMessageAsync(msgId).GetAwaiter().GetResult();
+                                                                DiscordChannel channel = Program.discord.GetShard(channel1.GuildId).GetChannelAsync(channel1.Id).Result;
+                                                                DiscordMessage msg = channel.GetMessageAsync(msgId).Result;
                                                                 message.ChannelMessages.Add(channel1.Id, msg);
                                                                 ConversationMessagesByOutId.Add(msgId, message);
                                                             }
@@ -219,7 +218,6 @@ namespace CarrotBot.Conversation
                         }
                     }
                 }
-                #nullable enable
             }
             /*foreach (string str in File.ReadAllLines($@"{Utils.conversationDataPath}/ConversationServers.csv"))
             {

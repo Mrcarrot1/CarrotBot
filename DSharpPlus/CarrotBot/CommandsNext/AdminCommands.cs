@@ -22,13 +22,13 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("Please enter a number between 1 and 1000.");
                 return;
             }
-            var messagesList = await ctx.Channel.GetMessagesAsync(messages + 1);
+            var messagesList = ctx.Channel.GetMessagesAsync(messages + 1).Result;
             foreach (DiscordMessage msg in messagesList.Where(x => !x.Pinned))
             {
                 await msg.DeleteAsync();
             }
         }
-        [Command("kick"), RequirePermissions(Permissions.KickMembers), RequireUserPermissions(Permissions.KickMembers), Description("Kicks a user from the server."), RequireGuild]
+        [Command("kick"), RequirePermissions(Permissions.KickMembers), RequireUserPermissions(Permissions.KickMembers), Description("Kicks a user from the server.")]
         public async Task Kick(CommandContext ctx, [Description("The user to kick.")] string userMention, [RemainingText, Description("The reason for kicking the user.")] string reason = null)
         {
             ulong UserId = Utils.GetId(userMention);
@@ -138,7 +138,7 @@ namespace CarrotBot.Commands
             else foreach (var warning in user.Warnings)
                 {
                     DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-                    eb.WithAuthor($"{(await ctx.Guild.GetMemberAsync(userId)).Username}'s Warnings");
+                    eb.WithAuthor($"{ctx.Guild.GetMemberAsync(userId).Result.Username}'s Warnings");
                     eb.AddField($"{warning.Item2.ToString("yyyy-MM-dd HH:mm:ss")}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
                     await ctx.RespondAsync(embed: eb.Build());
                 }

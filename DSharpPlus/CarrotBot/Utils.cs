@@ -15,7 +15,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.6";
+        private static readonly string version = "1.3.5";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -70,12 +70,9 @@ namespace CarrotBot
         public static bool IsImageUrl(string URL)
         {
             HttpClient client = new HttpClient();
-            var resp = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, URL)).GetAwaiter().GetResult();
-            if (resp.Content.Headers.ContentType != null && resp.Content.Headers.ContentType.MediaType != null)
+            var resp = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, URL)).Result;
             return resp.Content.Headers.ContentType.MediaType.StartsWith("image/") || resp.Content.Headers.ContentType.MediaType.StartsWith("video/");
-            else return false;
         }
-        #nullable disable
         public static Task<DiscordMember> FindMemberAsync(this DiscordGuild guild, string user)
         {
             //Check to see if the input string is a user ID or mention
@@ -127,7 +124,6 @@ namespace CarrotBot
             //If not found at the end, return null
             return null;
         }
-        #nullable enable
         /// <summary>
         /// Gets the Levenshtein distance between two strings.
         /// </summary>
@@ -199,7 +195,7 @@ namespace CarrotBot
         /// <returns></returns>
         public static string SafeSubstring(this string input, int startIndex)
         {
-            if (input == null) return "";
+            if (input == null) return null;
             if (startIndex < 0) return "";
             if (startIndex >= input.Length) return "";
             else return input.Substring(startIndex);
@@ -214,7 +210,7 @@ namespace CarrotBot
         /// <returns></returns>
         public static string SafeSubstring(this string input, int startIndex, int length)
         {
-            if (input == null) return "";
+            if (input == null) return null;
             if (startIndex < 0 || length <= 0) return "";
             if (startIndex >= input.Length) return "";
             else if (startIndex + length > input.Length) return input.Substring(startIndex, input.Length - startIndex);
@@ -222,7 +218,6 @@ namespace CarrotBot
         }
         public static bool TryLoadDatabaseNode(string inputPath, out KONNode output)
         {
-            #nullable disable
             if (!File.Exists(inputPath))
             {
                 output = null;
@@ -239,7 +234,6 @@ namespace CarrotBot
                 File.Delete(inputPath);
                 return false;
             }
-            #nullable enable
             return KONParser.Default.TryParse(DecryptedContents, out output);
         }
 

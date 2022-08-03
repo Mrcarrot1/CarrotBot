@@ -144,13 +144,11 @@ namespace CarrotBot.Conversation
                     ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name, guildId));
                     ConversationData.WriteDatabase();
                     await ctx.RespondAsync("Channel added to conversation.");
-                    DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(Id);
-                    await discordChannel.SendMessageAsync("This channel has just been added to the CarrotBot Multi-Server Conversation.\nHave fun chatting with other users!\nNote: for legal reasons, you must accept the conversation's terms(`%conversation acceptterms` to enter.");
+                    await Program.discord.GetShard(guildId).GetChannelAsync(Id).Result.SendMessageAsync("This channel has just been added to the CarrotBot Multi-Server Conversation.\nHave fun chatting with other users!\nNote: for legal reasons, you must accept the conversation's terms(`%conversation acceptterms` to enter.");
                 }
                 else
                 {
-                    DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(818960822151544873);
-                    await discordChannel.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}");
+                    await Program.discord.GetShard(guildId).GetChannelAsync(818960822151544873).Result.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}");
                     await ctx.RespondAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
                 }
             }

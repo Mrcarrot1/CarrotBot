@@ -250,7 +250,7 @@ namespace CarrotBot.Conversation
                         //This requires a slightly different approach as GetChannelAsync throws an exception instead of returning null if the channel is not found.
                         try
                         {
-                            var channel = await shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id);
+                            var channel = shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result;
                             if (RefMsg == null || (!RefMsg.ChannelMessages.Any(x => x.Value.ChannelId == channel.Id) && RefMsg.originalChannel.Id != channel.Id))
                             {
                                 var outMessage = await channel.SendMessageAsync(embed: embed);
@@ -303,8 +303,7 @@ namespace CarrotBot.Conversation
             {
                 try
                 {
-                    DiscordChannel channel = await Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId).GetChannelAsync(ConversationData.ConversationChannels[i].Id);
-                    await channel.SendMessageAsync(msg);
+                    await Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId).GetChannelAsync(ConversationData.ConversationChannels[i].Id).Result.SendMessageAsync(msg);
                 }
                 catch (Exception e)
                 {

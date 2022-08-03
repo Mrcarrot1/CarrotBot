@@ -25,7 +25,7 @@ namespace CarrotBot.Commands
                 {
                     if (userMention != null)
                     {
-                        member = await ctx.Guild.FindMemberAsync(userMention);
+                        member = ctx.Guild.FindMemberAsync(userMention).Result;
                         userId = member.Id;
                     }
 

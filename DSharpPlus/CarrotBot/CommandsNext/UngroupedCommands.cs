@@ -248,6 +248,7 @@ namespace CarrotBot.Commands
         [Command("shutdown"), Hidden, RequireOwner]
         public async Task Shutdown(CommandContext ctx, bool dontRestart = false)
         {
+            if (ctx.User.Id != 366298290377195522 && ctx.User.Id != 374283134243700747 && ctx.User.Id != 129329809741447168 && ctx.User.Id != 245703456382386177) return;
             if (dontRestart)
             {
                 File.WriteAllText($@"{Utils.localDataPath}/DO_NOT_START.cb", "DO_NOT_START");
@@ -280,7 +281,7 @@ namespace CarrotBot.Commands
             Console.WriteLine();
             Environment.Exit(0);
         }
-        [Command("updateping"), Hidden, RequireGuild]
+        [Command("updateping"), Hidden]
         public async Task UpdatePing(CommandContext ctx)
         {
             if (!ctx.Guild.Equals(Program.BotGuild)) return;
