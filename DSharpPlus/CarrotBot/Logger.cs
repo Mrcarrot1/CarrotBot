@@ -62,6 +62,7 @@ namespace CarrotBot
         }
         public IDisposable BeginScope<TState>(TState state)
         {
+            #nullable disable
             return null;
         }
         public bool IsEnabled(LogLevel logLevel)

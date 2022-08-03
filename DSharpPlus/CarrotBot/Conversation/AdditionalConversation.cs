@@ -22,7 +22,8 @@ namespace CarrotBot.Conversation
         {
             foreach (ConversationChannel channel in Channels.Values)
             {
-                await Program.discord.GetShard(channel.GuildId).GetChannelAsync(channel.Id).Result.SendMessageAsync(message);
+                DiscordChannel discordChannel = await Program.discord.GetShard(channel.GuildId).GetChannelAsync(channel.Id);
+                await discordChannel.SendMessageAsync(message);
             }
         }
 
