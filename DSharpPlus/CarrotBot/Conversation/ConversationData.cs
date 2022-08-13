@@ -53,7 +53,7 @@ namespace CarrotBot.Conversation
         }
         public static void LoadDatabase()
         {
-            #nullable disable
+#nullable disable
             KONNode databaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb")));
             Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).GetAwaiter().GetResult();
             Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).GetAwaiter().GetResult();
@@ -219,7 +219,7 @@ namespace CarrotBot.Conversation
                         }
                     }
                 }
-                #nullable enable
+#nullable enable
             }
             /*foreach (string str in File.ReadAllLines($@"{Utils.conversationDataPath}/ConversationServers.csv"))
             {

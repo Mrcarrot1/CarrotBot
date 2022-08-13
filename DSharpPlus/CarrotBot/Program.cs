@@ -76,7 +76,7 @@ namespace CarrotBot
                 Token = token,
                 TokenType = TokenType.Bot,
                 MinimumLogLevel = isBeta ? Microsoft.Extensions.Logging.LogLevel.Debug : Microsoft.Extensions.Logging.LogLevel.Information,
-                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
+                Intents = (DiscordIntents)((int)(DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers) | (1 << 15)), //1 << 15 = Message content
                 LoggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new CBLoggerProvider()))
             });
             Database.Load();
@@ -108,7 +108,6 @@ namespace CarrotBot
             discord.GuildDeleted += GuildRemoved;
             discord.ClientErrored += HandleClientError;
             //discord.MessageReactionAdded += ReactionAdded;
-            await discord.StartAsync();
 
 
             List<string> stringPrefixes = new List<string>();
@@ -122,22 +121,41 @@ namespace CarrotBot
                 EnableDefaultHelp = false,
                 UseDefaultCommandHandler = false
             });
-            foreach (var commands in discord.GetCommandsNextAsync().GetAwaiter().GetResult())
+            Parallel.ForEach((await discord.GetCommandsNextAsync()).Values, (CommandsNextExtension commands, ParallelLoopState loopState, long localSum) =>
             {
-                commands.Value.RegisterCommands<Commands.UngroupedCommands>();
-                commands.Value.RegisterCommands<Commands.AdminCommands>();
-                commands.Value.RegisterCommands<Commands.BotCommands>();
-                commands.Value.RegisterCommands<Commands.MathCommands>();
-                commands.Value.RegisterCommands<Commands.ServerCommands>();
-                commands.Value.RegisterCommands<Commands.UserCommands>();
-                commands.Value.RegisterCommands<Leveling.LevelingCommands>();
-                commands.Value.RegisterCommands<Conversation.ConversationCommands>();
-                commands.Value.RegisterCommands<Commands.JoinBlacklistCommands>();
-                commands.Value.RegisterCommands<Commands.JoinFilterCommands>();
-            }
+                commands.RegisterCommands<Commands.UngroupedCommands>();
+                commands.RegisterCommands<Commands.AdminCommands>();
+                commands.RegisterCommands<Commands.BotCommands>();
+                commands.RegisterCommands<Commands.MathCommands>();
+                commands.RegisterCommands<Commands.ServerCommands>();
+                commands.RegisterCommands<Commands.UserCommands>();
+                commands.RegisterCommands<Leveling.LevelingCommands>();
+                commands.RegisterCommands<Conversation.ConversationCommands>();
+                commands.RegisterCommands<Commands.JoinBlacklistCommands>();
+                commands.RegisterCommands<Commands.JoinFilterCommands>();
+            });
             discord.GetShard(824824193001979924).GetCommandsNext().RegisterCommands<DripcoinCommands>();
 
             //await discord.UseSlashCommandsAsync();
+
+            var slashCommands = await discord.UseSlashCommandsAsync();
+            slashCommands.RegisterCommands<SlashCommands.UngroupedCommands>(880990884668248094);
+            try
+            {
+                slashCommands[0].RegisterCommands<SlashCommands.AdminCommands>(880990884668248094);
+            }
+            catch (Exception e) { Console.WriteLine(e.ToString()); }
+            slashCommands.RegisterCommands<SlashCommands.BotCommands>();
+            slashCommands.RegisterCommands<SlashCommands.CBGuildCommands>(388339196978266114);
+            slashCommands.RegisterCommands<SlashCommands.JoinBlacklistCommands>();
+            slashCommands.RegisterCommands<SlashCommands.JoinFilterCommands>();
+            slashCommands.RegisterCommands<SlashCommands.MathCommands>();
+            slashCommands.RegisterCommands<SlashCommands.ServerCommands>();
+            slashCommands.RegisterCommands<SlashCommands.UserCommands>();
+            slashCommands.RegisterCommands<Conversation.ConversationSlashCommands>();
+            slashCommands.RegisterCommands<Leveling.LevelingSlashCommands>();
+            await discord.StartAsync();
+
 
             //Save the conversation message data every 5 minutes
             if (!isBeta)

@@ -82,7 +82,7 @@ namespace CarrotBot.Leveling
                                         if (member.Roles.ToList().Any(x => x.Id == roleId))
                                         {
                                             await member.RevokeRoleAsync(guild.GetRole(roleId));
-                                        } 
+                                        }
                                     }
                                 }
                             }

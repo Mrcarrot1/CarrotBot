@@ -40,6 +40,10 @@ namespace CarrotBot.Data
                             GuildData guild = new GuildData(item);
                             guild.GuildPrefix = (string)guildNode.Values["prefix"];
                             guild.GuildPrefix = guild.GuildPrefix.Replace(@"\", "");
+                            if (guildNode.Values.TryGetValue("modmailChannel", out object modmailChannel))
+                            {
+                                guild.ModMailChannel = (ulong)modmailChannel;
+                            }
                             foreach (KONArray array1 in guildNode.Arrays)
                             {
                                 if (array1.Name == "USERS")
@@ -97,7 +101,7 @@ namespace CarrotBot.Data
                                     }
                                 }
                             }
-                            foreach(KONNode node in guildNode.Children)
+                            foreach (KONNode node in guildNode.Children)
                             {
                                 if (node.Name == "JOIN_FILTERS")
                                 {
@@ -116,11 +120,11 @@ namespace CarrotBot.Data
                                         {
                                             filter.CreatorId = (ulong)node1.Values["creatorId"];
                                         }
-                                        foreach(KONArray array1 in node1.Arrays)
+                                        foreach (KONArray array1 in node1.Arrays)
                                         {
                                             if (array1.Name == "EXCEPTIONS")
                                             {
-                                                foreach(ulong id in array1)
+                                                foreach (ulong id in array1)
                                                 {
                                                     filter.Exceptions.Add(id);
                                                 }
@@ -147,11 +151,11 @@ namespace CarrotBot.Data
                                         {
                                             blacklist.CreatorId = (ulong)node1.Values["creatorId"];
                                         }
-                                        foreach(KONArray array1 in node1.Arrays)
+                                        foreach (KONArray array1 in node1.Arrays)
                                         {
                                             if (array1.Name == "EXCEPTIONS")
                                             {
-                                                foreach(ulong id in array1)
+                                                foreach (ulong id in array1)
                                                 {
                                                     blacklist.Exceptions.Add(id);
                                                 }

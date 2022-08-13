@@ -67,6 +67,7 @@ namespace CarrotBot
 
         public static void WriteData()
         {
+            if (Program.doNotWrite) return;
             KONNode node = new KONNode("DRIPCOIN_DATA");
             foreach (KeyValuePair<ulong, double> user in UserBalances)
             {
