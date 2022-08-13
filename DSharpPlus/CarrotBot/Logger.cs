@@ -54,6 +54,7 @@ namespace CarrotBot
                 Setup();
             File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
             Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
+            if (logLevel == LogLevel.Critical) Console.WriteLine(exception.ToString());
             if (logLevel == LogLevel.Critical)
             {
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
@@ -62,7 +63,7 @@ namespace CarrotBot
         }
         public IDisposable BeginScope<TState>(TState state)
         {
-            #nullable disable
+#nullable disable
             return null;
         }
         public bool IsEnabled(LogLevel logLevel)

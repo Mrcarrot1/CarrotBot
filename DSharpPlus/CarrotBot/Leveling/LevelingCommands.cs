@@ -164,6 +164,8 @@ namespace CarrotBot.Leveling
                     LevelingUser user = levelingServer.UsersByRank[i];
                     eb.Description += $"\n**{i + 1},** \t<@!{user.Id}> | Level **{user.Level}** | {user.CurrentXP}/{levelingServer.XPNeededForLevel(user.Level + 1)} XP";
                 }
+                eb.WithColor(Utils.CBOrange);
+                await ctx.RespondAsync(embed: eb.Build());
             }
         }
 
@@ -507,7 +509,7 @@ namespace CarrotBot.Leveling
         }
 
         [Command("setcumulativeroles"), Description("Sets whether level-up roles should be cumulative(combine) or the default(replace)."), LevelingCommand, RequireLeveling, RequireUserPermissions(Permissions.ManageGuild)]
-        public async Task SetCumulativeRoles(CommandContext ctx, [Description("Whether the roles should be cumulative or not.")]bool cumulative)
+        public async Task SetCumulativeRoles(CommandContext ctx, [Description("Whether the roles should be cumulative or not.")] bool cumulative)
         {
             LevelingData.Servers[ctx.Guild.Id].CumulativeRoles = cumulative;
             LevelingData.Servers[ctx.Guild.Id].FlushData();

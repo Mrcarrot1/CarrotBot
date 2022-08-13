@@ -19,12 +19,18 @@ namespace CarrotBot.Data
 
         public List<JoinBlacklist> JoinBlacklists { get; internal set; }
 
+        public ulong? ModMailChannel { get; internal set; }
+
         public void FlushData(bool flushUserData = false)
         {
             if (Program.doNotWrite) return;
             KONNode node = new KONNode($"GUILD_{Id}");
             node.AddValue("id", Id);
             node.AddValue("prefix", GuildPrefix);
+            if (ModMailChannel != null)
+            {
+                node.AddValue("modmailChannel", (ulong)ModMailChannel);
+            }
 
             KONArray usersArray = new KONArray("USERS");
             foreach (KeyValuePair<ulong, GuildUserData> user in Users)

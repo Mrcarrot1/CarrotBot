@@ -9,13 +9,14 @@ using System.Text;
 using System.Security.Cryptography;
 using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.SlashCommands;
 using KarrotObjectNotation;
 
 namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.3.6";
+        private static readonly string version = "1.4.0";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -72,10 +73,10 @@ namespace CarrotBot
             HttpClient client = new HttpClient();
             var resp = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, URL)).GetAwaiter().GetResult();
             if (resp.Content.Headers.ContentType != null && resp.Content.Headers.ContentType.MediaType != null)
-            return resp.Content.Headers.ContentType.MediaType.StartsWith("image/") || resp.Content.Headers.ContentType.MediaType.StartsWith("video/");
+                return resp.Content.Headers.ContentType.MediaType.StartsWith("image/") || resp.Content.Headers.ContentType.MediaType.StartsWith("video/");
             else return false;
         }
-        #nullable disable
+#nullable disable
         public static Task<DiscordMember> FindMemberAsync(this DiscordGuild guild, string user)
         {
             //Check to see if the input string is a user ID or mention
@@ -127,7 +128,7 @@ namespace CarrotBot
             //If not found at the end, return null
             return null;
         }
-        #nullable enable
+#nullable enable
         /// <summary>
         /// Gets the Levenshtein distance between two strings.
         /// </summary>
@@ -222,7 +223,7 @@ namespace CarrotBot
         }
         public static bool TryLoadDatabaseNode(string inputPath, out KONNode output)
         {
-            #nullable disable
+#nullable disable
             if (!File.Exists(inputPath))
             {
                 output = null;
@@ -239,7 +240,7 @@ namespace CarrotBot
                 File.Delete(inputPath);
                 return false;
             }
-            #nullable enable
+#nullable enable
             return KONParser.Default.TryParse(DecryptedContents, out output);
         }
 
@@ -257,6 +258,7 @@ namespace CarrotBot
         }
 
         /// <summary>
+        /// CarrotBot-specific extension method:
         /// A convenient way to send a response in embed form in one line of code.
         /// If more advanced features are needed, just stop being so lazy and use a DiscordEmbedBuilder.
         /// <para>&#160;</para>
@@ -274,8 +276,81 @@ namespace CarrotBot
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle(title);
             eb.WithDescription(content);
-            eb.WithColor(color == null ? CBGreen : (DiscordColor)color);
+            eb.WithColor(color ?? CBGreen);
             await ctx.RespondAsync(embed: eb.Build());
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: sends a text response to an interaction- not terribly useful actually
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static async Task RespondAsync(this InteractionContext ctx, string message)
+        {
+            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: updates a previously indicated response with text content.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static async Task UpdateResponseAsync(this InteractionContext ctx, string message)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(message));
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: updates a previously indicated response with embed content.
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="embed"></param>
+        /// <returns></returns>
+        public static async Task UpdateResponseAsync(this InteractionContext ctx, DiscordEmbed embed)
+        {
+            await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: sends an embed response to an interaction- not terribly useful actually
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static async Task RespondEmbedAsync(this InteractionContext ctx, string title, string content, DiscordColor? color = null)
+        {
+            DiscordEmbed embed = new DiscordEmbedBuilder()
+                .WithTitle(title)
+                .WithDescription(content)
+                .WithColor(color ?? CBGreen)
+                .Build();
+            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: sends an embed response to an interaction- not terribly useful actually
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static async Task RespondEmbedAsync(this InteractionContext ctx, DiscordEmbed embed)
+        {
+            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
+        }
+
+        /// <summary>
+        /// CarrotBot-specific extension method: sends a response to an interaction indicating that the bot is processing and will return with a result
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <returns></returns>
+        public static async Task IndicateResponseAsync(this InteractionContext ctx, bool ephemeral = false)
+        {
+            if (!ephemeral)
+                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.DeferredChannelMessageWithSource);
+            else
+                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral());
         }
 
         public static string[] TokenizeString(string str)
@@ -299,14 +374,14 @@ namespace CarrotBot
                     {
                         output.Add(currentToken);
                         currentToken = "";
-                    }      
+                    }
                     currentToken += c;
-                    do 
+                    do
                     {
                         i++;
                         if (i == str.Length)
                         {
-                            foreach(string s in currentToken.Split(' '))
+                            foreach (string s in currentToken.Split(' '))
                             {
                                 output.Add(s);
                             }
@@ -350,7 +425,7 @@ namespace CarrotBot
         {
             List<int> output = new();
 
-            if (!overload.Arguments.Any()) 
+            if (!overload.Arguments.Any())
             {
                 output.Add(0);
             }

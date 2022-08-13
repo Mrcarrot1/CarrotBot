@@ -25,7 +25,7 @@ namespace CarrotBot.Commands
         [Command("help"), Description("Displays command help.")]
         public async Task Help(CommandContext ctx, [Description("Command to provide help for.")] params string[] command)
         {
-            string basicDescription = $"Listing top-level commands and groups. Use `{Program.commandPrefix}help <command/group/module>` to see subcommands or usage details.\nModules are commands that do not share a prefix(such as `conversation acceptterms`, `conversation addchannel`, etc.) but are related in function.";
+            string basicDescription = $"Listing top-level commands and groups. Use `{Program.commandPrefix}help <command/group/module>` to see subcommands or usage details.\nModules are commands that do not share a prefix(such as `conversation acceptterms`, `conversation addchannel`, etc.) but are related in function.\nTo see slash commands, use the list available in the Discord client.";
             if (!ctx.Channel.IsPrivate)
             {
                 GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
@@ -138,8 +138,7 @@ namespace CarrotBot.Commands
                     }
                     else if (cmd != null)
                     {
-                        eb.WithDescription($"`{cmd.QualifiedName}`:" +
-                        $"{cmd.Description}");
+                        eb.WithDescription($"`{cmd.QualifiedName}`: {cmd.Description}");
                         if (cmd.Description == null)
                         {
                             eb.WithDescription($"`{cmd.QualifiedName}`");

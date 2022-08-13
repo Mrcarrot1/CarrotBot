@@ -3,19 +3,20 @@
     "tasks": [
         {
             "label": "build",
-            "command": "dotnet",
+            "command": "/usr/bin/dotnet",
             "type": "process",
             "args": [
                 "build",
                 "${workspaceFolder}/CarrotBot.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                
             ],
             "problemMatcher": "$msCompile"
         },
         {
             "label": "publish",
-            "command": "dotnet",
+            "command": "/usr/bin/dotnet",
             "type": "process",
             "args": [
                 "publish",
@@ -27,7 +28,7 @@
         },
         {
             "label": "watch",
-            "command": "dotnet",
+            "command": "/usr/bin/dotnet",
             "type": "process",
             "args": [
                 "watch",
