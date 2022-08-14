@@ -139,12 +139,7 @@ namespace CarrotBot
             //await discord.UseSlashCommandsAsync();
 
             var slashCommands = await discord.UseSlashCommandsAsync();
-            slashCommands.RegisterCommands<SlashCommands.UngroupedCommands>(880990884668248094);
-            try
-            {
-                slashCommands[0].RegisterCommands<SlashCommands.AdminCommands>(880990884668248094);
-            }
-            catch (Exception e) { Console.WriteLine(e.ToString()); }
+            slashCommands.RegisterCommands<SlashCommands.AdminCommands>();
             slashCommands.RegisterCommands<SlashCommands.BotCommands>();
             slashCommands.RegisterCommands<SlashCommands.CBGuildCommands>(388339196978266114);
             slashCommands.RegisterCommands<SlashCommands.JoinBlacklistCommands>();
@@ -154,8 +149,10 @@ namespace CarrotBot
             slashCommands.RegisterCommands<SlashCommands.UserCommands>();
             slashCommands.RegisterCommands<Conversation.ConversationSlashCommands>();
             slashCommands.RegisterCommands<Leveling.LevelingSlashCommands>();
-            await discord.StartAsync();
+            slashCommands.RegisterCommands<SlashCommands.UngroupedCommands>();
 
+            
+            await discord.StartAsync();
 
             //Save the conversation message data every 5 minutes
             if (!isBeta)
@@ -256,7 +253,6 @@ namespace CarrotBot
         }
         static async Task MainMessageHandler(DiscordClient client, MessageCreateEventArgs e)
         {
-            Console.WriteLine($"{e.Author.Username}: {e.Message.Content}");
             try
             {
                 if (e.Author.Id == discord.CurrentUser.Id) return;
