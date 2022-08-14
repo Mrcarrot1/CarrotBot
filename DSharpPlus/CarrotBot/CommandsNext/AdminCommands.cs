@@ -171,6 +171,5 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("I couldn't find that role. Make sure you're using the role's Id or mention!");
             }
         }
-
     }
 }
