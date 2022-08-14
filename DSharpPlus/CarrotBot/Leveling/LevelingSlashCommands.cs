@@ -69,7 +69,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         try
@@ -96,7 +96,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         try
@@ -129,7 +129,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (pagel > int.MaxValue || pagel < 1)
@@ -188,7 +188,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is already enabled for this server.\nUse `%disableleveling` if you wish to disable it.");
+            await ctx.UpdateResponseAsync("Leveling is already enabled for this server.\nUse `disableleveling` if you wish to disable it.");
             return;
         }
         LevelingData.AddServer(ctx.Guild.Id);
@@ -205,7 +205,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         LevelingData.RemoveServer(ctx.Guild.Id, deleteData);
@@ -218,7 +218,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (!LevelingData.Servers[ctx.Guild.Id].NoXPChannels.Contains(channel.Id))
@@ -233,7 +233,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         LevelingData.Servers[ctx.Guild.Id].NoXPChannels.RemoveAll(x => x == channel.Id);
@@ -247,7 +247,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         LevelingData.Servers[ctx.Guild.Id].SetLevelUpChannel(channel.Id);
@@ -261,7 +261,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         LevelingData.Servers[ctx.Guild.Id].SetLevelUpChannel(null);
@@ -275,7 +275,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (levell > int.MaxValue || levell < 1)
@@ -298,7 +298,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (levell > int.MaxValue || levell < 1)
@@ -321,7 +321,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (cooldownl > int.MaxValue || cooldownl < 1)
@@ -348,7 +348,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (xpl > int.MaxValue || xpl < 1)
@@ -375,7 +375,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (xpl > int.MaxValue || xpl < 1)
@@ -422,7 +422,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
     {
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         LevelingServer lvlServer = LevelingData.Servers[ctx.Guild.Id];
@@ -455,7 +455,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
+            await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         if (confirm)

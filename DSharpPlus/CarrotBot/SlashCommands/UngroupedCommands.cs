@@ -20,15 +20,6 @@ using KarrotObjectNotation;
 namespace CarrotBot.SlashCommands;
 public class UngroupedCommands : ApplicationCommandModule
 {
-    [SlashCommand("test", "Test slash command.")]
-    public async Task Test(InteractionContext ctx)
-    {
-        //await ctx.RespondAsync("Test slash command");
-        await ctx.IndicateResponseAsync();
-        await Task.Delay(5000 * 60);
-        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent("Fuck you I took 5 minutes of your time for nothing"));
-    }
-
     [SlashCommand("help", "Command help.")]
     public async Task Help(InteractionContext ctx)
     {
