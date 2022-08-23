@@ -20,7 +20,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
         {
-            await ctx.UpdateResponseAsync($"Leveling is not enabled for this server.\nUse `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}enableleveling` if you wish to enable it.");
+            await ctx.UpdateResponseAsync($"Leveling is not enabled for this server.\nUse `enableleveling` if you wish to enable it.");
             return;
         }
         try
@@ -175,7 +175,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
             for (int i = (20 * (page - 1)); i < (20 * (page - 1)) + 20; i++)
             {
                 LevelingUser user = levelingServer.UsersByRank[i];
-                eb.Description += $"\n**{i + 1},** \t<@!{user.Id}> | Level **{user.Level}** | {user.CurrentXP}/{levelingServer.XPNeededForLevel(user.Level + 1)} XP";
+                eb.Description += $"\n**{i + 1}.** \t<@!{user.Id}> | Level **{user.Level}** | {user.CurrentXP}/{levelingServer.XPNeededForLevel(user.Level + 1)} XP";
             }
             eb.WithColor(Utils.CBOrange);
             await ctx.UpdateResponseAsync(embed: eb.Build());

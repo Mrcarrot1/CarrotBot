@@ -406,7 +406,14 @@ public class UngroupedCommands : ApplicationCommandModule
                 }
             }
 
-            await channel.SendMessageAsync(embed: eb.Build());
+            //var sentMessage = await channel.SendMessageAsync(embed: eb.Build());
+            var button = new DiscordButtonComponent(ButtonStyle.Primary, $"mmreplybutton_{ctx.User.Id}", "Reply");
+
+            var messageBuilder = new DiscordMessageBuilder()
+                .WithEmbed(eb.Build())
+                .AddComponents(button);
+
+            await channel.SendMessageAsync(messageBuilder);
 
             await ctx.UpdateResponseAsync("Message sent.");
         }

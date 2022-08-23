@@ -107,6 +107,8 @@ namespace CarrotBot
             discord.GuildCreated += GuildAdded;
             discord.GuildDeleted += GuildRemoved;
             discord.ClientErrored += HandleClientError;
+            discord.ComponentInteractionCreated += HandleComponentInteraction;
+            discord.ModalSubmitted += HandleModalInteraction;
             //discord.MessageReactionAdded += ReactionAdded;
 
 
@@ -151,7 +153,7 @@ namespace CarrotBot
             slashCommands.RegisterCommands<Leveling.LevelingSlashCommands>();
             slashCommands.RegisterCommands<SlashCommands.UngroupedCommands>();
 
-            
+
             await discord.StartAsync();
 
             //Save the conversation message data every 5 minutes
@@ -229,6 +231,64 @@ namespace CarrotBot
                 }
             }
         }
+        static async Task HandleComponentInteraction(DiscordClient client, ComponentInteractionCreateEventArgs e)
+        {
+            string[] splitId = e.Id.Split('_');
+            if (splitId[0] == "mmreplybutton")
+            {
+                if (ulong.TryParse(splitId[1], out ulong Id))
+                {
+                    try
+                    {
+                        DiscordMember member = await e.Guild.GetMemberAsync(Id);
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.Modal, new DiscordInteractionResponseBuilder().WithTitle($"Replying to Modmail from {member.Username}#{member.Discriminator}").WithCustomId($"mmreply_{Id}").AddComponents(new TextInputComponent("Response", "response"))).WaitAsync(TimeSpan.FromMinutes(15));
+                    }
+                    catch (Exception exc)
+                    {
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"An error occurred: {exc.Message}").AsEphemeral());
+                    }
+                }
+            }
+        }
+        static async Task HandleModalInteraction(DiscordClient client, ModalSubmitEventArgs e)
+        {
+            await MainModalHandler(client, e);
+        }
+
+        static async Task MainModalHandler(DiscordClient client, ModalSubmitEventArgs e)
+        {
+            await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+            string[] splitId = e.Interaction.Data.CustomId.Split('_');
+            if (splitId[0] == "mmreply")
+            {
+                if (ulong.TryParse(splitId[1], out ulong Id))
+                {
+                    try
+                    {
+                        DiscordMember member = await e.Interaction.Guild.GetMemberAsync(Id);
+                        if (e.Values.TryGetValue("response", out string message))
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+                                .WithAuthor(name: $"Response from {e.Interaction.Guild.Name} Moderators", iconUrl: e.Interaction.Guild.IconUrl)
+                                .WithDescription($"{message}")
+                                .WithColor(Utils.CBOrange);
+
+                            await member.SendMessageAsync(eb.Build());
+
+                            await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Response sent."));
+                        }
+                    }
+                    catch (DSharpPlus.Exceptions.UnauthorizedException)
+                    {
+                        await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Failed to DM the user: Permission denied."));
+                    }
+                    catch (Exception exc)
+                    {
+                        await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent($"An error occurred: {exc.Message}"));
+                    }
+                }
+            }
+        }
         static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
         {
             await MainMessageHandler(client, e);
@@ -290,6 +350,9 @@ namespace CarrotBot
                         {
                             x.Nickname = member.Nickname.Replace("[AFK] ", "");
                         });
+                        var message = await e.Channel.SendMessageAsync($"Welcome back <@{member.Id}>. I removed your AFK.");
+                        await Task.Delay(5000);
+                        await message.DeleteAsync();
                     }
                     catch { }
                 }
