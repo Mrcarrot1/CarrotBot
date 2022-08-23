@@ -108,7 +108,15 @@ namespace CarrotBot
             discord.GuildDeleted += GuildRemoved;
             discord.ClientErrored += HandleClientError;
             discord.ComponentInteractionCreated += HandleComponentInteraction;
-            discord.ModalSubmitted += HandleModalInteraction;
+            discord.ModalSubmitted += (s, e) =>
+            {
+                _ = Task.Run(async() =>
+                {
+                    await MainModalHandler(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
             //discord.MessageReactionAdded += ReactionAdded;
 
 
