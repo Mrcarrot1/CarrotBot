@@ -162,7 +162,7 @@ namespace CarrotBot.Leveling
                 for (int i = (20 * (page - 1)); i < (20 * (page - 1)) + 20; i++)
                 {
                     LevelingUser user = levelingServer.UsersByRank[i];
-                    eb.Description += $"\n**{i + 1},** \t<@!{user.Id}> | Level **{user.Level}** | {user.CurrentXP}/{levelingServer.XPNeededForLevel(user.Level + 1)} XP";
+                    eb.Description += $"\n**{i + 1}.** \t<@!{user.Id}> | Level **{user.Level}** | {user.CurrentXP}/{levelingServer.XPNeededForLevel(user.Level + 1)} XP";
                 }
                 eb.WithColor(Utils.CBOrange);
                 await ctx.RespondAsync(embed: eb.Build());
