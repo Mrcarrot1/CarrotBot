@@ -287,7 +287,12 @@ namespace CarrotBot
 
                             await member.SendMessageAsync(eb.Build());
 
-                            await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Response sent."));
+                            eb = new DiscordEmbedBuilder()
+                                .WithAuthor(name: $"Response sent by {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.AvatarUrl)
+                                .WithDescription(message)
+                                .WithColor(Utils.CBOrange);
+
+                            await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().AddEmbed(eb.Build()));
                         }
                     }
                     catch (DSharpPlus.Exceptions.UnauthorizedException)
