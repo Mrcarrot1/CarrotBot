@@ -16,7 +16,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.4.2";
+        private static readonly string version = "1.4.3";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
