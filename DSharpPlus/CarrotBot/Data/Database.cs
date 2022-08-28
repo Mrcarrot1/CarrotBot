@@ -44,6 +44,10 @@ namespace CarrotBot.Data
                             {
                                 guild.ModMailChannel = (ulong)modmailChannel;
                             }
+                            if (guildNode.Values.TryGetValue("messageLogsChannel", out object messageLogsChannel))
+                            {
+                                guild.MessageLogsChannel = (ulong)messageLogsChannel;
+                            }
                             foreach (KONArray array1 in guildNode.Arrays)
                             {
                                 if (array1.Name == "USERS")

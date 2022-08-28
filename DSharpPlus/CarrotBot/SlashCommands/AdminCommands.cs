@@ -327,7 +327,7 @@ public class AdminCommands : ApplicationCommandModule
         guildData.FlushData();
         await ctx.UpdateResponseAsync($"Modmail configured in <#{channel.Id}>.");
     }
-    [SlashCommand("modmailremove", "Removes the modmail channel for this server."), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    [SlashCommand("modmailremove", "Removes the modmail channel for this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task ModmailRemove(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -335,5 +335,23 @@ public class AdminCommands : ApplicationCommandModule
         guildData.ModMailChannel = null;
         guildData.FlushData();
         await ctx.UpdateResponseAsync($"Modmail channel(if any) removed.");
+    }
+    [SlashCommand("setmessagelogschannel", "Sets a channel to log message changes and deletions in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    public async Task SetAttachLogsChannel(InteractionContext ctx, [Option("channel", "The channel to set up.")] DiscordChannel channel)
+    {
+        await ctx.IndicateResponseAsync();
+        GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+        guildData.MessageLogsChannel = channel.Id;
+        guildData.FlushData();
+        await ctx.UpdateResponseAsync($"Message logs configured in <#{channel.Id}>.");
+    }
+    [SlashCommand("removemessagelogschannel", "Removes the configured message log channel(if any).", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    public async Task RemoveAttachLogsChannel(InteractionContext ctx)
+    {
+        await ctx.IndicateResponseAsync();
+        GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+        guildData.MessageLogsChannel = null;
+        guildData.FlushData();
+        await ctx.UpdateResponseAsync("Message log channel(if any) removed.");
     }
 }
