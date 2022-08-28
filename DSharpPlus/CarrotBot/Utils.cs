@@ -16,7 +16,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.4.3";
+        private static readonly string version = "1.4.4";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -26,11 +26,18 @@ namespace CarrotBot
         public static string conversationDataPath = $@"{localDataPath}/Conversation";
         public static string levelingDataPath = $@"{localDataPath}/Leveling";
 
-        public static readonly DiscordColor CBGreen = new DiscordColor(15, 157, 88);
-
         public static int GuildCount = 0;
 
-        public static readonly DiscordColor CBOrange = new DiscordColor(245, 124, 0);
+        //CarrotBot colors
+        public static readonly DiscordColor CBGreen = new(15, 157, 88);
+        public static readonly DiscordColor CBOrange = new(245, 124, 0);
+
+        //Colors used in Discord UI elements
+        public static readonly DiscordColor DiscordRed = new("#ED4245");
+        public static readonly DiscordColor DiscordYellow = new("#F9A71A");
+        public static readonly DiscordColor DiscordGreen = new("#3BA55D");
+        public static readonly DiscordColor DiscordBlue = new("#5865F2");
+
         /// <summary>
         /// Takes a string that contains either a user ID or a user mention with ID and returns the ulong retrieved from that string, or throws a FormatException.
         /// </summary>

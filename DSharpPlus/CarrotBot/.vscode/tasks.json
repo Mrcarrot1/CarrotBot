@@ -10,7 +10,8 @@
                 "${workspaceFolder}/CarrotBot.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary",
-                
+                "-r",
+                "linux-x64"
             ],
             "problemMatcher": "$msCompile"
         },

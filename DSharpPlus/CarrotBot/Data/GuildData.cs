@@ -21,6 +21,8 @@ namespace CarrotBot.Data
 
         public ulong? ModMailChannel { get; internal set; }
 
+        public ulong? MessageLogsChannel { get; internal set; }
+
         public void FlushData(bool flushUserData = false)
         {
             if (Program.doNotWrite) return;
@@ -30,6 +32,10 @@ namespace CarrotBot.Data
             if (ModMailChannel != null)
             {
                 node.AddValue("modmailChannel", (ulong)ModMailChannel);
+            }
+            if (MessageLogsChannel != null)
+            {
+                node.AddValue("messageLogsChannel", (ulong)MessageLogsChannel);
             }
 
             KONArray usersArray = new KONArray("USERS");

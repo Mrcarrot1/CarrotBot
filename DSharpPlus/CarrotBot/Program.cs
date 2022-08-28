@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-//#define BETA
+#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -20,7 +20,7 @@ using DSharpPlus.SlashCommands.Attributes;
 using CarrotBot.Leveling;
 using CarrotBot.Data;
 using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace CarrotBot
 {
@@ -28,7 +28,7 @@ namespace CarrotBot
     {
         //Additional check added to make sure the binaries in production never run on the beta account
 #if BETA
-        public static readonly bool isBeta = Environment.UserName == "mrcarrot";
+        public static readonly bool isBeta = true;
 #else
         public static bool isBeta = false;
 #endif
@@ -49,6 +49,10 @@ namespace CarrotBot
         public static string commandPrefix = "";
         static async Task Main(string[] args)
         {
+            if (isBeta)
+            {
+                Logger.Log("Starting CarrotBot (using beta account)");
+            }
 #if !BETA
             if (args.Contains("--beta")) isBeta = true;
 #endif
@@ -101,8 +105,22 @@ namespace CarrotBot
 
                 return Task.CompletedTask;
             };
-            discord.MessageUpdated += MessageUpdated;
-            discord.MessageDeleted += MessageDeleted;
+            discord.MessageUpdated += (s, e) =>
+            {
+                _ = Task.Run(async() =>
+                {
+                    await MessageUpdated(s, e);
+                });
+
+                return Task.CompletedTask;
+            };
+            discord.MessageDeleted += (s, e) =>
+            {
+                return Task.Run(async() =>
+                {
+                    await MessageDeleted(s, e);
+                });
+            };
             discord.GuildMemberAdded += MemberJoined;
             discord.GuildCreated += GuildAdded;
             discord.GuildDeleted += GuildRemoved;
@@ -417,16 +435,111 @@ namespace CarrotBot
         }
         static async Task MessageUpdated(DiscordClient client, MessageUpdateEventArgs e)
         {
-            if (Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            if (e.Channel.IsPrivate) return;
+            if (!isBeta && Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
+            }
+            
+            GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
+            /*
+            Message Logs- Unfinished feature
+            if (guildData.MessageLogsChannel != null)
+            {
+                DiscordChannel channel = e.Guild.GetChannel((ulong)guildData.MessageLogsChannel);
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+                    .WithAuthor($"Message sent by {e.Author.Username}#{e.Author.Discriminator} edited in #<{e.Channel.Id}>", iconUrl: e.Author.AvatarUrl)
+                    .AddField("Original Contents", $"{e.MessageBefore.Content}");
+            }*/
+            if (guildData.MessageLogsChannel != null)
+            {
+                DiscordChannel channel = e.Guild.GetChannel((ulong)guildData.MessageLogsChannel);
+                StringBuilder attachments1 = new(64);
+                foreach (DiscordAttachment attachment in e.MessageBefore.Attachments)
+                {
+                    attachments1.Append($"\n{attachment.Url}");
+                }
+                StringBuilder attachments2 = new(64);
+                foreach (DiscordAttachment attachment in e.Message.Attachments)
+                {
+                    attachments2.Append($"\n{attachment.Url}");
+                }
+
+                string a1str = attachments1.ToString().Trim();
+                a1str = a1str == "" ? "None" : a1str;
+
+                string a2str = attachments2.ToString().Trim();
+                a2str = a2str == "" ? "None" : a2str;
+
+                
+                string contents1 = e.MessageBefore.Content;
+                if (contents1.Length > 2036)
+                    contents1 = contents1.SafeSubstring(0, 2033) + "...";
+
+                string contents2 = e.Message.Content;
+                if (contents2.Length > 2036)
+                    contents2 = contents2.SafeSubstring(0, 2033) + "...";
+
+                StringBuilder descriptionBuilder = new(1024);
+                descriptionBuilder.Append($"Message Edited in **#{e.Channel.Name}**");
+                descriptionBuilder.Append("\n**Before:** ");
+                descriptionBuilder.Append(contents1);
+                descriptionBuilder.Append("**\n\nAfter:** ");
+                descriptionBuilder.Append(contents2);
+                string description = descriptionBuilder.ToString();
+
+                if (description.Length > 4096)
+                {
+                    description = description.SafeSubstring(0, 4093) + "...";
+                }
+
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+                    .WithAuthor($"{e.Author.Username}#{e.Author.Discriminator} (Click to Jump)", $"{e.Message.JumpLink.AbsoluteUri}", iconUrl: e.Author.AvatarUrl)
+                    .WithDescription(description)
+                    .WithColor(Utils.DiscordYellow)
+                    .WithFooter($"ID: {e.Author.Id}");
+
+                if (a1str != "None" || a2str != "None")
+                {
+                    eb.AddField("Attachments Before", a1str);
+                    eb.AddField("Attachments After", a2str);
+                }
+                await channel.SendMessageAsync(eb.Build());
             }
         }
         static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
+            if (e.Channel.IsPrivate) return;
             if (Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
+            }
+            GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
+            if (guildData.MessageLogsChannel != null)
+            {
+                DiscordChannel channel = e.Guild.GetChannel((ulong)guildData.MessageLogsChannel);
+                StringBuilder attachments = new(64);
+                foreach (DiscordAttachment attachment in e.Message.Attachments)
+                {
+                    attachments.Append($"\n{attachment.Url}");
+                }
+                string astr = attachments.ToString().Trim();
+                
+                string description = $"**Message deleted in #{e.Channel.Name}**\n{e.Message.Content}";
+                if (description.Length > 4096) description = description.SafeSubstring(0, 4093) + "...";
+
+                DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+                    .WithAuthor($"{e.Message.Author.Username}#{e.Message.Author.Discriminator}", iconUrl: e.Message.Author.AvatarUrl)
+                    .WithDescription(description)
+                    .WithColor(Utils.DiscordRed)
+                    .WithFooter($"ID: {e.Message.Author.Id}");
+
+                if (astr != "")
+                {
+                    eb.AddField("Attachments", astr);
+                }
+
+                await channel.SendMessageAsync(eb.Build());
             }
         }
         static async Task CommandHandler(DiscordClient client, MessageCreateEventArgs e)
