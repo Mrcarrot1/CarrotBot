@@ -294,10 +294,6 @@ namespace CarrotBot
                         DiscordMember member = await e.Interaction.Guild.GetMemberAsync(Id);
                         if (e.Values.TryGetValue("response", out string message))
                         {
-                            if (message.Length > 2048)
-                            {
-                                await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Message was too long!"));
-                            }
                             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
                                 .WithAuthor(name: $"Response from {e.Interaction.Guild.Name} Moderators", iconUrl: e.Interaction.Guild.IconUrl)
                                 .WithDescription($"{message}")
