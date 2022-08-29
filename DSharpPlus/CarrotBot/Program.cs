@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-#define BETA
+//#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -28,7 +28,7 @@ namespace CarrotBot
     {
         //Additional check added to make sure the binaries in production never run on the beta account
 #if BETA
-        public static readonly bool isBeta = true;
+        public static readonly bool isBeta = Environment.UserName == "mrcarrot";
 #else
         public static bool isBeta = false;
 #endif
@@ -431,7 +431,7 @@ namespace CarrotBot
         }
         static async Task MessageUpdated(DiscordClient client, MessageUpdateEventArgs e)
         {
-            if (e.Channel.IsPrivate) return;
+            if (e.Channel.IsPrivate || e.Author.Id == discord.CurrentUser.Id) return;
             if (!isBeta && Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
@@ -505,7 +505,7 @@ namespace CarrotBot
         }
         static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
-            if (e.Channel.IsPrivate) return;
+            if (e.Channel.IsPrivate || e.Message.Author.Id == discord.CurrentUser.Id) return;
             if (Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
