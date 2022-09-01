@@ -413,7 +413,7 @@ namespace CarrotBot
                 {
                     Utils.GuildCount += shard.Guilds.Count;
                 }
-                await discord.UpdateStatusAsync(new DiscordActivity($"in {Utils.GuildCount} servers | {commandPrefix}help", ActivityType.Playing));
+                await discord.UpdateStatusAsync(new DiscordActivity($"in {Utils.GuildCount} servers | /help", ActivityType.Playing));
 
                 if (firstRun && !isBeta)
                 {
