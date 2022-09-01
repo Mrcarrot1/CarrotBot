@@ -27,7 +27,7 @@ public class UngroupedCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new();
         eb.WithTitle("Help")
             .WithColor(Utils.CBGreen)
-            .WithDescription($"To see available slash commands, you can view slash commands in the list avaiable in the Discord client. To see help for text commands, use {Program.commandPrefix}help.\n\nCarrotBot slash commands are currently experimental. Please report any bugs found in the CarrotBot Discord server or using the `bot reportbug` command.");
+            .WithDescription($"To see available slash commands, you can view slash commands in the list available in the Discord client. To see help for text commands, use {Program.commandPrefix}help.\n\nThis command is currently a work in progress. In the future, as more slash command options are made available, it will be improved.");
         await ctx.UpdateResponseAsync(eb.Build());
     }
 
