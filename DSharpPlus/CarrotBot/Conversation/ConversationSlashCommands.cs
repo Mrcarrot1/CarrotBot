@@ -15,7 +15,7 @@ namespace CarrotBot.Conversation;
 [SlashCommandGroup("conversation", "Commands for interacting with the CarrotBot Multi-Server Conversation.")]
 public class ConversationSlashCommands : ApplicationCommandModule
 {
-    [SlashCommand("acceptterms", "Used to accept the Conversation's terms of service")]
+    [SlashCommand("accept-terms", "Used to accept the Conversation's terms of service")]
     public async Task AcceptTerms(InteractionContext ctx, [Option("accept", "Whether or not to confirm that you are accepting the terms.")] bool accept = false)
     {
         await ctx.IndicateResponseAsync();
@@ -39,7 +39,7 @@ public class ConversationSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("optout", "Used to opt out of the Conversation's terms of service.")]
+    [SlashCommand("opt-out", "Used to opt out of the Conversation's terms of service.")]
     public async Task OptOut(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -54,7 +54,7 @@ public class ConversationSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("addchannel", "Used to add your channel to the conversation", false), SlashRequireUserPermissions(Permissions.ManageChannels)]
+    [SlashCommand("add-channel", "Used to add your channel to the conversation", false), SlashRequireUserPermissions(Permissions.ManageChannels)]
     public async Task AddChannel(InteractionContext ctx, [Option("channel", "The channel to connect to the conversation.")] DiscordChannel channel, [Option("name", "What the conversation should call your server.")] string name)
     {
         await ctx.IndicateResponseAsync();

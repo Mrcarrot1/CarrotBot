@@ -21,6 +21,7 @@ namespace CarrotBot.Leveling
         public int XPPerLevel { get; internal set; }
         public int MinXPPerMessage { get; internal set; }
         public int MaxXPPerMessage { get; internal set; }
+        public int XPRateOfChange { get; internal set; }
         public bool CumulativeRoles { get; internal set; }
 
         public LevelingUser CreateUser(ulong id, DateTimeOffset lastMessageTime, int xp = 5, int level = 0)
@@ -46,6 +47,7 @@ namespace CarrotBot.Leveling
             XPPerLevel = 150;
             MinXPPerMessage = 5;
             MaxXPPerMessage = 5;
+            XPRateOfChange = 1;
             if (!Directory.Exists($@"{Utils.levelingDataPath}/Server_{id}"))
                 Directory.CreateDirectory($@"{Utils.levelingDataPath}/Server_{id}");
         }
@@ -65,6 +67,7 @@ namespace CarrotBot.Leveling
             node.AddValue("minXPPerMessage", MinXPPerMessage);
             node.AddValue("maxXPPerMessage", MaxXPPerMessage);
             node.AddValue("cumulativeRoles", CumulativeRoles);
+            node.AddValue("xpRateOfChange", XPRateOfChange);
             if (RoleRewards.Count > 0)
             {
                 KONNode rolesNode = new KONNode("ROLES");
@@ -112,7 +115,7 @@ namespace CarrotBot.Leveling
         }
         public int XPNeededForLevel(int level)
         {
-            return (level * XPPerLevel);
+            return ((level - 1) * XPRateOfChange + XPPerLevel); //In the form m(x - 1) + b, where x is the desired level, m is the slope of the line(rate at which XP increases per level change) and b is the y-intercept of that line(the value at level 1)
         }
         private static Random rnd = new Random();
         public int GetMessageXP()

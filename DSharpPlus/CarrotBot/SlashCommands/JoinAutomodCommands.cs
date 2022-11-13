@@ -11,7 +11,7 @@ using DSharpPlus.SlashCommands.Attributes;
 using CarrotBot.Data;
 
 namespace CarrotBot.SlashCommands;
-[SlashCommandGroup("joinfilter", "SlashCommands for working with regex join filters.")]
+[SlashCommandGroup("join-filter", "SlashCommands for working with regex join filters.")]
 public class JoinFilterCommands : ApplicationCommandModule
 {
     [SlashCommand("add", "Adds a regex filter to autoremove members joining the server.", false), SlashRequirePermissions(Permissions.BanMembers, false)]
@@ -255,7 +255,7 @@ public class JoinFilterCommands : ApplicationCommandModule
     //}
 }
 
-[SlashCommandGroup("joinblacklist", "Commands for working with exact join blacklists.", false)]
+[SlashCommandGroup("join-blacklist", "Commands for working with exact join blacklists.", false)]
 public class JoinBlacklistCommands : ApplicationCommandModule
 {
     [SlashCommand("add", "Adds an exact blacklist to autoremove members joining the server.", false), SlashRequirePermissions(Permissions.BanMembers, false)]
@@ -469,6 +469,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
     [SlashCommand("remove-exception", "Used to add an exception to the blacklist rule.", false), SlashRequirePermissions(Permissions.BanMembers)]
     public async Task RemoveException(InteractionContext ctx, [Option("blacklistID", "The numeric ID of the blacklist entry to modify.")] long filterIdl, [Option("user", "The user to remove the exception for.")] DiscordUser user)
     {
+        await ctx.IndicateResponseAsync();
         try
         {
             if (filterIdl > int.MaxValue || filterIdl < 1)
@@ -496,5 +497,4 @@ public class JoinBlacklistCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a blacklist entry with that number!").WithColor(DiscordColor.Red));
         }
     }
-    //}
 }

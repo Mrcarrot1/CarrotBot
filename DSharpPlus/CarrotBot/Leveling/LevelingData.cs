@@ -32,16 +32,25 @@ namespace CarrotBot.Leveling
                         LevelingServer server = new LevelingServer(item);
                         if (serverIndex.Values.ContainsKey("levelUpChannel"))
                             server.SetLevelUpChannel((ulong)serverIndex.Values["levelUpChannel"]);
+
                         if (serverIndex.Values.ContainsKey("xpCooldown"))
                             server.XPCooldown = (int)serverIndex.Values["xpCooldown"];
+
                         if (serverIndex.Values.ContainsKey("xpPerLevel"))
                             server.XPPerLevel = (int)serverIndex.Values["xpPerLevel"];
+
                         if (serverIndex.Values.ContainsKey("minXPPerMessage"))
                             server.MinXPPerMessage = (int)serverIndex.Values["minXPPerMessage"];
+
                         if (serverIndex.Values.ContainsKey("maxXPPerMessage"))
                             server.MaxXPPerMessage = (int)serverIndex.Values["maxXPPerMessage"];
+
                         if (serverIndex.Values.ContainsKey("cumulativeRoles"))
                             server.CumulativeRoles = (bool)serverIndex.Values["cumulativeRoles"];
+
+                        if (serverIndex.Values.ContainsKey("xpRateOfChange"))
+                            server.XPRateOfChange = (int)serverIndex.Values["xpRateOfChange"];
+                            
                         foreach (KONNode childNode in serverIndex.Children)
                         {
                             if (childNode.Name == "ROLES")

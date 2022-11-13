@@ -10,7 +10,7 @@ namespace CarrotBot.SlashCommands;
 
 public class CBGuildCommands : ApplicationCommandModule
 {
-    [SlashCommand("updateping", "Grants or revokes the Update Ping role in the CarrotBot server."), SlashRequireGuild]
+    [SlashCommand("update-ping", "Grants or revokes the Update Ping role in the CarrotBot server."), SlashRequireGuild]
     public async Task UpdatePing(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();

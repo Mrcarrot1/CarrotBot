@@ -13,7 +13,7 @@ namespace CarrotBot.SlashCommands;
 //[Group("user")]
 public class UserCommands : ApplicationCommandModule
 {
-    [SlashCommand("userinfo", "Gets info about a user.")]
+    [SlashCommand("user-info", "Gets info about a user.")]
     public async Task Info(InteractionContext ctx, [Option("user", "The user in question. Leave blank to return your own info.")] DiscordUser user = null)
     {
         await ctx.IndicateResponseAsync();
