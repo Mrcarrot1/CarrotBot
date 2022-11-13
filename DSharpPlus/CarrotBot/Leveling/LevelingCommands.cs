@@ -431,6 +431,7 @@ namespace CarrotBot.Leveling
                 eb.AddField("Level-Up Channel", $"<#{lvlServer.LevelUpChannel}>");
             eb.AddField("XP Cooldown", $"{lvlServer.XPCooldown}");
             eb.AddField("XP Per Level", $"{lvlServer.XPPerLevel}", true);
+            eb.AddField("XP Rate of Change", $"{lvlServer.XPRateOfChange}", true);
             eb.AddField("Min XP Per Message", $"{lvlServer.MinXPPerMessage}");
             eb.AddField("Max XP Per Message", $"{lvlServer.MaxXPPerMessage}", true);
             eb.AddField("Cumulative Roles", $"{lvlServer.CumulativeRoles}");

@@ -304,21 +304,21 @@ public class AdminCommands : ApplicationCommandModule
                 await ctx.UpdateResponseAsync(eb.Build());
             }
     }
-    [SlashCommand("addjoinrole", "Adds a role that will be assigned to members on joining the server.", false), SlashRequirePermissions(Permissions.ManageRoles)]
+    [SlashCommand("add-join-role", "Adds a role that will be assigned to members on joining the server.", false), SlashRequirePermissions(Permissions.ManageRoles)]
     public async Task AddJoinRole(InteractionContext ctx, [Option("role", "The role to add.")] DiscordRole role)
     {
         await ctx.IndicateResponseAsync();
         Database.GetOrCreateGuildData(ctx.Guild.Id).AddJoinRole(role.Id);
         await ctx.UpdateResponseAsync("Added role to grant on join.");
     }
-    [SlashCommand("removejoinrole", "Removes a role from being assigned to members on joining the server.", false), SlashRequirePermissions(Permissions.ManageRoles)]
+    [SlashCommand("remove-join-role", "Removes a role from being assigned to members on joining the server.", false), SlashRequirePermissions(Permissions.ManageRoles)]
     public async Task RemoveJoinRole(InteractionContext ctx, [Option("role", "The role to remove.")] DiscordRole role)
     {
         await ctx.IndicateResponseAsync();
         Database.GetOrCreateGuildData(ctx.Guild.Id).RemoveJoinRole(role.Id);
         await ctx.UpdateResponseAsync("Removed role from being granted on join.");
     }
-    [SlashCommand("modmailsetup", "Sets up a channel to receive modmail messages in.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    [SlashCommand("modmail-setup", "Sets up a channel to receive modmail messages in.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task ModmailSetup(InteractionContext ctx, [Option("channel", "The channel to receive messages in.")] DiscordChannel channel)
     {
         await ctx.IndicateResponseAsync();
@@ -327,7 +327,7 @@ public class AdminCommands : ApplicationCommandModule
         guildData.FlushData();
         await ctx.UpdateResponseAsync($"Modmail configured in <#{channel.Id}>.");
     }
-    [SlashCommand("modmailremove", "Removes the modmail channel for this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    [SlashCommand("modmail-remove", "Removes the modmail channel for this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task ModmailRemove(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -336,7 +336,7 @@ public class AdminCommands : ApplicationCommandModule
         guildData.FlushData();
         await ctx.UpdateResponseAsync($"Modmail channel(if any) removed.");
     }
-    [SlashCommand("setmessagelogschannel", "Sets a channel to log message changes and deletions in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    [SlashCommand("set-message-logs-channel", "Sets a channel to log message changes and deletions in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task SetAttachLogsChannel(InteractionContext ctx, [Option("channel", "The channel to set up.")] DiscordChannel channel)
     {
         await ctx.IndicateResponseAsync();
@@ -345,7 +345,7 @@ public class AdminCommands : ApplicationCommandModule
         guildData.FlushData();
         await ctx.UpdateResponseAsync($"Message logs configured in <#{channel.Id}>.");
     }
-    [SlashCommand("removemessagelogschannel", "Removes the configured message log channel(if any).", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
+    [SlashCommand("remove-message-logs-channel", "Removes the configured message log channel(if any).", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task RemoveAttachLogsChannel(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();

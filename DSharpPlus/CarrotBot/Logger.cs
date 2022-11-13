@@ -55,7 +55,11 @@ namespace CarrotBot
             File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
             Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
             if (logLevel == LogLevel.Error) Console.WriteLine(exception.ToString());
-            if (logLevel == LogLevel.Critical && (exception == null || exception.GetType() != typeof(DSharpPlus.Exceptions.UnauthorizedException)))
+            if (exception != null)
+            {
+                Console.WriteLine(exception.ToString());
+            }
+            if (logLevel == LogLevel.Critical && eventId.Name == "ConnectionClose")
             {
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
                 Environment.Exit(0);

@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Diagnostics;
+using System.Text;
+using System.Text.RegularExpressions;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
@@ -20,7 +22,6 @@ using DSharpPlus.SlashCommands.Attributes;
 using CarrotBot.Leveling;
 using CarrotBot.Data;
 using Microsoft.Extensions.Logging;
-using System.Text;
 
 namespace CarrotBot
 {
@@ -107,7 +108,7 @@ namespace CarrotBot
             };
             discord.MessageUpdated += (s, e) =>
             {
-                _ = Task.Run(async() =>
+                _ = Task.Run(async () =>
                 {
                     await MessageUpdated(s, e);
                 });
@@ -116,7 +117,7 @@ namespace CarrotBot
             };
             discord.MessageDeleted += (s, e) =>
             {
-                return Task.Run(async() =>
+                return Task.Run(async () =>
                 {
                     await MessageDeleted(s, e);
                 });
@@ -128,7 +129,7 @@ namespace CarrotBot
             discord.ComponentInteractionCreated += HandleComponentInteraction;
             discord.ModalSubmitted += (s, e) =>
             {
-                _ = Task.Run(async() =>
+                _ = Task.Run(async () =>
                 {
                     await MainModalHandler(s, e);
                 });
@@ -260,6 +261,7 @@ namespace CarrotBot
         static async Task HandleComponentInteraction(DiscordClient client, ComponentInteractionCreateEventArgs e)
         {
             string[] splitId = e.Id.Split('_');
+            Console.WriteLine(e.Id);
             if (splitId[0] == "mmreplybutton")
             {
                 if (ulong.TryParse(splitId[1], out ulong Id))
@@ -267,10 +269,39 @@ namespace CarrotBot
                     try
                     {
                         DiscordMember member = await e.Guild.GetMemberAsync(Id);
-                        await e.Interaction.CreateResponseAsync(InteractionResponseType.Modal, new DiscordInteractionResponseBuilder().WithTitle($"Replying to Modmail from {member.Username}#{member.Discriminator}").WithCustomId($"mmreply_{Id}").AddComponents(new TextInputComponent("Response", "response"))).WaitAsync(TimeSpan.FromMinutes(15));
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.Modal,
+                        new DiscordInteractionResponseBuilder()
+                        .WithTitle($"Replying to Modmail")
+                        .WithCustomId($"mmreply_{Id}")
+                        .AddComponents(new TextInputComponent("Response", "response")))
+                        .WaitAsync(TimeSpan.FromMinutes(15));
                     }
                     catch (Exception exc)
                     {
+                        await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"An error occurred: {exc.Message}").AsEphemeral());
+                    }
+                }
+            }
+            else if (splitId[0] == "mmfubutton")
+            {
+                if (splitId.Length >= 4 && ulong.TryParse(splitId[1], out ulong guildId) && ulong.TryParse(splitId[2], out ulong channelId) && ulong.TryParse(splitId[3], out ulong messageId))
+                {
+                    try
+                    {
+                        Console.WriteLine(guildId);
+                        DiscordGuild guild = await discord.GetShard(guildId).GetGuildAsync(guildId);
+                        string guildName = guild.Name;
+                        await e.Interaction.CreateResponseAsync(
+                        InteractionResponseType.Modal,
+                        new DiscordInteractionResponseBuilder()
+                        .WithTitle($"Responding to Moderators")
+                        .WithCustomId($"mmfu_{guildId}_{channelId}_{messageId}")
+                        .AddComponents(new TextInputComponent("Response", "response")))
+                        .WaitAsync(TimeSpan.FromMinutes(15));
+                    }
+                    catch (Exception exc)
+                    {
+                        Console.WriteLine(exc.ToString());
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent($"An error occurred: {exc.Message}").AsEphemeral());
                     }
                 }
@@ -299,12 +330,26 @@ namespace CarrotBot
                                 .WithDescription($"{message}")
                                 .WithColor(Utils.CBOrange);
 
-                            await member.SendMessageAsync(eb.Build());
+                            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+                            foreach (Match match in URLRegex.Matches(message))
+                            {
+                                if (Utils.IsImageUrl(match.Value))
+                                {
+                                    eb.WithImageUrl(match.Value);
+                                    break;
+                                }
+                            }
+
+                            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder()
+                                .WithEmbed(eb.Build())
+                                .AddComponents(new DiscordButtonComponent(ButtonStyle.Primary, $"mmfubutton_{e.Interaction.Guild.Id}_{e.Interaction.Channel.Id}_{(await e.Interaction.GetOriginalResponseAsync()).Id}", "Reply"));
 
                             eb = new DiscordEmbedBuilder()
                                 .WithAuthor(name: $"Response sent by {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.AvatarUrl)
                                 .WithDescription(message)
                                 .WithColor(Utils.CBOrange);
+
+                            await member.SendMessageAsync(messageBuilder);
 
                             await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().AddEmbed(eb.Build()));
                         }
@@ -316,6 +361,47 @@ namespace CarrotBot
                     catch (Exception exc)
                     {
                         await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent($"An error occurred: {exc.Message}"));
+                    }
+                }
+            }
+            else if (splitId[0] == "mmfu")
+            {
+                if (splitId.Length >= 4
+                    && ulong.TryParse(splitId[1], out ulong guildId) && ulong.TryParse(splitId[2], out ulong channelId) && ulong.TryParse(splitId[3], out ulong messageId))
+                {
+                    try
+                    {
+                        DiscordChannel channel = await discord.GetShard(guildId).GetChannelAsync(channelId);
+                        DiscordMessage message = await channel.GetMessageAsync(messageId);
+
+                        if (e.Values.TryGetValue("response", out string response))
+                        {
+                            DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
+                                .WithAuthor(name: $"Response from {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.GetAvatarUrl(ImageFormat.Auto))
+                                .WithDescription(response)
+                                .WithColor(Utils.CBOrange);
+                            
+                            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+                            foreach (Match match in URLRegex.Matches(response))
+                            {
+                                if (Utils.IsImageUrl(match.Value))
+                                {
+                                    eb.WithImageUrl(match.Value);
+                                    break;
+                                }
+                            }
+
+                            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder()
+                                .WithEmbed(eb.Build())
+                                .AddComponents(new DiscordButtonComponent(ButtonStyle.Primary, $"mmreplybutton_{e.Interaction.User.Id}", "Reply"));
+
+                            await message.RespondAsync(messageBuilder);
+                            await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Message sent."));
+                        }
+                    }
+                    catch
+                    {
+                        await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent($"I couldn't send your message. Try contacting server moderators directly."));
                     }
                 }
             }
@@ -353,14 +439,11 @@ namespace CarrotBot
                     await Conversation.Conversation.CarryOutConversation(e.Message);
                 if (LevelingData.Servers.ContainsKey(e.Guild.Id))
                 {
-                    if (LevelingData.Servers[e.Guild.Id].Users.ContainsKey(e.Author.Id))
-                    {
-                        await LevelingData.Servers[e.Guild.Id].Users[e.Author.Id].HandleMessage(e.Message);
-                    }
-                    else if (!e.Author.IsBot)
+                    if (!LevelingData.Servers[e.Guild.Id].Users.ContainsKey(e.Author.Id))
                     {
                         LevelingData.Servers[e.Guild.Id].CreateUser(e.Message.Author.Id, DateTimeOffset.Now);
                     }
+                    await LevelingData.Servers[e.Guild.Id].Users[e.Author.Id].HandleMessage(e.Message);
                 }
                 foreach (var user in e.MentionedUsers)
                 {
@@ -436,7 +519,7 @@ namespace CarrotBot
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
             }
-            
+
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
             /*
             Message Logs- Unfinished feature
@@ -467,7 +550,7 @@ namespace CarrotBot
                 string a2str = attachments2.ToString().Trim();
                 a2str = a2str == "" ? "None" : a2str;
 
-                
+
                 string contents1 = e.MessageBefore.Content;
                 if (contents1.Length > 2036)
                     contents1 = contents1.SafeSubstring(0, 2033) + "...";
@@ -520,7 +603,7 @@ namespace CarrotBot
                     attachments.Append($"\n{attachment.Url}");
                 }
                 string astr = attachments.ToString().Trim();
-                
+
                 string description = $"**Message deleted in #{e.Channel.Name}**\n{e.Message.Content}";
                 if (description.Length > 4096) description = description.SafeSubstring(0, 4093) + "...";
 
