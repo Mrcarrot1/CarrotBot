@@ -348,7 +348,7 @@ public class UngroupedCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
         eb.WithTitle("About CarrotBot");
         eb.WithColor(Utils.CBGreen);
-        eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `{Program.commandPrefix}help` for command help.");
+        eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `/help` for command help.");
         eb.AddField("Shards", $"{Program.discord.ShardClients.Count}", true);
         eb.AddField("Guilds", $"{Utils.GuildCount}", true);
         eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
