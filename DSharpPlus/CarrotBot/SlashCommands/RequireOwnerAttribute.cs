@@ -7,6 +7,12 @@ public class RequireOwnerAttribute : SlashCheckBaseAttribute
 {
     public override async Task<bool> ExecuteChecksAsync(InteractionContext ctx)
     {
-        return await Task.Run(() => { return ctx.User.Id == Program.Mrcarrot.Id; });
+        bool ok = ctx.User.Id == Program.Mrcarrot.Id;
+        if (!ok)
+        {
+            await ctx.RespondAsync("You don't have permission to do that!", true);
+        }
+        return await Task.Run(() => { return ok; });
+
     }
 }

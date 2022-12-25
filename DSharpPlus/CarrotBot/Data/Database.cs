@@ -48,6 +48,17 @@ namespace CarrotBot.Data
                             {
                                 guild.MessageLogsChannel = (ulong)messageLogsChannel;
                             }
+                            if (guildNode.Values.TryGetValue("customRolesAllowed", out object customRolesAllowed))
+                            {
+                                string customRolesAllowedStr = (string)customRolesAllowed;
+                                guild.CustomRolesAllowed = customRolesAllowedStr switch 
+                                {
+                                    "None" => GuildData.AllowCustomRoles.None,
+                                    "Booster" => GuildData.AllowCustomRoles.Booster,
+                                    "All" => GuildData.AllowCustomRoles.All,
+                                    _ => GuildData.AllowCustomRoles.None
+                                };
+                            }
                             foreach (KONArray array1 in guildNode.Arrays)
                             {
                                 if (array1.Name == "USERS")

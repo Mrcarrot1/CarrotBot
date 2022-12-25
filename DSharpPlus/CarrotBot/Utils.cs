@@ -16,7 +16,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.5.0";
+        private static readonly string version = "1.5.1";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
@@ -293,9 +293,12 @@ namespace CarrotBot
         /// <param name="ctx"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public static async Task RespondAsync(this InteractionContext ctx, string message)
+        public static async Task RespondAsync(this InteractionContext ctx, string message, bool ephemeral = false)
         {
-            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+            if (!ephemeral)
+                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+            else
+                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message).AsEphemeral());
         }
 
         /// <summary>
