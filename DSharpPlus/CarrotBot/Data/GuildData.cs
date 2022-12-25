@@ -23,6 +23,8 @@ namespace CarrotBot.Data
 
         public ulong? MessageLogsChannel { get; internal set; }
 
+        public AllowCustomRoles CustomRolesAllowed { get; internal set; }
+
         public void FlushData(bool flushUserData = false)
         {
             if (Program.doNotWrite) return;
@@ -37,6 +39,8 @@ namespace CarrotBot.Data
             {
                 node.AddValue("messageLogsChannel", (ulong)MessageLogsChannel);
             }
+
+            node.AddValue("customRolesAllowed", CustomRolesAllowed.ToString());
 
             KONArray usersArray = new KONArray("USERS");
             foreach (KeyValuePair<ulong, GuildUserData> user in Users)
@@ -109,6 +113,7 @@ namespace CarrotBot.Data
             JoinFilters = new List<JoinFilter>();
             JoinBlacklists = new List<JoinBlacklist>();
             GuildPrefix = "%";
+            CustomRolesAllowed = AllowCustomRoles.None;
             if (createIndex)
                 FlushData();
         }
@@ -120,6 +125,13 @@ namespace CarrotBot.Data
         public void RemoveJoinRole(ulong Id)
         {
             RolesToAssignOnJoin.RemoveAll(x => x.Equals(Id));
+        }
+
+        public enum AllowCustomRoles
+        {
+            None,
+            Booster,
+            All
         }
     }
 

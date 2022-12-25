@@ -39,8 +39,14 @@ namespace CarrotBot.Conversation
                 if (!ConversationData.AcceptedUsers.Contains(userId))
                 {
                     await message.DeleteAsync();
-                    await user.SendMessageAsync($"<@{userId}> By entering the conversation, you consent to having your data read and used by others. \nType `%conversation acceptterms` to accept these terms. Until you do, your data will not be sent.");
-                    Thread.Sleep(10);
+                    try
+                    {
+                        await user.SendMessageAsync($"<@{userId}> By entering the conversation, you consent to having your data read and used by others. \nUse `/conversation acceptterms` to accept these terms. Until you do, your data will not be sent.");
+                    }
+                    catch
+                    {
+                        await message.Channel.SendMessageAsync($"<@{userId}> By entering the conversation, you consent to having your data read and used by others. \nUse `/conversation acceptterms` to accept these terms. Until you do, your data will not be sent.");
+                    }
                     return;
                 }
                 if (ConversationData.BannedUsers.Contains(userId))
@@ -57,7 +63,11 @@ namespace CarrotBot.Conversation
                     if (message.Content.ToLower().Contains(str))
                     {
                         await message.DeleteAsync();
-                        await user.SendMessageAsync("Your message has been removed for containing an offensive word.\nContact a CarrotBot administrator if you believe this to be a mistake.");
+                        try
+                        {
+                            await user.SendMessageAsync("Your message has been removed for containing an offensive word.\nContact a CarrotBot administrator if you believe this to be a mistake.");
+                        }
+                        catch { } //This probably means we couldn't DM the user because they have DMs disabled. In this case, we just ignore the exception.
                     }
                 }
                 /*if (ConversationData.LastMessage != null)
@@ -219,7 +229,7 @@ namespace CarrotBot.Conversation
                             {
                                 if (message.ChannelId != message1.ChannelId)
                                     msgObject.ChannelMessages.Add(message1.ChannelId, await message1.RespondAsync(embed: embed));
-                                Thread.Sleep(1);
+                                await Task.Delay(1);
                             }
                             catch { throw; }
                         }
@@ -268,7 +278,7 @@ namespace CarrotBot.Conversation
                             continue;
                         }
 
-                        Thread.Sleep(1);
+                        await Task.Delay(1);
                     }
                 }
 
@@ -310,7 +320,7 @@ namespace CarrotBot.Conversation
                 {
                     await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {ConversationData.ConversationChannels[i].Id}:\n{e.ToString()}");
                 }
-                Thread.Sleep(5);
+                await Task.Delay(5);
             }
         }
         public static async Task StartConversation(bool alert = true)

@@ -348,7 +348,7 @@ public class UngroupedCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
         eb.WithTitle("About CarrotBot");
         eb.WithColor(Utils.CBGreen);
-        eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `{Program.commandPrefix}help` for command help.");
+        eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `/help` for command help.");
         eb.AddField("Shards", $"{Program.discord.ShardClients.Count}", true);
         eb.AddField("Guilds", $"{Utils.GuildCount}", true);
         eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
@@ -382,7 +382,7 @@ public class UngroupedCommands : ApplicationCommandModule
         }
     }
     [SlashCommand("modmail", "Sends a message to server moderators.")]
-    public async Task Modmail(InteractionContext ctx, [Option("message", "The message to send. Please include any images as links.")] string message)
+    public async Task Modmail(InteractionContext ctx, [Option("message", "The message to send. You can attach up to one image, or link to multiple in this message.")] string message, [Option("attachment", "An image or file to add to your message.")] DiscordAttachment attachment = null)
     {
         if (ctx.Channel.IsPrivate)
         {
@@ -400,14 +400,28 @@ public class UngroupedCommands : ApplicationCommandModule
                 .WithFooter($"{ctx.Member.Id} ・ <@!{ctx.Member.Id}>")
                 .WithColor(Utils.CBOrange);
 
-            //Check for image URLs and set the first one we find to the embed's image URL
-            Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
-            foreach (Match match in URLRegex.Matches(message))
+            if (attachment != null)
             {
-                if (Utils.IsImageUrl(match.Value))
+                if (Utils.IsImageUrl(attachment.Url))
                 {
-                    eb.WithImageUrl(match.Value);
-                    break;
+                    eb.WithImageUrl(attachment.Url);
+                }
+                else
+                {
+                    eb.AddField("Attached File", attachment.Url);
+                }
+            }
+            else
+            {
+                //Check for image URLs and set the first one we find to the embed's image URL
+                Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+                foreach (Match match in URLRegex.Matches(message))
+                {
+                    if (Utils.IsImageUrl(match.Value))
+                    {
+                        eb.WithImageUrl(match.Value);
+                        break;
+                    }
                 }
             }
 
@@ -425,6 +439,77 @@ public class UngroupedCommands : ApplicationCommandModule
         else
         {
             await ctx.UpdateResponseAsync("This server does not currently have modmail configured. Please try contacting the server's moderators directly.");
+        }
+    }
+    [SlashCommand("custom-role", "Grants a custom role(in future, to server boosters).")]
+    public async Task CustomRole(InteractionContext ctx, [Option("name", "The name of the role.")] string name,
+    //Discord default role colors
+    [Choice("Light Teal", "#1abc9c")]
+    [Choice("Dark Teal", "#11806a")]
+    [Choice("Light Green", "#2ecc71")]
+    [Choice("Dark Green", "#1f8b4c")]
+    [Choice("Light Blue", "#3498db")]
+    [Choice("Dark Blue", "#206694")]
+    [Choice("Light Purple", "#9b59b6")]
+    [Choice("Dark Purple", "#71368a")]
+    [Choice("Light Pink", "#e91e63")]
+    [Choice("Dark Pink", "#ad1457")]
+    [Choice("Light Yellow", "#f1c40f")]
+    [Choice("Dark Yellow", "#c27c0e")]
+    [Choice("Light Orange", "#e67e22")]
+    [Choice("Dark Orange", "#a84300")]
+    [Choice("Light Red", "#e74c3c")]
+    [Choice("Dark Red", "#992d22")]
+    [Choice("Light Grey 1", "#95a5a6")]
+    [Choice("Light Grey 2", "#979c9f")]
+    [Choice("Dark Grey 1", "#607d8b")]
+    [Choice("Dark Grey 2", "#546e7a")]
+    [Option("color", "The hex color for the role."),
+    NameLocalization(Localization.BritishEnglish, "colour"),
+    DescriptionLocalization(Localization.BritishEnglish, "The hex colour for the role.")] string color, [Option("icon", "The URL or link to your desired icon image.")] string iconUrl = null)
+    {
+        try
+        {
+            GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+            //if (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.All || (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.Booster && ctx.Member.PremiumSince is not null))
+            {
+                await ctx.IndicateResponseAsync(true);
+                if (!Regex.IsMatch(color, "#?[0-9A-Fa-f]{6}"))
+                {
+                    await ctx.UpdateResponseAsync("Please enter a valid hex color. To find your desired color value, visit ");
+                    return;
+                }
+                Stream iconStream = null;
+                if (iconUrl != null)
+                {
+                    if (!Utils.IsImageUrl(iconUrl))
+                    {
+                        await ctx.UpdateResponseAsync("Please provide a valid image URL!");
+                        return;
+                    }
+                    HttpClient client = new();
+                    if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
+                    var httpIconStream = await client.GetStreamAsync(iconUrl);
+
+                }
+                DiscordRole role = await ctx.Guild.CreateRoleAsync(name, color: new DiscordColor(color), icon: iconStream);
+                DiscordRole headerRole = ctx.Guild.Roles[1044292868329705562];
+                await role.ModifyPositionAsync(headerRole.Position - 1); //For some unfathomable reason position - 1 is one *lower*. I have no idea why the Discord devs did this or what they were smoking.
+                await ctx.Member.GrantRoleAsync(role);
+                await ctx.UpdateResponseAsync("Role granted.");
+            }
+            /*else if (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.Booster)
+            {
+                await ctx.RespondAsync("Custom roles are only available to people who boost!\nBoost to help the server and get a custom role!", true);
+            }
+            else
+            {
+                await ctx.RespondAsync("This server doesn't have custom roles enabled.", true);
+            }*/
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.ToString());
         }
     }
 }
