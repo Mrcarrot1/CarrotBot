@@ -397,8 +397,9 @@ public class UngroupedCommands : ApplicationCommandModule
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
                 .WithAuthor($"Modmail from {ctx.Member.Username}#{ctx.Member.Discriminator}", iconUrl: ctx.Member.AvatarUrl)
                 .WithDescription($"{message}")
-                .WithFooter($"{ctx.Member.Id} ・ <@!{ctx.Member.Id}>")
-                .WithColor(Utils.CBOrange);
+                .WithFooter($"ID: {ctx.Member.Id}")
+                .WithColor(Utils.CBOrange)
+                .AddField("User Mention", $"<@!{ctx.Member.Id}>");
 
             if (attachment != null)
             {
