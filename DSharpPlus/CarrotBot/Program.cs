@@ -588,7 +588,7 @@ namespace CarrotBot
         }
         static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
-            if (e.Channel.IsPrivate || e.Message.Author.Id == discord.CurrentUser.Id) return;
+            if (e.Channel.IsPrivate || e.Message.Author == null || e.Message.Author.Id == discord.CurrentUser.Id) return;
             if (Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
                 await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);

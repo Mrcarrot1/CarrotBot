@@ -59,14 +59,20 @@ public class UngroupedCommands : ApplicationCommandModule
                     List<DiscordApplicationCommand> eligibleCommands = new List<DiscordApplicationCommand>();
                     foreach (var candidateCommand in levelingCommands)
                     {
-                        if (candidateCommand == null || !candidateCommand.ExecutionChecks.Any())
+                        if (candidateCommand == null || candidateCommand.DefaultMemberPermissions == Permissions.None)
                         {
                             eligibleCommands.Add(candidateCommand);
                             continue;
                         }
 
-                        var candidateFailedChecks = await candidateCommand.RunChecksAsync(ctx, true).ConfigureAwait(false);
-                        if (!candidateFailedChecks.Any())
+                        //Check user permissions and whether this is a DM channel
+                        bool permissionsValid = false;
+                        if (ctx.Channel.IsPrivate) 
+                            permissionsValid = candidateCommand.DefaultMemberPermissions == Permissions.None;
+                        else 
+                            permissionsValid = (ctx.Member.Permissions & candidateCommand.DefaultMemberPermissions) == (Permissions.All & candidateCommand.DefaultMemberPermissions);
+
+                        if (permissionsValid)
                             eligibleCommands.Add(candidateCommand);
                     }
                     if (eligibleCommands.Any())
@@ -442,7 +448,7 @@ public class UngroupedCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync("This server does not currently have modmail configured. Please try contacting the server's moderators directly.");
         }
     }
-    [SlashCommand("custom-role", "Grants a custom role(in future, to server boosters).")]
+    //[SlashCommand("custom-role", "Grants a custom role(in future, to server boosters).")]
     public async Task CustomRole(InteractionContext ctx, [Option("name", "The name of the role.")] string name,
     //Discord default role colors
     [Choice("Light Teal", "#1abc9c")]

@@ -59,8 +59,11 @@ namespace CarrotBot
             {
                 Console.WriteLine(exception.ToString());
             }
-            if (logLevel == LogLevel.Critical && eventId.Name == "ConnectionClose")
+            if (eventId.ToString() == "ConnectionClose" || eventId.ToString() == "HeartbeatFailure")
             {
+                Data.Database.FlushDatabase(true);
+                Conversation.ConversationData.WriteDatabase();
+                Leveling.LevelingData.FlushAllData();
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
                 Environment.Exit(0);
             }

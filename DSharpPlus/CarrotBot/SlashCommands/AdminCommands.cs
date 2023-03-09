@@ -14,10 +14,10 @@ namespace CarrotBot.SlashCommands;
 
 public class AdminCommands : ApplicationCommandModule
 {
-    [SlashCommand("clear", "Removes the last n messages.", false), SlashRequirePermissions(Permissions.ManageMessages)]
+    [SlashCommand("clear", "Removes the last n messages.", false), SlashRequirePermissions(Permissions.ManageMessages), SlashCommandPermissions(Permissions.ManageMessages)]
     public async Task Clear(InteractionContext ctx, [Option("messages", "The number of messages to remove.")] long messages)
     {
-        await ctx.IndicateResponseAsync();
+        await ctx.IndicateResponseAsync(true);
         if (messages > 1000 || messages < 1)
         {
             await ctx.UpdateResponseAsync("Please enter a number between 1 and 1000.");
@@ -35,8 +35,6 @@ public class AdminCommands : ApplicationCommandModule
             await msg.DeleteAsync();
         }
         await ctx.UpdateResponseAsync($"Cleared {messages} messages.");
-        await Task.Delay(5000);
-        await ctx.DeleteResponseAsync();
     }
     /*[SlashCommand("kick", "Kicks a user from the server."), SlashRequirePermissions(Permissions.KickMembers), SlashRequireGuild]
     public async Task Kick(InteractionContext ctx, [Option("userMention", "The user to kick.")] string userMention, [Option("reason", "The reason for kicking the user.")] string reason = null)
@@ -78,7 +76,7 @@ public class AdminCommands : ApplicationCommandModule
         }
     }*/
 
-    [SlashCommand("kick", "Kicks a user from the server.", false), SlashRequirePermissions(Permissions.KickMembers), SlashRequireGuild]
+    [SlashCommand("kick", "Kicks a user from the server.", false), SlashRequirePermissions(Permissions.KickMembers), SlashCommandPermissions(Permissions.KickMembers), SlashRequireGuild]
     public async Task Kick(InteractionContext ctx, [Option("user", "The user to kick.")] DiscordUser user, [Option("reason", "The reason for kicking the user.")] string reason = null)
     {
         await ctx.IndicateResponseAsync();
@@ -168,7 +166,7 @@ public class AdminCommands : ApplicationCommandModule
         }
     }*/
 
-    [SlashCommand("ban", "Bans a user from the server.", false), SlashRequirePermissions(Permissions.BanMembers), SlashRequireGuild]
+    [SlashCommand("ban", "Bans a user from the server.", true), SlashRequirePermissions(Permissions.BanMembers), SlashCommandPermissions(Permissions.BanMembers), SlashRequireGuild]
     public async Task Ban(InteractionContext ctx, [Option("user", "The user to ban.")] DiscordUser user, [Option("reason", "The reason for banning the user.")] string reason = null)
     {
         await ctx.IndicateResponseAsync();
