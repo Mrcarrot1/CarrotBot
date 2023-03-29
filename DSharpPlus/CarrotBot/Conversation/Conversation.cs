@@ -1,21 +1,17 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Text.RegularExpressions;
-using System.Net.Http;
+using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using System.IO;
+using DSharpPlus.Exceptions;
 
 namespace CarrotBot.Conversation
 {
-    public class Conversation
+    public static class Conversation
     {
-        public static DiscordChannel liveFeedChannel = null;
-        public static DiscordChannel embedsChannel = null;
+        public static DiscordChannel? liveFeedChannel = null;
+        public static DiscordChannel? embedsChannel = null;
         public static async Task CarryOutConversation(DiscordMessage message)
         {
             try
@@ -23,7 +19,7 @@ namespace CarrotBot.Conversation
                 ulong userId = message.Author.Id;
                 bool channelIsInConversation = false;
                 string Server = "";
-                ConversationChannel originalChannel = null;
+                ConversationChannel? originalChannel = null;
                 for (int i = 0; i < ConversationData.ConversationChannels.Count(); i++)
                 {
                     if (message.Channel.Id == ConversationData.ConversationChannels[i].Id)
@@ -67,7 +63,7 @@ namespace CarrotBot.Conversation
                         {
                             await user.SendMessageAsync("Your message has been removed for containing an offensive word.\nContact a CarrotBot administrator if you believe this to be a mistake.");
                         }
-                        catch { } //This probably means we couldn't DM the user because they have DMs disabled. In this case, we just ignore the exception.
+                        catch (UnauthorizedException) { } //This probably means we couldn't DM the user because they have DMs disabled. In this case, we just ignore the exception.
                     }
                 }
                 /*if (ConversationData.LastMessage != null)
@@ -137,7 +133,7 @@ namespace CarrotBot.Conversation
                 string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
                 string Footer = $"Via {Server}";
 
-                if (Program.BotGuild.Members.ContainsKey(userId))
+                if (Program.BotGuild is not null && Program.BotGuild.Members.ContainsKey(userId))
                 {
                     if (Program.BotGuild.Members[userId].Roles.Any(x => x.Id == 907824766168203295))
                     {
@@ -194,11 +190,11 @@ namespace CarrotBot.Conversation
                 }
                 DiscordEmbed embed = eb2.Build();
 
-                ConversationMessage RefMsg = null;
+                ConversationMessage? RefMsg = null;
                 if (message.ReferencedMessage != null && message.MessageType == MessageType.Reply)
                 {
                     var replyMsg = message.ReferencedMessage;
-                    if (replyMsg.Author.Id == Program.discord.CurrentUser.Id)
+                    if (replyMsg.Author.Id == Program.discord!.CurrentUser.Id)
                     {
                         if (ConversationData.ConversationMessagesByOutId.ContainsKey(replyMsg.Id))
                         {
@@ -217,21 +213,13 @@ namespace CarrotBot.Conversation
                 {
                     try
                     {
-                        try
-                        {
-                            if (message.ChannelId != RefMsg.originalChannel.Id)
-                                msgObject.ChannelMessages.Add(RefMsg.originalChannel.Id, await RefMsg.originalMessage.RespondAsync(embed: embed));
-                        }
-                        catch { throw; }
+                        if (message.ChannelId != RefMsg.originalChannel!.Id)
+                            msgObject.ChannelMessages.Add(RefMsg.originalChannel!.Id, await RefMsg.originalMessage.RespondAsync(embed: embed));
                         foreach (DiscordMessage message1 in RefMsg.ChannelMessages.Values)
                         {
-                            try
-                            {
-                                if (message.ChannelId != message1.ChannelId)
-                                    msgObject.ChannelMessages.Add(message1.ChannelId, await message1.RespondAsync(embed: embed));
-                                await Task.Delay(1);
-                            }
-                            catch { throw; }
+                            if (message.ChannelId != message1.ChannelId)
+                                msgObject.ChannelMessages.Add(message1.ChannelId, await message1.RespondAsync(embed: embed));
+                            await Task.Delay(1);
                         }
                     }
                     catch (Exception e)
@@ -247,7 +235,7 @@ namespace CarrotBot.Conversation
                         //Check if the guild in question has a shard associated with it-
                         //If it doesn't, the guild has most likely either been deleted or removed the bot.
                         //So we remove the guild from the database.
-                        var shard = Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId);
+                        var shard = Program.discord!.GetShard(ConversationData.ConversationChannels[i].GuildId);
                         if (shard == null)
                         {
                             Logger.Log($"Conversation: Shard not found for guild {ConversationData.ConversationChannels[i].GuildId}. Assuming invalid guild.", Logger.CBLogLevel.WRN);
@@ -261,7 +249,7 @@ namespace CarrotBot.Conversation
                         try
                         {
                             var channel = await shard.GetChannelAsync(ConversationData.ConversationChannels[i].Id);
-                            if (RefMsg == null || (!RefMsg.ChannelMessages.Any(x => x.Value.ChannelId == channel.Id) && RefMsg.originalChannel.Id != channel.Id))
+                            if (RefMsg == null || (!RefMsg.ChannelMessages.Any(x => x.Value.ChannelId == channel.Id) && RefMsg.originalChannel!.Id != channel.Id))
                             {
                                 var outMessage = await channel.SendMessageAsync(embed: embed);
                                 msgObject.ChannelMessages.Add(channel.Id, outMessage);
@@ -291,9 +279,9 @@ namespace CarrotBot.Conversation
                 eb.WithDescription(message.Content);
                 eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
                 eb.WithColor(DiscordColor.Green);
-                msgObject.liveFeedMessage = await liveFeedChannel.SendMessageAsync(embed: eb.Build());
+                msgObject.liveFeedMessage = await liveFeedChannel!.SendMessageAsync(embed: eb.Build());
                 msgObject.Embed = embed;
-                msgObject.EmbedMessage = await embedsChannel.SendMessageAsync(embed: embed);
+                msgObject.EmbedMessage = await embedsChannel!.SendMessageAsync(embed: embed);
                 ConversationData.MessageDataChangedSinceLastWrite = true;
                 //Write the message database if it is less than 5 minutes before midnight
                 if ((DateTimeOffset.Now + new TimeSpan(0, 5, 0)).Day > DateTimeOffset.Now.Day)
@@ -303,7 +291,7 @@ namespace CarrotBot.Conversation
             }
             catch (Exception e)
             {
-                await Program.Mrcarrot.SendMessageAsync(e.ToString());
+                await Program.Mrcarrot!.SendMessageAsync(e.ToString());
             }
         }
         public static async Task SendConversationMessage(string msg)
@@ -313,12 +301,12 @@ namespace CarrotBot.Conversation
             {
                 try
                 {
-                    DiscordChannel channel = await Program.discord.GetShard(ConversationData.ConversationChannels[i].GuildId).GetChannelAsync(ConversationData.ConversationChannels[i].Id);
+                    DiscordChannel channel = await Program.discord!.GetShard(ConversationData.ConversationChannels[i].GuildId).GetChannelAsync(ConversationData.ConversationChannels[i].Id);
                     await channel.SendMessageAsync(msg);
                 }
                 catch (Exception e)
                 {
-                    await Program.Mrcarrot.SendMessageAsync($"Problems encountered sending message to channel {ConversationData.ConversationChannels[i].Id}:\n{e.ToString()}");
+                    await Program.Mrcarrot!.SendMessageAsync($"Problems encountered sending message to channel {ConversationData.ConversationChannels[i].Id}:\n{e}");
                 }
                 await Task.Delay(5);
             }
@@ -339,7 +327,7 @@ namespace CarrotBot.Conversation
             }
             catch (Exception e)
             {
-                await Program.Mrcarrot.SendMessageAsync(e.ToString());
+                await Program.Mrcarrot!.SendMessageAsync(e.ToString());
             }
         }
     }

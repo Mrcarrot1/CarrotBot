@@ -1,11 +1,9 @@
 //Unfinished reaction role module-
 //Will be finished in a later release.
-using System;
-using System.Collections.Generic;
-using DSharpPlus;
+
 using DSharpPlus.Entities;
 
-namespace CarrotBot
+namespace CarrotBot.Modules.ReactionRoles
 {
     public class ReactionRole
     {

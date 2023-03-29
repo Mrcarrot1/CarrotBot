@@ -1,10 +1,7 @@
-using System;
-using System.IO;
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using KarrotObjectNotation;
 
 namespace CarrotBot.Conversation
 {
@@ -57,4 +54,4 @@ namespace CarrotBot.Conversation
             await Task.Run(() => null);
         }
     }
-}
+}*/

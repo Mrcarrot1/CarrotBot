@@ -1,10 +1,10 @@
+using System.Linq;
+using System.Threading.Tasks;
+using CarrotBot.Conversation;
+using CarrotBot.Data;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using System.Threading.Tasks;
-using DSharpPlus.Entities;
-using DSharpPlus;
-using System.Linq;
-using CarrotBot.Conversation;
 
 namespace CarrotBot.SlashCommands;
 
@@ -84,12 +84,12 @@ public class CBGuildCommands : ApplicationCommandModule
     }
 
     [SlashCommand("conv-addchannelwgid", "Used to add your channel to the conversation.", false), SlashRequireConversationPermissions(ConversationPermissions.Admin)]
-    public async Task AddChannel(InteractionContext ctx, [Option("guild-id", "The guild the channel is in.")] long guildIds, [Option("channel", "The channel to connect to the conversation")] string channel, [Option("name", "What the conversation should call your server")] string name)
+    public async Task AddChannel(InteractionContext ctx, [Option("guild-id", "The guild the channel is in.")] long guildIds, [Option("channel", "The channel to connect to the conversation")] string? channel, [Option("name", "What the conversation should call your server")] string name)
     {
         await ctx.IndicateResponseAsync();
         try
         {
-            if (name == null || name == "")
+            if (name == "")
             {
                 name = ctx.Guild.Name;
             }
@@ -100,12 +100,12 @@ public class CBGuildCommands : ApplicationCommandModule
                 ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name, guildId));
                 ConversationData.WriteDatabase();
                 await ctx.UpdateResponseAsync("Channel added to conversation.");
-                DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(Id);
+                DiscordChannel discordChannel = await Program.discord!.GetShard(guildId).GetChannelAsync(Id);
                 await discordChannel.SendMessageAsync("This channel has just been added to the CarrotBot Multi-Server Conversation.\nHave fun chatting with other users!\nNote: for legal reasons, you must accept the conversation's terms(`%conversation acceptterms` to enter.");
             }
             else
             {
-                DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(818960822151544873);
+                DiscordChannel discordChannel = await Program.discord!.GetShard(guildId).GetChannelAsync(818960822151544873);
                 await discordChannel.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}");
                 await ctx.UpdateResponseAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
             }
@@ -116,7 +116,7 @@ public class CBGuildCommands : ApplicationCommandModule
         }
     }
     [SlashCommand("conv-removechannel", "Used to remove a channel from the conversation.", false), SlashRequireConversationPermissions(ConversationPermissions.Admin)]
-    public async Task RemoveChannel(InteractionContext ctx, [Option("channel", "The channel to remove.")] string channel)
+    public async Task RemoveChannel(InteractionContext ctx, [Option("channel", "The channel to remove.")] string? channel)
     {
         await ctx.IndicateResponseAsync();
         ulong Id = Utils.GetId(channel);
@@ -160,7 +160,7 @@ public class CBGuildCommands : ApplicationCommandModule
         //DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
         if (!confirm)
         {
-            await ctx.UpdateResponseAsync($"About to add {user.Username}#{user.Discriminator} as a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+            await ctx.UpdateResponseAsync($"About to add {user.Username}#{user.Discriminator} as a conversation moderator.\nType `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
         }
         else
         {
@@ -177,7 +177,7 @@ public class CBGuildCommands : ApplicationCommandModule
         //DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
         if (!confirm)
         {
-            await ctx.UpdateResponseAsync($"About to remove {user.Username}#{user.Discriminator} from being a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+            await ctx.UpdateResponseAsync($"About to remove {user.Username}#{user.Discriminator} from being a conversation moderator.\nType `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
         }
         else
         {

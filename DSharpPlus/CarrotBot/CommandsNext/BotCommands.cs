@@ -1,18 +1,8 @@
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
-using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using System.IO.Compression;
-using System.Net.Http;
-using System.IO;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     [Group("bot"), Description("Commands for various CarrotBot-related functions")]
     public class BotCommands : BaseCommandModule
@@ -30,13 +20,13 @@ namespace CarrotBot.Commands
         [Command("reportbug"), Description("Reports a bug with the bot")]
         public async Task ReportBug(CommandContext ctx, [RemainingText, Description("A description of the bug you are experiencing.")] string bug)
         {
-            await Program.Mrcarrot.SendMessageAsync($"Bug reported by {ctx.User.Username}#{ctx.User.Discriminator}: {bug}");
+            await Program.Mrcarrot!.SendMessageAsync($"Bug reported by {ctx.User.Username}#{ctx.User.Discriminator}: {bug}");
             await ctx.RespondAsync("Bug reported.");
         }
         [Command("suggestfeature"), Description("Suggests a feature for the bot")]
         public async Task SuggestFeature(CommandContext ctx, [RemainingText, Description("A description of the feature you would like to suggest.")] string feature)
         {
-            await Program.Mrcarrot.SendMessageAsync($"Feature suggested by {ctx.User.Username}#{ctx.User.Discriminator}: {feature}");
+            await Program.Mrcarrot!.SendMessageAsync($"Feature suggested by {ctx.User.Username}#{ctx.User.Discriminator}: {feature}");
             await ctx.RespondAsync("Feature suggested.");
         }
         //[Command("remoteupdate"), RequireOwner]

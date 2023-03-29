@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
-using KarrotObjectNotation;
 using System.Text.RegularExpressions;
+using KarrotObjectNotation;
 
 namespace CarrotBot.Data
 {
@@ -117,14 +116,14 @@ namespace CarrotBot.Data
             if (createIndex)
                 FlushData();
         }
-        public void AddJoinRole(ulong Id)
+        public void AddJoinRole(ulong id)
         {
-            if (!RolesToAssignOnJoin.Contains(Id))
-                RolesToAssignOnJoin.Add(Id);
+            if (!RolesToAssignOnJoin.Contains(id))
+                RolesToAssignOnJoin.Add(id);
         }
-        public void RemoveJoinRole(ulong Id)
+        public void RemoveJoinRole(ulong id)
         {
-            RolesToAssignOnJoin.RemoveAll(x => x.Equals(Id));
+            RolesToAssignOnJoin.RemoveAll(x => x.Equals(id));
         }
 
         public enum AllowCustomRoles
@@ -152,7 +151,7 @@ namespace CarrotBot.Data
 
         public override string ToString()
         {
-            return $"{Regex.ToString()} (" + (Ban ? "ban" : "kick") + ")";
+            return $"{Regex} {(Ban ? "ban" : "kick")}";
         }
     }
 

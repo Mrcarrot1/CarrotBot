@@ -1,20 +1,17 @@
 using System;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text.RegularExpressions;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using CarrotBot.Conversation;
+using CarrotBot.Data;
+using CarrotBot.Leveling;
 using DSharpPlus;
 using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using CarrotBot.Data;
 using KarrotObjectNotation;
 
 namespace CarrotBot.SlashCommands;
@@ -31,7 +28,9 @@ public class UngroupedCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync(eb.Build());
     }
 
-    /*[SlashCommand("help", "Displays command help.")]
+    //Help command- still WIP
+#if false
+    [SlashCommand("help", "Displays command help.")]
     public async Task Help(InteractionContext ctx, [Option("command", "The command to show help for.")] string command = null)
     {
         await ctx.IndicateResponseAsync();
@@ -78,20 +77,20 @@ public class UngroupedCommands : ApplicationCommandModule
                     if (eligibleCommands.Any())
                     {
                         string subcommands = "None";
-                        foreach (Command c in eligibleCommands)
+                        foreach (DiscordApplicationCommand c in eligibleCommands)
                         {
                             if (subcommands == "None")
-                                subcommands = $"`{c.QualifiedName}`";
+                                subcommands = $"`{c.Name}`";
                             else
-                                subcommands += $", `{c.QualifiedName}`";
+                                subcommands += $", `{c.Name}`";
                         }
                         eb.AddField("Commands", subcommands);
                     }
                     //eb.AddField("Settings Helper", "Configuring leveling using individual commands not your speed? Try out the new [leveling settings helper](https://carrotbot.calebmharper.com/LevelingHelper) beta!");
-                    await ctx.RespondAsync(eb.Build());
+                    await ctx.RespondEmbedAsync(eb.Build());
                     return;
                 }
-                Command cmd = null;
+                DiscordApplicationCommand cmd = null;
                 //Have to use 1-indexing for the overload so the user can enter the index correctly
                 int overload = 1;
                 foreach (var c in command)
@@ -108,13 +107,12 @@ public class UngroupedCommands : ApplicationCommandModule
                     if (cmd == null)
                         break;
 
-                    var failedChecks = await cmd.RunChecksAsync(ctx, true).ConfigureAwait(false);
-                    if (failedChecks.Any())
-                        throw new ChecksFailedException(cmd, ctx, failedChecks);
+                    bool permissionsValid = (ctx.Member.Permissions & cmd.DefaultMemberPermissions) == cmd.DefaultMemberPermissions;
+                    
 
-                    searchIn = cmd is CommandGroup ? (cmd as CommandGroup).Children.ToList() : null;
+                    //searchIn = cmd is APplicationCommand ? (cmd as CommandGroup).Children.ToList() : null;
                 }
-                if (cmd is CommandGroup group)
+                /*if (cmd is CommandGroup group)
                 {
                     eb.WithDescription($"`{cmd.QualifiedName}`: {cmd.Description}");
                     var commandsToSearch = group.Children.Where(xc => !xc.IsHidden);
@@ -145,16 +143,16 @@ public class UngroupedCommands : ApplicationCommandModule
                         }
                         eb.AddField("Subcommands", subcommands);
                     }
-                }
+                }*/
                 else if (cmd != null)
                 {
-                    eb.WithDescription($"`{cmd.QualifiedName}`:" +
+                    eb.WithDescription($"`{cmd.Name}`:" +
                     $"{cmd.Description}");
                     if (cmd.Description == null)
                     {
-                        eb.WithDescription($"`{cmd.QualifiedName}`");
+                        eb.WithDescription($"`{cmd.Name}`");
                     }
-                    if (cmd.Overloads.Count > 1)
+                    if (cmd. > 1)
                     {
                         eb.WithFooter($"This command has {cmd.Overloads.Count} overloads. To see them, use `%help {cmd.QualifiedName} <overload number>`.");
                     }
@@ -262,7 +260,8 @@ public class UngroupedCommands : ApplicationCommandModule
 
                 .Build()
                 );
-    }*/
+    }
+#endif
 
     [SlashCommand("shutdown", "Shuts the bot down.", false), SlashRequireOwner]
     public async Task Shutdown(InteractionContext ctx, [Option("dontRestart", "Whether or not to prevent the bot from automatically restarting.")] bool dontRestart = false)
@@ -274,10 +273,10 @@ public class UngroupedCommands : ApplicationCommandModule
         }
         await ctx.UpdateResponseAsync("CarrotBot shutting down. Good night!");
         Database.FlushDatabase(true);
-        Leveling.LevelingData.FlushAllData();
+        LevelingData.FlushAllData();
         if (!Program.isBeta)
         {
-            Conversation.ConversationData.WriteDatabase();
+            ConversationData.WriteDatabase();
             Dripcoin.WriteData();
         }
         Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
@@ -290,8 +289,8 @@ public class UngroupedCommands : ApplicationCommandModule
     {
         await ctx.IndicateResponseAsync();
         if (!Program.isBeta)
-            Conversation.ConversationData.LoadDatabase();
-        Leveling.LevelingData.LoadDatabase();
+            ConversationData.LoadDatabase();
+        LevelingData.LoadDatabase();
         Database.Load();
         await ctx.UpdateResponseAsync("Reloaded all data.");
     }
@@ -305,7 +304,7 @@ public class UngroupedCommands : ApplicationCommandModule
         Database.FlushDatabase(true);
         if (!Program.isBeta)
         {
-            Conversation.ConversationData.WriteDatabase();
+            ConversationData.WriteDatabase();
             Dripcoin.WriteData();
         }
         Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
@@ -323,7 +322,7 @@ public class UngroupedCommands : ApplicationCommandModule
         {
             await ctx.Member.ModifyAsync(x => x.Nickname = $"[AFK] {ctx.Member.DisplayName}");
         }
-        catch { }
+        catch(UnauthorizedException) { }
         await ctx.UpdateResponseAsync($"Set your AFK: {message}");
     }
     private static readonly HttpClient client = new HttpClient();
@@ -354,11 +353,11 @@ public class UngroupedCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
         eb.WithTitle("About CarrotBot");
         eb.WithColor(Utils.CBGreen);
-        eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `/help` for command help.");
-        eb.AddField("Shards", $"{Program.discord.ShardClients.Count}", true);
+        eb.WithDescription("CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `/help` for command help.");
+        eb.AddField("Shards", $"{Program.discord!.ShardClients.Count}", true);
         eb.AddField("Guilds", $"{Utils.GuildCount}", true);
         eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
-        //eb.AddField("DSharpPlus Version", $"v4.0.1");
+        eb.AddField("DSharpPlus Version", Program.discord.ShardClients[0].VersionString, true);
         eb.AddField("Invite/Vote Link", "https://discord.bots.gg/bots/389513870835974146");
         eb.AddField("Support Server", "https://discord.gg/wHPwHu7");
         eb.AddField("Source Repository", "https://github.com/Mrcarrot1/CarrotBot");
@@ -383,12 +382,12 @@ public class UngroupedCommands : ApplicationCommandModule
         else
         {
             await ctx.RespondAsync("You have requested a full deletion of all data CarrotBot has stored pertaining to your account. Please note that this may take some time and that CarrotBot may store additional data in the future.\nHowever, the bot does not store global user data, so data pertaining to you will not be stored unless you share a server with the bot.");
-            Leveling.LevelingData.DeleteUserData(ctx.User.Id);
+            LevelingData.DeleteUserData(ctx.User.Id);
             Database.DeleteUserData(ctx.User.Id);
         }
     }
     [SlashCommand("modmail", "Sends a message to server moderators.")]
-    public async Task Modmail(InteractionContext ctx, [Option("message", "The message to send. You can attach up to one image, or link to multiple in this message.")] string message, [Option("attachment", "An image or file to add to your message.")] DiscordAttachment attachment = null)
+    public async Task Modmail(InteractionContext ctx, [Option("message", "The message to send. You can attach up to one image, or link to multiple in this message.")] string message, [Option("attachment", "An image or file to add to your message.")] DiscordAttachment? attachment = null)
     {
         if (ctx.Channel.IsPrivate)
         {
@@ -473,7 +472,7 @@ public class UngroupedCommands : ApplicationCommandModule
     [Choice("Dark Grey 2", "#546e7a")]
     [Option("color", "The hex color for the role."),
     NameLocalization(Localization.BritishEnglish, "colour"),
-    DescriptionLocalization(Localization.BritishEnglish, "The hex colour for the role.")] string color, [Option("icon", "The URL or link to your desired icon image.")] string iconUrl = null)
+    DescriptionLocalization(Localization.BritishEnglish, "The hex colour for the role.")] string color, [Option("icon", "The URL or link to your desired icon image.")] string? iconUrl = null)
     {
         try
         {
@@ -486,7 +485,7 @@ public class UngroupedCommands : ApplicationCommandModule
                     await ctx.UpdateResponseAsync("Please enter a valid hex color. To find your desired color value, visit ");
                     return;
                 }
-                Stream iconStream = null;
+                Stream? iconStream = null;
                 if (iconUrl != null)
                 {
                     if (!Utils.IsImageUrl(iconUrl))
@@ -494,9 +493,9 @@ public class UngroupedCommands : ApplicationCommandModule
                         await ctx.UpdateResponseAsync("Please provide a valid image URL!");
                         return;
                     }
-                    HttpClient client = new();
+                    HttpClient httpClient = new();
                     if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
-                    var httpIconStream = await client.GetStreamAsync(iconUrl);
+                    var httpIconStream = await httpClient.GetStreamAsync(iconUrl);
 
                 }
                 DiscordRole role = await ctx.Guild.CreateRoleAsync(name, color: new DiscordColor(color), icon: iconStream);

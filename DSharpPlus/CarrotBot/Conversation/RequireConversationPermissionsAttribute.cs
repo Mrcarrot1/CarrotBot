@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
 
 namespace CarrotBot.Conversation
 {
@@ -33,7 +30,7 @@ namespace CarrotBot.Conversation
                 case ConversationPermissions.SuperAdmin:
                     return Task.FromResult(ConversationData.SuperAdministrators.Contains(ctx.User.Id));
                 case ConversationPermissions.Developer:
-                    return (Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id));
+                    return (Task.FromResult(ctx.User.Id == Program.Mrcarrot?.Id));
             }
             return Task.FromResult(false);
         }
@@ -64,7 +61,7 @@ namespace CarrotBot.Conversation
                 case ConversationPermissions.SuperAdmin:
                     return Task.FromResult(ConversationData.SuperAdministrators.Contains(ctx.User.Id));
                 case ConversationPermissions.Developer:
-                    return (Task.FromResult(ctx.User.Id == Program.Mrcarrot.Id));
+                    return (Task.FromResult(ctx.User.Id == Program.Mrcarrot?.Id));
             }
             return Task.FromResult(false);
         }

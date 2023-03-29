@@ -1,8 +1,9 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.IO;
+using CarrotBot.Data;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using KarrotObjectNotation;
 
@@ -34,9 +35,9 @@ namespace CarrotBot.Leveling
         public async Task HandleMessage(DiscordMessage msg)
         {
             if (Server.NoXPChannels.Contains(msg.ChannelId)) return;
-            if (msg.MessageType == DSharpPlus.MessageType.GuildMemberJoin) return;
+            if (msg.MessageType == MessageType.GuildMemberJoin) return;
             messageInterval = new TimeSpan(0, 0, Server.XPCooldown);
-            if (msg.Content.StartsWith(Data.Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId).GuildPrefix) || (Program.isBeta && msg.Content.StartsWith("b%"))) return;
+            if (msg.Content.StartsWith(Database.GetOrCreateGuildData((ulong)msg.Channel.GuildId!).GuildPrefix) || (Program.isBeta && msg.Content.StartsWith("b%"))) return;
             if (DateTimeOffset.Now - LastMessageTimestamp > messageInterval)
             {
                 if (msg.Channel.Guild.Id == 824824193001979924)
@@ -93,7 +94,7 @@ namespace CarrotBot.Leveling
                         eb.Description += $"\n{Server.LevelUpMessages[Level]}";
                     }
                     Server.SortUsersByRank();
-                    string content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;
+                    string? content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;
                     if (Server.LevelUpChannel == null)
                         await msg.RespondAsync(content, eb.Build());
                     else

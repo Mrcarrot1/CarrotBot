@@ -2,10 +2,12 @@
 //As such, those systems do not use this database.
 //This may change in the future, but for now I don't want to break already-functional code.
 //That said, I will do my best to keep future data storage and handling in this class.
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Data
@@ -13,11 +15,11 @@ namespace CarrotBot.Data
     /// <summary>
     /// Contains general data not related to conversation or leveling.
     /// </summary>
-    public class Database
+    public static class Database
     {
         public static Dictionary<ulong, GuildData> Guilds = new Dictionary<ulong, GuildData>();
 
-        private static KONNode DatabaseNode = null;
+        private static KONNode? DatabaseNode;
         private static List<KONNode> RootNodes = new List<KONNode>();
 
         public static void Load()
@@ -40,18 +42,18 @@ namespace CarrotBot.Data
                             GuildData guild = new GuildData(item);
                             guild.GuildPrefix = (string)guildNode.Values["prefix"];
                             guild.GuildPrefix = guild.GuildPrefix.Replace(@"\", "");
-                            if (guildNode.Values.TryGetValue("modmailChannel", out object modmailChannel))
+                            if (guildNode.Values.TryGetValue("modmailChannel", out object? modmailChannel))
                             {
                                 guild.ModMailChannel = (ulong)modmailChannel;
                             }
-                            if (guildNode.Values.TryGetValue("messageLogsChannel", out object messageLogsChannel))
+                            if (guildNode.Values.TryGetValue("messageLogsChannel", out object? messageLogsChannel))
                             {
                                 guild.MessageLogsChannel = (ulong)messageLogsChannel;
                             }
-                            if (guildNode.Values.TryGetValue("customRolesAllowed", out object customRolesAllowed))
+                            if (guildNode.Values.TryGetValue("customRolesAllowed", out object? customRolesAllowed))
                             {
                                 string customRolesAllowedStr = (string)customRolesAllowed;
-                                guild.CustomRolesAllowed = customRolesAllowedStr switch 
+                                guild.CustomRolesAllowed = customRolesAllowedStr switch
                                 {
                                     "None" => GuildData.AllowCustomRoles.None,
                                     "Booster" => GuildData.AllowCustomRoles.Booster,
@@ -65,11 +67,11 @@ namespace CarrotBot.Data
                                 {
                                     foreach (ulong item1 in array1.Items)
                                     {
-                                        bool ok = Utils.TryLoadDatabaseNode($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb", out KONNode userNode);
+                                        bool ok = Utils.TryLoadDatabaseNode($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb", out KONNode? userNode);
                                         if (!ok) continue;
-                                        RootNodes.Add(userNode);
+                                        RootNodes.Add(userNode!);
                                         GuildUserData user = new GuildUserData(item1, guild.Id);
-                                        user.IsAFK = (bool)userNode.Values["isAFK"];
+                                        user.IsAFK = (bool)userNode!.Values["isAFK"];
                                         if (user.IsAFK)
                                         {
                                             user.AFKMessage = (string)userNode.Values["AFKMessage"];
@@ -125,7 +127,7 @@ namespace CarrotBot.Data
                                         JoinFilter filter = new JoinFilter("(?!.*)", false, 0); //If there's a problem reading it, just add a new filter with a regex designed to have 0 valid matches
                                         if (node1.Values.ContainsKey("regex"))
                                         {
-                                            filter.Regex = new System.Text.RegularExpressions.Regex((string)node1.Values["regex"]);
+                                            filter.Regex = new Regex((string)node1.Values["regex"]);
                                         }
                                         if (node1.Values.ContainsKey("ban"))
                                         {
@@ -188,7 +190,7 @@ namespace CarrotBot.Data
                         }
                         catch (Exception e)
                         {
-                            Logger.Log($"Problem loading guild {item}: {e.ToString()}", Logger.CBLogLevel.EXC);
+                            Logger.Log($"Problem loading guild {item}: {e}", Logger.CBLogLevel.EXC);
                         }
                     }
                 }
@@ -226,22 +228,22 @@ namespace CarrotBot.Data
         /// </summary>
         /// <param name="input">Format ROOT_NODE/NODE/NODE/key</param>
         /// <returns>The corresponding value if the key exists, null if it does not.</returns>
-        public static string Query(string input)
+        public static string? Query(string input)
         {
             if (RootNodes.Count == 0) Load();
             string[] query = input.Split('/');
-            KONNode currentNode = DatabaseNode;
+            KONNode? currentNode = DatabaseNode ?? new("DATABASE");
             try
             {
                 for (int i = 0; i < query.Length; i++)
                 {
                     if (i != query.Length - 1)
                     {
-                        currentNode = currentNode.Children.FirstOrDefault(x => x.Name == query[i]);
+                        currentNode = currentNode!.Children.FirstOrDefault(x => x.Name == query[i]) ?? null;
                     }
                     else
                     {
-                        return currentNode.Values[query[i]].ToString();
+                        return currentNode!.Values[query[i]].ToString();
                     }
                 }
             }

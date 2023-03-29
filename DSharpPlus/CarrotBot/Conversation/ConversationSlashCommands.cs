@@ -1,10 +1,4 @@
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
-using System.IO;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
@@ -60,7 +54,7 @@ public class ConversationSlashCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (name == null || name == "")
+            if (name == "")
             {
                 name = ctx.Guild.Name;
             }
@@ -74,13 +68,13 @@ public class ConversationSlashCommands : ApplicationCommandModule
             }
             else
             {
-                await Program.BotGuild.Channels[818960822151544873].SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
+                await Program.BotGuild!.Channels[818960822151544873].SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
                 await ctx.UpdateResponseAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
             }
         }
         catch
         {
-            await ctx.UpdateResponseAsync($"Something went wrong. Please ensure that you are using a valid channel in this server.");
+            await ctx.UpdateResponseAsync("Something went wrong. Please ensure that you are using a valid channel in this server.");
         }
     }
 

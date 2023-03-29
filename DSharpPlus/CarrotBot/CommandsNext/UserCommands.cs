@@ -1,43 +1,20 @@
 using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
-using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     //[Group("user")]
     public class UserCommands : BaseCommandModule
     {
         [Command("userinfo"), Description("Gets info about a user")]
-        public async Task Info(CommandContext ctx, [Description("The user in question. Leave blank to return your own info."), RemainingText] string userMention = null)
+        public async Task Info(CommandContext ctx, [Description("The user in question. Leave blank to return your own info."), RemainingText] DiscordUser? user = null)
         {
             try
             {
-                ulong userId = 0;
-                var member = ctx.Member;
-                try
-                {
-                    if (userMention != null)
-                    {
-                        member = await ctx.Guild.FindMemberAsync(userMention);
-                        userId = member.Id;
-                    }
-
-                }
-                catch
-                {
-                    await ctx.RespondAsync("User not found or not a member of this guild!");
-                    return;
-                }
-                var user = ctx.User;
-                if (userId != 0)
-                    user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
+                user ??= ctx.User;
                 Logger.Log($"User info command: processing user {user.Username}");
                 string type = "User";
                 if (user.IsBot)
@@ -58,8 +35,9 @@ namespace CarrotBot.Commands
                 eb.AddField("Type", $"{type}", true);
                 if (!ctx.Channel.IsPrivate)
                 {
-                    string nick = member.Nickname;
-                    if (nick == null || nick == "")
+                    DiscordMember? member = user as DiscordMember;
+                    string nick = member!.Nickname;
+                    if (string.IsNullOrEmpty(nick))
                         nick = member.Username;
                     eb.AddField("Nickname", $"{nick}", true);
                 }

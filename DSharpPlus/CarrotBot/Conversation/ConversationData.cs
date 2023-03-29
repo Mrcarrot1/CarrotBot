@@ -1,21 +1,20 @@
 using System;
-using System.Security.Cryptography;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using DSharpPlus.Entities;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Conversation
 {
-    public class ConversationData
+    public static class ConversationData
     {
-        public static ConversationMessage LastMessage { get; set; }
+        public static ConversationMessage? LastMessage { get; set; }
         public static List<ulong> MessageIdsInUse = new List<ulong>();
         public static List<ConversationChannel> ConversationChannels = new List<ConversationChannel>();
-        public static Dictionary<ulong, ConversationMessage> ConversationMessages = new Dictionary<ulong, ConversationMessage>();
-        public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOrigId = new Dictionary<ulong, ConversationMessage>();
-        public static Dictionary<ulong, ConversationMessage> ConversationMessagesByOutId = new Dictionary<ulong, ConversationMessage>();
+        public static readonly Dictionary<ulong, ConversationMessage> ConversationMessages = new Dictionary<ulong, ConversationMessage>();
+        public static readonly Dictionary<ulong, ConversationMessage> ConversationMessagesByOrigId = new Dictionary<ulong, ConversationMessage>();
+        public static readonly Dictionary<ulong, ConversationMessage> ConversationMessagesByOutId = new Dictionary<ulong, ConversationMessage>();
         public static Dictionary<ulong, DiscordEmbed> ConversationEmbeds = new Dictionary<ulong, DiscordEmbed>();
         public static List<ulong> AcceptedUsers = new List<ulong>();
         public static List<ulong> BannedUsers = new List<ulong>();
@@ -25,8 +24,8 @@ namespace CarrotBot.Conversation
 
         public static List<ulong> VerifiedUsers = new List<ulong>();
         public static Dictionary<ulong, PreVerifiedUser> PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
-        public static List<string> BannedWords = new List<string>();
-        private static ulong currentMessageIndex = 0;
+        public static List<string> BannedWords = new();
+        private static ulong currentMessageIndex;
 
         public static bool MessageDataChangedSinceLastWrite { get; internal set; }
 
@@ -47,7 +46,7 @@ namespace CarrotBot.Conversation
             //There will always be 9 digits following the date
             //This allows for a larger number of messages than can be practically sent while leaving zero chance of overflowing the ulong
             //And also allowing the conversation to continue working until at least 2100, by which time I will most likely be dead :)
-            string Date = $"{DateTime.Now.ToString("yyyyMMdd")}000000000";
+            string Date = $"{DateTime.Now:yyyyMMdd}000000000";
             currentMessageIndex += 1;
             return ulong.Parse(Date) + currentMessageIndex;
         }
@@ -55,7 +54,7 @@ namespace CarrotBot.Conversation
         {
 #nullable disable
             KONNode databaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.conversationDataPath}/ConversationDatabase.cb")));
-            Conversation.liveFeedChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(818960559625732096).GetAwaiter().GetResult();
+            Conversation.liveFeedChannel = Program.discord!.GetShard(388339196978266114).GetChannelAsync(818960559625732096).GetAwaiter().GetResult();
             Conversation.embedsChannel = Program.discord.GetShard(388339196978266114).GetChannelAsync(824473207608049684).GetAwaiter().GetResult();
             ConversationChannels = new List<ConversationChannel>();
             PreVerifiedUsers = new Dictionary<ulong, PreVerifiedUser>();
@@ -170,8 +169,10 @@ namespace CarrotBot.Conversation
                                                 originalMsg = origChn.GetMessageAsync(originalId).GetAwaiter().GetResult();
                                                 author = origChn.Guild.GetMemberAsync(originalMsg.Author.Id).GetAwaiter().GetResult();
                                             }
-                                            ConversationMessage message = new ConversationMessage(CBId, originalMsg, author, originalChannel);
-                                            message.thisRun = false;
+                                            ConversationMessage message = new(CBId, originalMsg, author, originalChannel)
+                                            {
+                                                thisRun = false
+                                            };
                                             foreach (KONNode childNode in node.Children)
                                             {
                                                 if (childNode.Name == "CHANNEL_MESSAGES")
@@ -182,11 +183,6 @@ namespace CarrotBot.Conversation
                                                         {
                                                             if (ConversationChannels.Any(x => x.Id.ToString() == chnMsg.Key))
                                                             {
-                                                                //TODO: Grab the message object from the correct channel and add it to the ConversationMessage object   DONE
-                                                                //Also add the correct entry to ConversationMessagesByOutId                                             DONE
-                                                                //Also make sure that none of this shit can throw unhandled exceptions                                  DONE
-                                                                //Also make sure to write the code that actually stores this information on disk                        DONE
-                                                                //Also make sure that no code that might be affected by this change can throw unhandled exceptions      DONE (PROBABLY)
                                                                 ulong msgId = (ulong)chnMsg.Value;
                                                                 ConversationChannel channel1 = ConversationChannels.FirstOrDefault(x => x.Id.ToString() == chnMsg.Key);
                                                                 DiscordChannel channel = Program.discord.GetShard(channel1.GuildId).GetChannelAsync(channel1.Id).GetAwaiter().GetResult();
@@ -263,7 +259,7 @@ namespace CarrotBot.Conversation
             KONNode databaseNode = new KONNode("CONVERSATION_DATABASE");
 
             KONNode channelsNode = new KONNode("CHANNELS");
-            foreach (ConversationChannel channel in ConversationChannels)
+            foreach (ConversationChannel? channel in ConversationChannels)
             {
                 KONNode channelNode = new KONNode("CHANNEL");
                 channelNode.AddValue("id", channel.Id);
@@ -336,7 +332,7 @@ namespace CarrotBot.Conversation
                 if (!message.thisRun) continue;
                 KONNode msgNode = new KONNode("MESSAGE");
                 msgNode.AddValue("CBId", message.Id);
-                msgNode.AddValue("originalChannel", message.originalChannel.Id);
+                if (message.originalChannel is not null) msgNode.AddValue("originalChannel", message.originalChannel.Id);
                 msgNode.AddValue("originalId", message.originalMessage.Id);
                 KONNode channelMessages = new KONNode("CHANNEL_MESSAGES");
                 foreach (KeyValuePair<ulong, DiscordMessage> chnMsg in message.ChannelMessages)

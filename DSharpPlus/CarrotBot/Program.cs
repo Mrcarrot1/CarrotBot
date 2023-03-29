@@ -5,22 +5,23 @@
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using CarrotBot.Conversation;
+using CarrotBot.Data;
+using CarrotBot.Leveling;
+using CarrotBot.SlashCommands;
 using DSharpPlus;
+using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
-using DSharpPlus.CommandsNext;
+using DSharpPlus.Exceptions;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
-using CarrotBot.Leveling;
-using CarrotBot.Data;
 using Microsoft.Extensions.Logging;
 
 namespace CarrotBot
@@ -31,22 +32,22 @@ namespace CarrotBot
 #if BETA
         public static readonly bool isBeta = Environment.UserName == "mrcarrot";
 #else
-        public static bool isBeta = false;
+        public static bool isBeta;
 #endif
 
 #if DATABASE_WRITE_PROTECTED
         public static readonly bool doNotWrite = true;
 #else
-        public static bool doNotWrite = false;
+        public static bool doNotWrite;
 #endif
 
 
         public static bool conversation = false;
         static bool firstRun = true;
 
-        public static DiscordShardedClient discord;
-        public static DiscordMember Mrcarrot;
-        public static DiscordGuild BotGuild;
+        public static DiscordShardedClient? discord;
+        public static DiscordMember? Mrcarrot;
+        public static DiscordGuild? BotGuild;
         public static string commandPrefix = "";
         static async Task Main(string[] args)
         {
@@ -71,7 +72,7 @@ namespace CarrotBot
             //Check to see if it's the beta, and set these values accordingly
             //I know I'll probably forget how this operator works at some point
             //So it's worth explaining the code
-            string token = isBeta ? SensitiveInformation.betaToken : SensitiveInformation.botToken;
+            string? token = isBeta ? SensitiveInformation.betaToken : SensitiveInformation.botToken;
             commandPrefix = isBeta ? "b%" : "%";
             Console.Title = isBeta ? "CarrotBot Beta" : "CarrotBot";
 
@@ -80,7 +81,7 @@ namespace CarrotBot
             {
                 Token = token,
                 TokenType = TokenType.Bot,
-                MinimumLogLevel = isBeta ? Microsoft.Extensions.Logging.LogLevel.Debug : Microsoft.Extensions.Logging.LogLevel.Information,
+                MinimumLogLevel = isBeta ? LogLevel.Debug : LogLevel.Information,
                 Intents = (DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers | DiscordIntents.MessageContents),
                 LoggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new CBLoggerProvider()))
             });
@@ -88,59 +89,21 @@ namespace CarrotBot
             if (!isBeta)
                 Dripcoin.LoadData();
             discord.MessageCreated += CommandHandler;
-            discord.MessageCreated += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MainMessageHandler(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.Ready += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await ReadyHandler(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.MessageUpdated += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MessageUpdated(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
-            discord.MessageDeleted += (s, e) =>
-            {
-                return Task.Run(async () =>
-                {
-                    await MessageDeleted(s, e);
-                });
-            };
+            discord.MessageCreated += MainMessageHandler;
+            discord.Ready += ReadyHandler;
+            discord.MessageUpdated += MessageUpdated;
+            discord.MessageDeleted += MessageDeleted;
             discord.GuildMemberAdded += MemberJoined;
             discord.GuildCreated += GuildAdded;
             discord.GuildDeleted += GuildRemoved;
             discord.ClientErrored += HandleClientError;
             discord.ComponentInteractionCreated += HandleComponentInteraction;
-            discord.ModalSubmitted += (s, e) =>
-            {
-                _ = Task.Run(async () =>
-                {
-                    await MainModalHandler(s, e);
-                });
-
-                return Task.CompletedTask;
-            };
+            discord.ModalSubmitted += ModalHandler;
+            discord.SocketErrored += HandleSocketError;
             //discord.MessageReactionAdded += ReactionAdded;
 
 
-            List<string> stringPrefixes = new List<string>();
-            stringPrefixes.Add(commandPrefix);
+            List<string> stringPrefixes = new() { commandPrefix };
             if (!isBeta)
                 stringPrefixes.Add("cb%");
 
@@ -150,45 +113,53 @@ namespace CarrotBot
                 EnableDefaultHelp = false,
                 UseDefaultCommandHandler = false
             });
-            Parallel.ForEach((await discord.GetCommandsNextAsync()).Values, (CommandsNextExtension commands, ParallelLoopState loopState, long localSum) =>
+            Parallel.ForEach((await discord.GetCommandsNextAsync()).Values, commands =>
             {
-                commands.RegisterCommands<Commands.UngroupedCommands>();
-                commands.RegisterCommands<Commands.AdminCommands>();
-                commands.RegisterCommands<Commands.BotCommands>();
-                commands.RegisterCommands<Commands.MathCommands>();
-                commands.RegisterCommands<Commands.ServerCommands>();
-                commands.RegisterCommands<Commands.UserCommands>();
-                commands.RegisterCommands<Leveling.LevelingCommands>();
-                commands.RegisterCommands<Conversation.ConversationCommands>();
-                commands.RegisterCommands<Commands.JoinBlacklistCommands>();
-                commands.RegisterCommands<Commands.JoinFilterCommands>();
+                commands.RegisterCommands<CommandsNext.UngroupedCommands>();
+                commands.RegisterCommands<CommandsNext.AdminCommands>();
+                commands.RegisterCommands<CommandsNext.BotCommands>();
+                commands.RegisterCommands<CommandsNext.MathCommands>();
+                commands.RegisterCommands<CommandsNext.ServerCommands>();
+                commands.RegisterCommands<CommandsNext.UserCommands>();
+                commands.RegisterCommands<LevelingCommands>();
+                commands.RegisterCommands<ConversationCommands>();
+                commands.RegisterCommands<CommandsNext.JoinBlacklistCommands>();
+                commands.RegisterCommands<CommandsNext.JoinFilterCommands>();
             });
             discord.GetShard(824824193001979924).GetCommandsNext().RegisterCommands<DripcoinCommands>();
 
             //await discord.UseSlashCommandsAsync();
 
             var slashCommands = await discord.UseSlashCommandsAsync();
-            slashCommands.RegisterCommands<SlashCommands.AdminCommands>();
-            slashCommands.RegisterCommands<SlashCommands.BotCommands>();
-            slashCommands.RegisterCommands<SlashCommands.CBGuildCommands>(388339196978266114);
-            slashCommands.RegisterCommands<SlashCommands.JoinBlacklistCommands>();
-            slashCommands.RegisterCommands<SlashCommands.JoinFilterCommands>();
-            slashCommands.RegisterCommands<SlashCommands.MathCommands>();
-            slashCommands.RegisterCommands<SlashCommands.ServerCommands>();
-            slashCommands.RegisterCommands<SlashCommands.UserCommands>();
-            slashCommands.RegisterCommands<Conversation.ConversationSlashCommands>();
-            slashCommands.RegisterCommands<Leveling.LevelingSlashCommands>();
-            slashCommands.RegisterCommands<SlashCommands.UngroupedCommands>();
+            slashCommands.RegisterCommands<AdminCommands>();
+            slashCommands.RegisterCommands<BotCommands>();
+            slashCommands.RegisterCommands<CBGuildCommands>(388339196978266114);
+            slashCommands.RegisterCommands<JoinBlacklistCommands>();
+            slashCommands.RegisterCommands<JoinFilterCommands>();
+            slashCommands.RegisterCommands<MathCommands>();
+            slashCommands.RegisterCommands<ServerCommands>();
+            slashCommands.RegisterCommands<UserCommands>();
+            slashCommands.RegisterCommands<ConversationSlashCommands>();
+            slashCommands.RegisterCommands<LevelingSlashCommands>();
+            slashCommands.RegisterCommands<UngroupedCommands>();
 
 
             await discord.StartAsync();
 
             //Save the conversation message data every 5 minutes
+            System.Timers.Timer? conversationSaveTimer = null;
             if (!isBeta)
             {
-                var conversationSaveTimer = new System.Threading.Timer(e => Conversation.ConversationData.WriteMessageData(), new AutoResetEvent(false), 18000000, 18000000); //Wait 5 minutes, then run every 5 minutes
+                conversationSaveTimer = new(300000); //Run every 5 minutes
+                conversationSaveTimer.Elapsed += (sender, e) =>
+                {
+                    ConversationData.WriteMessageData();
+                };
+                conversationSaveTimer.AutoReset = true;
+                conversationSaveTimer.Enabled = true;
             }
             await Task.Delay(-1);
+            conversationSaveTimer?.Dispose();
         }
         static async Task MemberJoined(DiscordClient client, GuildMemberAddEventArgs e)
         {
@@ -210,7 +181,7 @@ namespace CarrotBot
                             eb.WithDescription($"You have been banned from {e.Guild.Name} by automatic username filter.");
                             await e.Member.SendMessageAsync(embed: eb.Build());
                         }
-                        catch { }
+                        catch (UnauthorizedException) { } //Ignore this, it probably just means that the user's DMs are disabled
                         await e.Member.BanAsync(reason: "Username regex filter");
                     }
                     else
@@ -222,7 +193,7 @@ namespace CarrotBot
                             eb.WithDescription($"You have been kicked from {e.Guild.Name} by automatic username filter.");
                             await e.Member.SendMessageAsync(embed: eb.Build());
                         }
-                        catch { }
+                        catch (UnauthorizedException) { }
                         await e.Member.RemoveAsync(reason: "Username regex filter");
                     }
                 }
@@ -240,7 +211,7 @@ namespace CarrotBot
                             eb.WithDescription($"You have been banned from {e.Guild.Name} by exact username blacklist.");
                             await e.Member.SendMessageAsync(embed: eb.Build());
                         }
-                        catch { }
+                        catch (UnauthorizedException) { }
                         await e.Member.BanAsync(reason: "Username blacklisted");
                     }
                     else
@@ -252,7 +223,7 @@ namespace CarrotBot
                             eb.WithDescription($"You have been kicked from {e.Guild.Name} by exact username blacklist.");
                             await e.Member.SendMessageAsync(embed: eb.Build());
                         }
-                        catch { }
+                        catch (UnauthorizedException) { }
                         await e.Member.RemoveAsync(reason: "Username blacklisted");
                     }
                 }
@@ -268,10 +239,9 @@ namespace CarrotBot
                 {
                     try
                     {
-                        DiscordMember member = await e.Guild.GetMemberAsync(Id);
                         await e.Interaction.CreateResponseAsync(InteractionResponseType.Modal,
                         new DiscordInteractionResponseBuilder()
-                        .WithTitle($"Replying to Modmail")
+                        .WithTitle("Replying to Modmail")
                         .WithCustomId($"mmreply_{Id}")
                         .AddComponents(new TextInputComponent("Response", "response")))
                         .WaitAsync(TimeSpan.FromMinutes(15));
@@ -289,12 +259,10 @@ namespace CarrotBot
                     try
                     {
                         Console.WriteLine(guildId);
-                        DiscordGuild guild = await discord.GetShard(guildId).GetGuildAsync(guildId);
-                        string guildName = guild.Name;
                         await e.Interaction.CreateResponseAsync(
                         InteractionResponseType.Modal,
                         new DiscordInteractionResponseBuilder()
-                        .WithTitle($"Responding to Moderators")
+                        .WithTitle("Responding to Moderators")
                         .WithCustomId($"mmfu_{guildId}_{channelId}_{messageId}")
                         .AddComponents(new TextInputComponent("Response", "response")))
                         .WaitAsync(TimeSpan.FromMinutes(15));
@@ -307,12 +275,8 @@ namespace CarrotBot
                 }
             }
         }
-        static async Task HandleModalInteraction(DiscordClient client, ModalSubmitEventArgs e)
-        {
-            await MainModalHandler(client, e);
-        }
 
-        static async Task MainModalHandler(DiscordClient client, ModalSubmitEventArgs e)
+        static async Task ModalHandler(DiscordClient client, ModalSubmitEventArgs e)
         {
             await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             string[] splitId = e.Interaction.Data.CustomId.Split('_');
@@ -323,7 +287,7 @@ namespace CarrotBot
                     try
                     {
                         DiscordMember member = await e.Interaction.Guild.GetMemberAsync(Id);
-                        if (e.Values.TryGetValue("response", out string message))
+                        if (e.Values.TryGetValue("response", out string? message))
                         {
                             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
                                 .WithAuthor(name: $"Response from {e.Interaction.Guild.Name} Moderators", iconUrl: e.Interaction.Guild.IconUrl)
@@ -354,7 +318,7 @@ namespace CarrotBot
                             await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().AddEmbed(eb.Build()));
                         }
                     }
-                    catch (DSharpPlus.Exceptions.UnauthorizedException)
+                    catch (UnauthorizedException)
                     {
                         await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("Failed to DM the user: Permission denied."));
                     }
@@ -371,16 +335,16 @@ namespace CarrotBot
                 {
                     try
                     {
-                        DiscordChannel channel = await discord.GetShard(guildId).GetChannelAsync(channelId);
+                        DiscordChannel channel = await discord!.GetShard(guildId).GetChannelAsync(channelId);
                         DiscordMessage message = await channel.GetMessageAsync(messageId);
 
-                        if (e.Values.TryGetValue("response", out string response))
+                        if (e.Values.TryGetValue("response", out string? response))
                         {
                             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
                                 .WithAuthor(name: $"Response from {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.GetAvatarUrl(ImageFormat.Auto))
                                 .WithDescription(response)
                                 .WithColor(Utils.CBOrange);
-                            
+
                             Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
                             foreach (Match match in URLRegex.Matches(response))
                             {
@@ -401,14 +365,10 @@ namespace CarrotBot
                     }
                     catch
                     {
-                        await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent($"I couldn't send your message. Try contacting server moderators directly."));
+                        await e.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent("I couldn't send your message. Try contacting server moderators directly."));
                     }
                 }
             }
-        }
-        static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
-        {
-            await MainMessageHandler(client, e);
         }
         static Task HandleClientError(DiscordClient client, ClientErrorEventArgs e)
         {
@@ -419,9 +379,9 @@ namespace CarrotBot
             }
             return Task.CompletedTask;
         }
-        static Task HandleSocketError(DiscordClient client, ClientErrorEventArgs e)
+        static Task HandleSocketError(DiscordClient client, SocketErrorEventArgs e)
         {
-            if (e.EventName == "HearbeatFailure")
+            if (e.Exception.ToString().Contains(("HeartbeatFailure")))
             {
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
                 Environment.Exit(0);
@@ -432,7 +392,7 @@ namespace CarrotBot
         {
             try
             {
-                if (e.Author.Id == discord.CurrentUser.Id) return;
+                if (e.Author.Id == discord!.CurrentUser.Id) return;
                 if (e.Channel.IsPrivate) return;
                 if (e.Author.IsBot) return;
                 if (conversation)
@@ -468,7 +428,7 @@ namespace CarrotBot
                         await Task.Delay(5000);
                         await message.DeleteAsync();
                     }
-                    catch { }
+                    catch (UnauthorizedException) { }
                 }
                 if (e.Author.Id == 366298290377195522 && e.Message.Content.ToLowerInvariant().Trim().Equals("am i right lads or am i right?"))
                 {
@@ -480,15 +440,11 @@ namespace CarrotBot
                 Logger.Log(ee.ToString(), Logger.CBLogLevel.EXC);
             }
         }
-        static async Task Ready(DiscordClient client, ReadyEventArgs e)
-        {
-            await ReadyHandler(client, e);
-        }
         static async Task ReadyHandler(DiscordClient client, ReadyEventArgs e)
         {
             try
             {
-                BotGuild = await discord.GetShard(388339196978266114).GetGuildAsync(388339196978266114);
+                BotGuild = await discord!.GetShard(388339196978266114).GetGuildAsync(388339196978266114);
                 Mrcarrot = await BotGuild.GetMemberAsync(366298290377195522);
                 Logger.Log("Connection ready");
                 Utils.GuildCount = 0;
@@ -514,10 +470,10 @@ namespace CarrotBot
         }
         static async Task MessageUpdated(DiscordClient client, MessageUpdateEventArgs e)
         {
-            if (e.Channel.IsPrivate || e.Author.Id == discord.CurrentUser.Id) return;
-            if (!isBeta && Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            if (e.Channel.IsPrivate || e.Author.Id == discord!.CurrentUser.Id) return;
+            if (!isBeta && ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
-                await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
+                await ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
             }
 
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
@@ -588,10 +544,10 @@ namespace CarrotBot
         }
         static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
-            if (e.Channel.IsPrivate || e.Message.Author == null || e.Message.Author.Id == discord.CurrentUser.Id) return;
-            if (Conversation.ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            if (e.Channel.IsPrivate || e.Message.Author == null || e.Message.Author.Id == discord!.CurrentUser.Id) return;
+            if (ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
             {
-                await Conversation.ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
+                await ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
             }
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
             if (guildData.MessageLogsChannel != null)
@@ -680,10 +636,10 @@ namespace CarrotBot
 
                 var command = cnext.FindCommand(cmdString, out var args);
 
-                string[] args2 = (args == null) ? new string[0] : Utils.TokenizeString(args);
-                int argsCount = (args2 == null) ? 0 : args2.Length;
+                string[] args2 = (args == null) ? Array.Empty<string>() : Utils.TokenizeString(args);
+                int argsCount = args2.Length;
 
-                Console.WriteLine($"User has entered command {command.QualifiedName} with {argsCount} arguments:");
+                Console.WriteLine($"User has entered command {command!.QualifiedName} with {argsCount} arguments:");
                 for (int i = 0; i < argsCount; i++)
                 {
                     Console.WriteLine(args2[i]);
@@ -694,7 +650,7 @@ namespace CarrotBot
                     if (!Utils.GetPossibleArgCounts(command).Contains(argsCount))
                     {
                         //If the user has entered an incorrect number of parameters, pretend they've just run %help <command>
-                        if (!command.Overloads.Any(x => x.Arguments.Count == argsCount) && command.QualifiedName != "help")
+                        if (command.Overloads.All(x => x.Arguments.Count != argsCount) && command.QualifiedName != "help")
                         {
                             if (cnext.RegisteredCommands.Any(x => cmdString.StartsWith(x.Value.QualifiedName)))
                             {
@@ -707,8 +663,6 @@ namespace CarrotBot
                 var ctx = cnext.CreateContext(msg, prefix, command, args);
 
                 await cnext.ExecuteCommandAsync(ctx);
-
-                return;
             }
             catch (Exception ee)
             {
@@ -731,14 +685,14 @@ namespace CarrotBot
                 {
                     Database.DeleteGuildData(e.Guild.Id);
                 }
-                if (Leveling.LevelingData.Servers.ContainsKey(e.Guild.Id))
+                if (LevelingData.Servers.ContainsKey(e.Guild.Id))
                 {
-                    Leveling.LevelingData.DeleteGuildData(e.Guild.Id);
+                    LevelingData.DeleteGuildData(e.Guild.Id);
                 }
-                if (Conversation.ConversationData.ConversationChannels.Any(x => x.GuildId == e.Guild.Id))
+                if (ConversationData.ConversationChannels.Any(x => x.GuildId == e.Guild.Id))
                 {
-                    Conversation.ConversationData.ConversationChannels.RemoveAll(x => x.GuildId == e.Guild.Id);
-                    Conversation.ConversationData.WriteDatabase();
+                    ConversationData.ConversationChannels.RemoveAll(x => x.GuildId == e.Guild.Id);
+                    ConversationData.WriteDatabase();
                 }
             });
         }

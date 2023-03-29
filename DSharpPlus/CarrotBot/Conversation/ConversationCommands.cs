@@ -1,14 +1,10 @@
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq;
-using System.IO;
+using System.Threading.Tasks;
+using CarrotBot.Data;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 
 namespace CarrotBot.Conversation
 {
@@ -102,11 +98,11 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Wrote conversation database to disk.");
         }
         [Command("addchannel"), Description("Used to add your channel to the conversation"), RequireUserPermissions(Permissions.ManageChannels)]
-        public async Task AddChannel(CommandContext ctx, [Description("The channel to connect to the conversation")] string channel, [RemainingText, Description("What the conversation should call your server")] string name)
+        public async Task AddChannel(CommandContext ctx, [Description("The channel to connect to the conversation")] string? channel, [RemainingText, Description("What the conversation should call your server")] string name)
         {
             try
             {
-                if (name == null || name == "")
+                if (name == "")
                 {
                     name = ctx.Guild.Name;
                 }
@@ -120,21 +116,23 @@ namespace CarrotBot.Conversation
                 }
                 else
                 {
-                    await Program.BotGuild.Channels[818960822151544873].SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
+                    if (Program.BotGuild is not null)
+                        await Program.BotGuild.Channels[818960822151544873].SendMessageAsync(
+                            $"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
                     await ctx.RespondAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
                 }
             }
             catch
             {
-                await ctx.RespondAsync($"Something went wrong. Please ensure that you are using the channel hashtag or ID and that the channel exists in this server.");
+                await ctx.RespondAsync("Something went wrong. Please ensure that you are using the channel hashtag or ID and that the channel exists in this server.");
             }
         }
         [Command("addchannelwgid"), Description("Used to add your channel to the conversation."), Hidden]
-        public async Task AddChannel(CommandContext ctx, [Description("The guild the channel is in.")] ulong guildId, [Description("The channel to connect to the conversation")] string channel, [RemainingText, Description("What the conversation should call your server")] string name)
+        public async Task AddChannel(CommandContext ctx, [Description("The guild the channel is in.")] ulong guildId, [Description("The channel to connect to the conversation")] string? channel, [RemainingText, Description("What the conversation should call your server")] string name)
         {
             try
             {
-                if (name == null || name == "")
+                if (name == "")
                 {
                     name = ctx.Guild.Name;
                 }
@@ -144,12 +142,12 @@ namespace CarrotBot.Conversation
                     ConversationData.ConversationChannels.Add(new ConversationChannel(Id, name, guildId));
                     ConversationData.WriteDatabase();
                     await ctx.RespondAsync("Channel added to conversation.");
-                    DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(Id);
+                    DiscordChannel discordChannel = await Program.discord!.GetShard(guildId).GetChannelAsync(Id);
                     await discordChannel.SendMessageAsync("This channel has just been added to the CarrotBot Multi-Server Conversation.\nHave fun chatting with other users!\nNote: for legal reasons, you must accept the conversation's terms(`%conversation acceptterms` to enter.");
                 }
                 else
                 {
-                    DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(818960822151544873);
+                    DiscordChannel discordChannel = await Program.discord!.GetShard(guildId).GetChannelAsync(818960822151544873);
                     await discordChannel.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}");
                     await ctx.RespondAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
                 }
@@ -160,7 +158,7 @@ namespace CarrotBot.Conversation
             }
         }
         [Command("removechannel"), Description("Used to remove a channel from the conversation."), RequireConversationPermissions(ConversationPermissions.Admin)]
-        public async Task RemoveChannel(CommandContext ctx, string channel)
+        public async Task RemoveChannel(CommandContext ctx, string? channel)
         {
             ulong Id = Utils.GetId(channel);
             ConversationData.ConversationChannels.RemoveAll(x => x.Id == Id || x.GuildId == Id);
@@ -168,7 +166,7 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Removed channel from conversation.");
         }
         [Command("ban"), Description("Bans a user from being able to take part in the conversation."), RequireConversationPermissions(ConversationPermissions.Moderator)]
-        public async Task BanUser(CommandContext ctx, string user)
+        public async Task BanUser(CommandContext ctx, string? user)
         {
             ulong Id = Utils.GetId(user);
             if (!ConversationData.Moderators.Contains(Id))
@@ -193,13 +191,13 @@ namespace CarrotBot.Conversation
             await ctx.RespondAsync("Message deleted.");
         }
         [Command("addmod"), Description("Adds a user as a conversation moderator."), RequireConversationPermissions(ConversationPermissions.Admin)]
-        public async Task AddMod(CommandContext ctx, string user, bool confirm = false)
+        public async Task AddMod(CommandContext ctx, string? user, bool confirm = false)
         {
             ulong Id = Utils.GetId(user);
-            DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
+            DiscordMember duser = await Program.BotGuild!.GetMemberAsync(Id);
             if (!confirm)
             {
-                await ctx.RespondAsync($"About to add {duser.Username}#{duser.Discriminator} as a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+                await ctx.RespondAsync($"About to add {duser.Username}#{duser.Discriminator} as a conversation moderator.\nType `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
             }
             else
             {
@@ -209,13 +207,13 @@ namespace CarrotBot.Conversation
             }
         }
         [Command("removemod"), Description("Removes a user from being a conversation moderator."), RequireConversationPermissions(ConversationPermissions.Admin)]
-        public async Task RemoveMod(CommandContext ctx, string user, bool confirm = false)
+        public async Task RemoveMod(CommandContext ctx, string? user, bool confirm = false)
         {
             ulong Id = Utils.GetId(user);
-            DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
+            DiscordMember duser = await Program.BotGuild!.GetMemberAsync(Id);
             if (!confirm)
             {
-                await ctx.RespondAsync($"About to remove {duser.Username}#{duser.Discriminator} from being a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+                await ctx.RespondAsync($"About to remove {duser.Username}#{duser.Discriminator} from being a conversation moderator.\nType `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
             }
             else
             {
@@ -225,7 +223,7 @@ namespace CarrotBot.Conversation
             }
         }
         [Command("approveuser"), Description("Adds a user to the conversation verified list."), RequireConversationPermissions(ConversationPermissions.Moderator)]
-        public async Task ApproveUser(CommandContext ctx, string user)
+        public async Task ApproveUser(CommandContext ctx, string? user)
         {
             ulong Id = Utils.GetId(user);
             DiscordUser duser = await ctx.Guild.GetMemberAsync(Id);

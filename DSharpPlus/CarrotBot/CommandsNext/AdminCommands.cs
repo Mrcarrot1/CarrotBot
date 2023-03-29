@@ -1,16 +1,13 @@
 using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
+using CarrotBot.Data;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using CarrotBot.Data;
+using DSharpPlus.Entities;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     public class AdminCommands : BaseCommandModule
     {
@@ -29,11 +26,11 @@ namespace CarrotBot.Commands
             }
         }
         [Command("kick"), RequirePermissions(Permissions.KickMembers), RequireUserPermissions(Permissions.KickMembers), Description("Kicks a user from the server."), RequireGuild]
-        public async Task Kick(CommandContext ctx, [Description("The user to kick.")] string userMention, [RemainingText, Description("The reason for kicking the user.")] string reason = null)
+        public async Task Kick(CommandContext ctx, [Description("The user to kick.")] string? userMention, [RemainingText, Description("The reason for kicking the user.")] string? reason = null)
         {
             ulong UserId = Utils.GetId(userMention);
             DiscordMember user = await ctx.Guild.GetMemberAsync(UserId);
-            if (user.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+            if (user.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member?.Roles.OrderBy(x => x.Position).First().Position)
             {
                 await ctx.RespondAsync("You don't have permission to kick that user!");
                 return;
@@ -54,13 +51,12 @@ namespace CarrotBot.Commands
             }
         }
         [Command("ban"), RequirePermissions(Permissions.BanMembers), RequireUserPermissions(Permissions.BanMembers), Description("Bans a user from the server.")]
-        public async Task Ban(CommandContext ctx, [Description("The user to ban.")] string userMention, [RemainingText, Description("The reason for banning the user.")] string reason = null)
+        public async Task Ban(CommandContext ctx, [Description("The user to ban.")] string? userMention, [RemainingText, Description("The reason for banning the user.")] string? reason = null)
         {
-            ulong userId;
-            DiscordMember user = null;
+            DiscordMember? user = null;
             try
             {
-                userId = Utils.GetId(userMention);
+                var userId = Utils.GetId(userMention);
                 user = await ctx.Guild.GetMemberAsync(userId);
             }
             catch (FormatException)
@@ -74,17 +70,20 @@ namespace CarrotBot.Commands
             }
             try
             {
-                if (user.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+                if (user?.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member?.Roles.OrderBy(x => x.Position).First().Position)
                 {
                     await ctx.RespondAsync("You don't have permission to ban that user!");
                     return;
                 }
-                await user.SendMessageAsync($"You have been banned from {ctx.Guild.Name} by {ctx.User.Username}.");
+
+                if ((await user!.TrySendMessageAsync(
+                        $"You have been banned from {ctx.Guild.Name} by {ctx.User.Username}.")) is null)
+                    await ctx.RespondAsync("Failed to DM the user.");
                 if (reason != null)
-                    await user.SendMessageAsync($"Reason for ban: {reason}");
+                    await user!.TrySendMessageAsync($"Reason for ban: {reason}");
                 else
-                    await user.SendMessageAsync("No reason given.");
-                await user.BanAsync(reason: reason);
+                    await user!.TrySendMessageAsync("No reason given.");
+                await user!.BanAsync(reason: reason);
                 await ctx.RespondAsync($"Banned {user.Username}.");
             }
             catch
@@ -93,10 +92,10 @@ namespace CarrotBot.Commands
             }
         }
         [Command("unban"), RequirePermissions(Permissions.BanMembers), RequireUserPermissions(Permissions.BanMembers), Description("Unbans a user from the server.")]
-        public async Task Unban(CommandContext ctx, [Description("The user to unban.")] string userMention, [RemainingText, Description("The reason for unbanning the user.")] string reason = null)
+        public async Task Unban(CommandContext ctx, [Description("The user to unban.")] string? userMention, [RemainingText, Description("The reason for unbanning the user.")] string? reason = null)
         {
             ulong userId = Utils.GetId(userMention);
-            DiscordUser user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
+            DiscordUser user = await Program.discord!.ShardClients.First().Value.GetUserAsync(userId);
             try
             {
                 await user.UnbanAsync(ctx.Guild, reason);
@@ -108,24 +107,23 @@ namespace CarrotBot.Commands
             }
         }
         [Command("warn"), RequirePermissions(Permissions.ManageGuild), Description("Issues a warning to a user in this server.")]
-        public async Task Warn(CommandContext ctx, [Description("The user to warn.")] string userMention, [RemainingText] string reason)
+        public async Task Warn(CommandContext ctx, [Description("The user to warn.")] string? userMention, [RemainingText] string? reason = null)
         {
             ulong userId = Utils.GetId(userMention);
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithAuthor("Warning Issued");
-            if (reason != null)
-                eb.WithDescription($"Warned <@!{userId}>: **{reason}**");
-            else
-                eb.WithDescription($"Warned <@!{userId}>. No reason given.");
+            eb.WithDescription(reason != null
+                ? $"Warned <@!{userId}>: **{reason}**"
+                : $"Warned <@!{userId}>. No reason given.");
             GuildUserData user = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
-            if (reason == "" || reason == null)
+            if (string.IsNullOrEmpty(reason))
                 reason = "No reason given.";
             user.AddWarning(reason, ctx.User.Id);
             user.FlushData();
             await ctx.RespondAsync(embed: eb.Build());
         }
         [Command("warnings"), Description("Allows a user to check warnings in this server.")]
-        public async Task Warnings(CommandContext ctx, [Description("The user to check warnings for. Leave blank to check your own.")] string userMention = null)
+        public async Task Warnings(CommandContext ctx, [Description("The user to check warnings for. Leave blank to check your own.")] string? userMention = null)
         {
             ulong userId = ctx.User.Id;
             if (userMention != null)
@@ -135,16 +133,17 @@ namespace CarrotBot.Commands
             {
                 await ctx.RespondAsync("That user doesn't have any warnings in this server!");
             }
-            else foreach (var warning in user.Warnings)
+            else 
+                foreach (var warning in user.Warnings)
                 {
                     DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                     eb.WithAuthor($"{(await ctx.Guild.GetMemberAsync(userId)).Username}'s Warnings");
-                    eb.AddField($"{warning.Item2.ToString("yyyy-MM-dd HH:mm:ss")}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
+                    eb.AddField($"{warning.Item2:yyyy-MM-dd HH:mm:ss}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
                     await ctx.RespondAsync(embed: eb.Build());
                 }
         }
         [Command("addjoinrole"), RequirePermissions(Permissions.ManageRoles), Description("Adds a role that will be assigned to members on joining the server.")]
-        public async Task AddJoinRole(CommandContext ctx, [Description("The role to add.")] string role)
+        public async Task AddJoinRole(CommandContext ctx, [Description("The role to add.")] string? role)
         {
             try
             {
@@ -158,7 +157,7 @@ namespace CarrotBot.Commands
             }
         }
         [Command("removejoinrole"), RequirePermissions(Permissions.ManageRoles), Description("Removes a role from being assigned to members on joining the server.")]
-        public async Task RemoveJoinRole(CommandContext ctx, [Description("The role to remove.")] string role)
+        public async Task RemoveJoinRole(CommandContext ctx, [Description("The role to remove.")] string? role)
         {
             try
             {

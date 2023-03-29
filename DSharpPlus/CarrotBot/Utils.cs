@@ -1,14 +1,12 @@
 using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Globalization;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Security.Cryptography;
-using DSharpPlus.Entities;
+using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using KarrotObjectNotation;
 
@@ -18,13 +16,13 @@ namespace CarrotBot
     {
         private static readonly string version = "1.5.2";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
-        public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
+        public static readonly string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
-        public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
+        public static readonly string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";
-        public static string logsPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Logs";
-        public static string conversationDataPath = $@"{localDataPath}/Conversation";
-        public static string levelingDataPath = $@"{localDataPath}/Leveling";
+        public static readonly string logsPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Logs";
+        public static readonly string conversationDataPath = $@"{localDataPath}/Conversation";
+        public static readonly string levelingDataPath = $@"{localDataPath}/Leveling";
 
         public static int GuildCount = 0;
 
@@ -43,8 +41,9 @@ namespace CarrotBot
         /// </summary>
         /// <param name="mention"></param>
         /// <returns></returns>
-        public static ulong GetId(string mention)
+        public static ulong GetId(string? mention)
         {
+            if (mention is null) throw new FormatException("Mention string was null");
             try
             {
                 mention = mention
@@ -62,7 +61,7 @@ namespace CarrotBot
                 throw new FormatException();
             }
         }
-        public static bool TryGetId(string mention, out ulong Id)
+        public static bool TryGetId(string? mention, out ulong Id)
         {
             try
             {
@@ -79,18 +78,17 @@ namespace CarrotBot
         {
             HttpClient client = new HttpClient();
             var resp = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, URL)).GetAwaiter().GetResult();
-            if (resp.Content.Headers.ContentType != null && resp.Content.Headers.ContentType.MediaType != null)
+            if (resp.Content.Headers.ContentType is { MediaType: { } })
                 return resp.Content.Headers.ContentType.MediaType.StartsWith("image/") || resp.Content.Headers.ContentType.MediaType.StartsWith("video/");
-            else return false;
+            return false;
         }
-#nullable disable
-        public static Task<DiscordMember> FindMemberAsync(this DiscordGuild guild, string user)
+        public static Task<DiscordMember>? FindMemberAsync(this DiscordGuild guild, string user)
         {
             //Check to see if the input string is a user ID or mention
             if (TryGetId(user, out ulong Id))
             {
                 if (guild.Members.ContainsKey(Id))
-                    return Task<DiscordMember>.Run(() => guild.Members[Id]);
+                    return Task.Run(() => guild.Members[Id]);
             }
             //If not an ID- check for two things-
             //First, if there is less than 5 characters' difference between the input and either the username or nickname.
@@ -101,7 +99,7 @@ namespace CarrotBot
             try
             {
                 int currLowestDistance = user.Length < 3 ? user.Length + 1 : 3;
-                DiscordMember currClosestMatch = null;
+                DiscordMember? currClosestMatch = null;
                 foreach (DiscordMember member in guild.Members.Values)
                 {
                     if (CompareStrings(member.Username, user) < currLowestDistance)
@@ -126,7 +124,7 @@ namespace CarrotBot
                     }
                 }
                 if (currClosestMatch != null)
-                    return Task<DiscordMember>.Run(() => currClosestMatch);
+                    return Task.Run(() => currClosestMatch);
             }
             catch (Exception e)
             {
@@ -135,7 +133,6 @@ namespace CarrotBot
             //If not found at the end, return null
             return null;
         }
-#nullable enable
         /// <summary>
         /// Gets the Levenshtein distance between two strings.
         /// </summary>
@@ -147,7 +144,8 @@ namespace CarrotBot
             //If the string is null, we return an arbitrary large number-
             //This is not appropriate for all use cases, but here we don't want to create a false match between
             //null and a search query of fewer than 4 characters
-            if (s == null || t == null) return 1000000;
+            //This is no longer necessary with nullable
+            //if (s == null || t == null) return 1000000;
             int n = s.Length;
             int m = t.Length;
             int[,] d = new int[n + 1, m + 1];
@@ -207,10 +205,10 @@ namespace CarrotBot
         /// <returns></returns>
         public static string SafeSubstring(this string input, int startIndex)
         {
-            if (input == null) return "";
+            //if (input == null) return "";
             if (startIndex < 0) return "";
             if (startIndex >= input.Length) return "";
-            else return input.Substring(startIndex);
+            return input.Substring(startIndex);
         }
         /// <summary>
         /// Retrieves a substring from this instance, empty if the start index is out of range, or up to the end of the string.
@@ -222,13 +220,13 @@ namespace CarrotBot
         /// <returns></returns>
         public static string SafeSubstring(this string input, int startIndex, int length)
         {
-            if (input == null) return "";
+            //if (input == null) return "";
             if (startIndex < 0 || length <= 0) return "";
             if (startIndex >= input.Length) return "";
-            else if (startIndex + length > input.Length) return input.Substring(startIndex, input.Length - startIndex);
-            else return input.Substring(startIndex, length);
+            if (startIndex + length > input.Length) return input.Substring(startIndex, input.Length - startIndex);
+            return input.Substring(startIndex, length);
         }
-        public static bool TryLoadDatabaseNode(string inputPath, out KONNode output)
+        public static bool TryLoadDatabaseNode(string inputPath, out KONNode? output)
         {
 #nullable disable
             if (!File.Exists(inputPath))
@@ -277,8 +275,9 @@ namespace CarrotBot
         /// <param name="ctx"></param>
         /// <param name="title"></param>
         /// <param name="content"></param>
+        /// <param name="color"></param>
         /// <returns></returns>
-        public static async Task RespondEmbedAsync(this CommandContext ctx, string title, string content, DiscordColor? color = null)
+        public static async Task RespondEmbedAsync(this CommandContext ctx, string? title, string? content, DiscordColor? color = null)
         {
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle(title);
@@ -287,18 +286,32 @@ namespace CarrotBot
             await ctx.RespondAsync(embed: eb.Build());
         }
 
+        public static async Task<DiscordMessage?> TrySendMessageAsync(this DiscordMember? member, string? content = null, DiscordEmbed? embed = null)
+        {
+            if (member is null) return null;
+            try
+            {
+                return await member.SendMessageAsync(content, embed);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         /// <summary>
         /// CarrotBot-specific extension method: sends a text response to an interaction- not terribly useful actually
         /// </summary>
         /// <param name="ctx"></param>
         /// <param name="message"></param>
+        /// <param name="ephemeral"></param>
         /// <returns></returns>
         public static async Task RespondAsync(this InteractionContext ctx, string message, bool ephemeral = false)
         {
             if (!ephemeral)
-                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
+                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message));
             else
-                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message).AsEphemeral());
+                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder().WithContent(message).AsEphemeral());
         }
 
         /// <summary>
@@ -327,40 +340,43 @@ namespace CarrotBot
         /// CarrotBot-specific extension method: sends an embed response to an interaction- not terribly useful actually
         /// </summary>
         /// <param name="ctx"></param>
-        /// <param name="message"></param>
+        /// <param name="title"></param>
+        /// <param name="content"></param>
+        /// <param name="color"></param>
         /// <returns></returns>
-        public static async Task RespondEmbedAsync(this InteractionContext ctx, string title, string content, DiscordColor? color = null)
+        public static async Task RespondEmbedAsync(this InteractionContext ctx, string? title, string? content, DiscordColor? color = null)
         {
             DiscordEmbed embed = new DiscordEmbedBuilder()
                 .WithTitle(title)
                 .WithDescription(content)
                 .WithColor(color ?? CBGreen)
                 .Build();
-            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
         }
 
         /// <summary>
         /// CarrotBot-specific extension method: sends an embed response to an interaction- not terribly useful actually
         /// </summary>
         /// <param name="ctx"></param>
-        /// <param name="message"></param>
+        /// <param name="embed"></param>
         /// <returns></returns>
         public static async Task RespondEmbedAsync(this InteractionContext ctx, DiscordEmbed embed)
         {
-            await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
+            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, new DiscordInteractionResponseBuilder(new DiscordMessageBuilder().WithEmbed(embed)));
         }
 
         /// <summary>
         /// CarrotBot-specific extension method: sends a response to an interaction indicating that the bot is processing and will return with a result
         /// </summary>
         /// <param name="ctx"></param>
+        /// <param name="ephemeral"></param>
         /// <returns></returns>
         public static async Task IndicateResponseAsync(this InteractionContext ctx, bool ephemeral = false)
         {
             if (!ephemeral)
-                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.DeferredChannelMessageWithSource);
+                await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
             else
-                await ctx.CreateResponseAsync(DSharpPlus.InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral());
+                await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource, new DiscordInteractionResponseBuilder().AsEphemeral());
         }
 
         public static string[] TokenizeString(string str)

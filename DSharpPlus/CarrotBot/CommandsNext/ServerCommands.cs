@@ -1,15 +1,10 @@
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Entities;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     [Group("server"), Description("Commands for interacting with a given server"), Aliases("guild")]
     public class ServerCommands : BaseCommandModule
@@ -33,8 +28,10 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("You need to be in a server to use this command!");
                 return;
             }
-            var eb = new DiscordEmbedBuilder();
-            eb.Color = Utils.CBGreen;
+            DiscordEmbedBuilder eb = new()
+            {
+                Color = Utils.CBGreen
+            };
             //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
             eb.WithThumbnail(ctx.Guild.IconUrl);
             eb.WithTitle("Server Info");

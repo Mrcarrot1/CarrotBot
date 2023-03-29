@@ -1,26 +1,24 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Threading;
 using System.Diagnostics;
-using ZipFile = System.IO.Compression.ZipFile;
-using DSharpPlus;
-using DSharpPlus.Entities;
+using System.IO;
+using CarrotBot.Conversation;
+using CarrotBot.Data;
+using CarrotBot.Leveling;
 using Microsoft.Extensions.Logging;
 
 namespace CarrotBot
 {
     class Logger : ILogger
     {
-        public static bool firstRun = true;
-        public static string logPath = "";
+        private static bool firstRun = true;
+        private static string logPath = "";
 
-        private static int exceptionCount = 0;
-        public static void Setup()
+        private static int exceptionCount;
+
+        private static void Setup()
         {
             firstRun = false;
-            logPath = $@"{Utils.logsPath}/Log_{DateTime.Now.ToString("yyyy-MM-dd_HH:mm:ss")}.txt";
+            logPath = $@"{Utils.logsPath}/Log_{DateTime.Now:yyyy-MM-dd_HH:mm:ss}.txt";
             File.WriteAllText(logPath, "-----Log initiated for CarrotBot.-----\nRun by " + Environment.UserName + ". Local time: " + DateTime.Now + "; UTC: " + DateTime.UtcNow + ".\n---------------------------------------------");
 
         }
@@ -29,11 +27,11 @@ namespace CarrotBot
             if (firstRun)
                 Setup();
             //ISocketMessageChannel channel = Program.client.GetChannel(490551836323872779) as ISocketMessageChannel;
-            File.AppendAllText(logPath, $"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
+            File.AppendAllText(logPath, $"\n[{level} {DateTime.Now:HH:mm:ss}] {Message}");
             if (level == CBLogLevel.ERR) Console.ForegroundColor = ConsoleColor.DarkYellow;
             if (level == CBLogLevel.WRN) Console.ForegroundColor = ConsoleColor.Yellow;
             if (level == CBLogLevel.EXC) Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"\n[{level} {DateTime.Now.ToString("HH:mm:ss")}] {Message}");
+            Console.WriteLine($"\n[{level} {DateTime.Now:HH:mm:ss}] {Message}");
             Console.ForegroundColor = ConsoleColor.White;
             if (level == CBLogLevel.EXC)
             {
@@ -48,31 +46,28 @@ namespace CarrotBot
             //if (channel != null)
             //  channel.SendMessageAsync($"{DateTime.Now}: {Message.Replace(DateTime.Now.ToString("HH:mm:ss"), "")}");
         }
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (firstRun)
                 Setup();
-            File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
-            Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now.ToString("HH:mm:ss")}] {formatter(state, exception)}");
-            if (logLevel == LogLevel.Error) Console.WriteLine(exception.ToString());
-            if (exception != null)
-            {
-                Console.WriteLine(exception.ToString());
-            }
+            File.AppendAllText(logPath, $"\n[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now:HH:mm:ss}] {formatter(state, exception)}");
+            Console.WriteLine($"[{GetShortLogLevel(logLevel)} {eventId} {DateTime.Now:HH:mm:ss}] {formatter(state, exception)}");
+            if (exception is not null) Console.WriteLine(exception.ToString());
             if (eventId.ToString() == "ConnectionClose" || eventId.ToString() == "HeartbeatFailure")
             {
-                Data.Database.FlushDatabase(true);
-                Conversation.ConversationData.WriteDatabase();
-                Leveling.LevelingData.FlushAllData();
+                Database.FlushDatabase(true);
+                ConversationData.WriteDatabase();
+                LevelingData.FlushAllData();
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
                 Environment.Exit(0);
             }
         }
+#nullable disable
         public IDisposable BeginScope<TState>(TState state)
         {
-#nullable disable
             return null;
         }
+#nullable enable
         public bool IsEnabled(LogLevel logLevel)
         {
             return true;

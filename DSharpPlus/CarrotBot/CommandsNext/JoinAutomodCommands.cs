@@ -1,16 +1,13 @@
 using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Linq;
+using CarrotBot.Data;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using CarrotBot.Data;
+using DSharpPlus.Entities;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     [Group("joinfilter"), Description("Commands for working with regex join filters."), Aliases("joinfilters", "regexfilters")]
     public class JoinFilterCommands : BaseCommandModule
@@ -20,7 +17,7 @@ namespace CarrotBot.Commands
         {
             try
             {
-                if (filter[0] == '`' && filter[filter.Length - 1] == '`')
+                if (filter[0] == '`' && filter[^1] == '`')
                 {
                     filter = filter.SafeSubstring(1, filter.Length - 2);
                 }
@@ -62,7 +59,7 @@ namespace CarrotBot.Commands
                 JoinFilter filter = guild.JoinFilters[i];
                 string ban = filter.Ban ? "Yes" : "No";
                 eb.AddField("ID", $"`{i}`", true);
-                eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+                eb.AddField("Regex", $"`{filter.Regex}`", true);
                 eb.AddField("Ban?", ban, true);
             }
             eb.WithColor(Utils.CBGreen);
@@ -81,7 +78,7 @@ namespace CarrotBot.Commands
                 DiscordEmbedBuilder eb = new();
 
                 eb.WithTitle($"Filter {filterId} info");
-                eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+                eb.AddField("Regex", $"`{filter.Regex}`", true);
                 eb.AddField("Ban?", (filter.Ban ? "Yes" : "No"), true);
                 eb.AddField("Created By", filter.CreatorId != 0 ? $"<@{filter.CreatorId}>" : "Unknown", true);
                 string exceptions = "";
@@ -139,7 +136,7 @@ namespace CarrotBot.Commands
 
                     filter.Ban = ban;
                     guildData.FlushData();
-                    await ctx.RespondEmbedAsync("Success", $"Successfully set filter {filterId} (`{filter.Regex.ToString()}`) to " + (ban ? "ban" : "kick") + " users.", Utils.CBGreen);
+                    await ctx.RespondEmbedAsync("Success", $"Successfully set filter {filterId} (`{filter.Regex}`) to " + (ban ? "ban" : "kick") + " users.", Utils.CBGreen);
                 }
                 catch (IndexOutOfRangeException)
                 {
@@ -150,7 +147,7 @@ namespace CarrotBot.Commands
             [Command("regex"), Description("Used to modify the regex used in the filter."), RequirePermissions(Permissions.BanMembers)]
             public async Task ModifyRegex(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The regex the filter should use.")] string regex)
             {
-                if (regex[0] == '`' && regex[regex.Length - 1] == '`')
+                if (regex[0] == '`' && regex[^1] == '`')
                 {
                     regex = regex.SafeSubstring(1, regex.Length - 2);
                 }
@@ -159,9 +156,9 @@ namespace CarrotBot.Commands
                     GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
                     JoinFilter filter = guildData.JoinFilters[filterId];
 
-                    filter.Regex = new System.Text.RegularExpressions.Regex(regex);
+                    filter.Regex = new Regex(regex);
                     guildData.FlushData();
-                    await ctx.RespondEmbedAsync("Success", $"Successfully set filter {filterId} to `{filter.ToString()}`.", Utils.CBGreen);
+                    await ctx.RespondEmbedAsync("Success", $"Successfully set filter {filterId} to `{filter}`.", Utils.CBGreen);
                 }
                 catch (IndexOutOfRangeException)
                 {
@@ -170,7 +167,7 @@ namespace CarrotBot.Commands
             }
 
             [Command("addexception"), Description("Used to add an exception to the filter rule."), RequirePermissions(Permissions.BanMembers)]
-            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to add an exception for.")] string user)
+            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to add an exception for.")] string? user)
             {
                 try
                 {
@@ -192,7 +189,7 @@ namespace CarrotBot.Commands
             }
 
             [Command("removeexception"), Description("Used to add an exception to the filter rule."), RequirePermissions(Permissions.BanMembers)]
-            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string user)
+            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the filter to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string? user)
             {
                 try
                 {
@@ -364,7 +361,7 @@ namespace CarrotBot.Commands
 
                     blacklist.Username = username;
                     guildData.FlushData();
-                    await ctx.RespondEmbedAsync("Success", $"Successfully set blacklist entry {blacklistId} to {blacklist.ToString()}.", Utils.CBGreen);
+                    await ctx.RespondEmbedAsync("Success", $"Successfully set blacklist entry {blacklistId} to {blacklist}.", Utils.CBGreen);
                 }
                 catch (IndexOutOfRangeException)
                 {
@@ -373,7 +370,7 @@ namespace CarrotBot.Commands
             }
 
             [Command("addexception"), Description("Used to add an exception to the blacklist rule."), RequirePermissions(Permissions.BanMembers)]
-            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int blacklistId, [Description("The user ID or @-mention to add an exception for.")] string user)
+            public async Task AddException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int blacklistId, [Description("The user ID or @-mention to add an exception for.")] string? user)
             {
                 try
                 {
@@ -395,7 +392,7 @@ namespace CarrotBot.Commands
             }
 
             [Command("removeexception"), Description("Used to add an exception to the blacklist rule."), RequirePermissions(Permissions.BanMembers)]
-            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string user)
+            public async Task RemoveException(CommandContext ctx, [Description("The numeric ID of the blacklist entry to modify.")] int filterId, [Description("The user ID or @-mention to remove the exception for.")] string? user)
             {
                 try
                 {

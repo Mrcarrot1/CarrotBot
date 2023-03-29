@@ -1,36 +1,34 @@
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using CarrotBot.Conversation;
+using CarrotBot.Data;
+using CarrotBot.Leveling;
 using DSharpPlus;
-using DSharpPlus.Entities;
-using DSharpPlus.EventArgs;
-using DSharpPlus.CommandsNext.Converters;
-using DSharpPlus.CommandsNext.Exceptions;
-using DSharpPlus.CommandsNext.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using CarrotBot.Data;
+using DSharpPlus.CommandsNext.Exceptions;
+using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using KarrotObjectNotation;
 
-namespace CarrotBot.Commands
+namespace CarrotBot.CommandsNext
 {
     public class UngroupedCommands : BaseCommandModule
     {
         [Command("help"), Description("Displays command help.")]
-        public async Task Help(CommandContext ctx, [Description("Command to provide help for.")] params string[] command)
+        public async Task Help(CommandContext ctx, [Description("Command to provide help for.")] params string[]? command)
         {
             string basicDescription = $"Listing top-level commands and groups. Use `{Program.commandPrefix}help <command/group/module>` to see subcommands or usage details.\nModules are commands that do not share a prefix(such as `conversation acceptterms`, `conversation addchannel`, etc.) but are related in function.\nTo see slash commands, use the list available in the Discord client.";
             if (!ctx.Channel.IsPrivate)
             {
                 GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
                 if (guildData.GuildPrefix != Program.commandPrefix)
-                    basicDescription = $"Listing top-level commands and groups. Use `{guildData.GuildPrefix}help <command/group/module>` to see subcommands or usage details.\nModules are commands that do not share a prefix(such as `conversation acceptterms`, `conversation addchannel`, etc.) but are related in function.\nThis server's prefix is `{guildData.GuildPrefix}`. You can also use the prefix `cb%` or <@!{Program.discord.CurrentUser.Id}>.";
+                    basicDescription = $"Listing top-level commands and groups. Use `{guildData.GuildPrefix}help <command/group/module>` to see subcommands or usage details.\nModules are commands that do not share a prefix(such as `conversation acceptterms`, `conversation addchannel`, etc.) but are related in function.\nThis server's prefix is `{guildData.GuildPrefix}`. You can also use the prefix `cb%` or <@!{Program.discord!.CurrentUser.Id}>.";
             }
             try
             {
@@ -51,11 +49,11 @@ namespace CarrotBot.Commands
                     if (command.First().ToLower().Trim() == "leveling")
                     {
                         eb.WithDescription("Showing all commands in module `leveling`.");
-                        var levelingCommands = searchIn.Where(x => x.CustomAttributes.Any(x => x.GetType() == typeof(Leveling.LevelingCommandAttribute))).Where(x => !x.IsHidden);
+                        var levelingCommands = searchIn.Where(x => x.CustomAttributes.Any(y => y is LevelingCommandAttribute)).Where(x => !x.IsHidden);
                         List<Command> eligibleCommands = new List<Command>();
                         foreach (var candidateCommand in levelingCommands)
                         {
-                            if (candidateCommand.ExecutionChecks == null || !candidateCommand.ExecutionChecks.Any())
+                            if (!candidateCommand.ExecutionChecks.Any())
                             {
                                 eligibleCommands.Add(candidateCommand);
                                 continue;
@@ -81,7 +79,7 @@ namespace CarrotBot.Commands
                         await ctx.RespondAsync(eb.Build());
                         return;
                     }
-                    Command cmd = null;
+                    Command? cmd = null;
                     //Have to use 1-indexing for the overload so the user can enter the index correctly
                     int overload = 1;
                     foreach (var c in command)
@@ -93,16 +91,17 @@ namespace CarrotBot.Commands
                             break;
                         }
 
-                        cmd = searchIn.FirstOrDefault(xc => xc.Name.ToLowerInvariant() == c.ToLowerInvariant() || (xc.Aliases != null && xc.Aliases.Select(xs => xs.ToLowerInvariant()).Contains(c.ToLowerInvariant())));
+                        cmd = searchIn.FirstOrDefault(xc => xc.Name.ToLowerInvariant() == c.ToLowerInvariant() || (xc.Aliases.Select(xs => xs.ToLowerInvariant()).Contains(c.ToLowerInvariant())));
 
                         if (cmd == null)
                             break;
 
                         var failedChecks = await cmd.RunChecksAsync(ctx, true).ConfigureAwait(false);
-                        if (failedChecks.Any())
-                            throw new ChecksFailedException(cmd, ctx, failedChecks);
+                        var checkBaseAttributes = failedChecks as CheckBaseAttribute[] ?? failedChecks.ToArray();
+                        if (checkBaseAttributes.Any())
+                            throw new ChecksFailedException(cmd, ctx, checkBaseAttributes);
 
-                        searchIn = cmd is CommandGroup ? (cmd as CommandGroup).Children.ToList() : null;
+                        searchIn = cmd is CommandGroup ? (cmd as CommandGroup)?.Children.ToList() : null;
                     }
                     if (cmd is CommandGroup group)
                     {
@@ -111,7 +110,7 @@ namespace CarrotBot.Commands
                         var eligibleCommands = new List<Command>();
                         foreach (var candidateCommand in commandsToSearch)
                         {
-                            if (candidateCommand.ExecutionChecks == null || !candidateCommand.ExecutionChecks.Any())
+                            if (!candidateCommand.ExecutionChecks.Any())
                             {
                                 eligibleCommands.Add(candidateCommand);
                                 continue;
@@ -156,7 +155,7 @@ namespace CarrotBot.Commands
                             string Overloads = "";
                             foreach (var arg in cmd.Overloads[overload - 1].Arguments)
                             {
-                                string argstr = "";
+                                string argstr;
                                 if (arg.IsOptional)
                                 {
                                     argstr = $"`[{arg.Name}]: {Utils.GetUserFriendlyTypeName(arg.Type)}`: {arg.Description} Default Value: {arg.DefaultValue}";
@@ -207,15 +206,15 @@ namespace CarrotBot.Commands
 
                         if (!ctx.Channel.IsPrivate)
                         {
-                            if ((cmd.Name == "rank" || cmd.Name == "leaderboard" || cmd.Name == "disableleveling") && !Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
-                            if (cmd.Name == "enableleveling" && Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
+                            if ((cmd.Name == "rank" || cmd.Name == "leaderboard" || cmd.Name == "disableleveling") && !LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
+                            if (cmd.Name == "enableleveling" && LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
                             if (cmd.IsHidden && !(cmd.Name == "dripcoin" && ctx.Guild.Id == 824824193001979924))
                             {
                                 continue;
                             }
                         }
 
-                        if (cmd is CommandGroup group)
+                        if (cmd is CommandGroup)
                         {
                             if (commandGroups.Contains($"`{cmd.Name}`")) continue;
                             if (commandGroups == "None")
@@ -253,9 +252,9 @@ namespace CarrotBot.Commands
             }
             await ctx.RespondAsync("CarrotBot shutting down. Good night!");
             Database.FlushDatabase(true);
-            Leveling.LevelingData.FlushAllData();
+            LevelingData.FlushAllData();
             Dripcoin.WriteData();
-            Conversation.ConversationData.WriteDatabase();
+            ConversationData.WriteDatabase();
             Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
             Console.WriteLine();
             Environment.Exit(0);
@@ -263,8 +262,8 @@ namespace CarrotBot.Commands
         [Command("reload"), Hidden, RequireOwner]
         public async Task ReloadData(CommandContext ctx)
         {
-            Conversation.ConversationData.LoadDatabase();
-            Leveling.LevelingData.LoadDatabase();
+            ConversationData.LoadDatabase();
+            LevelingData.LoadDatabase();
             Database.Load();
             await ctx.RespondAsync("Reloaded all data.");
         }
@@ -284,7 +283,7 @@ namespace CarrotBot.Commands
         {
             if (!ctx.Guild.Equals(Program.BotGuild)) return;
             DiscordRole role = ctx.Guild.Roles.FirstOrDefault(x => x.Value.Name == "Updoot Ping").Value;
-            if (!ctx.Member.Roles.ToList().Contains(role))
+            if (!ctx.Member!.Roles.ToList().Contains(role))
             {
                 await ctx.Member.GrantRoleAsync(role, "Given by user request");
                 await ctx.RespondAsync("Role granted.");
@@ -295,16 +294,16 @@ namespace CarrotBot.Commands
                 await ctx.RespondAsync("Role removed.");
             }
         }
-        [Command("afk"), Description("Sets your AFK message.")]
+        [Command("afk"), Description("Sets your AFK message."), RequireGuild]
         public async Task AFK(CommandContext ctx, [RemainingText, Description("The message to set.")] string message = "AFK")
         {
             GuildUserData userData = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(ctx.User.Id);
             userData.SetAFK(message);
             try
             {
-                await ctx.Member.ModifyAsync(x => x.Nickname = $"[AFK] {ctx.Member.DisplayName}");
+                await ctx.Member!.ModifyAsync(x => x.Nickname = $"[AFK] {ctx.Member.DisplayName}");
             }
-            catch { }
+            catch(UnauthorizedException) { }
             await ctx.RespondAsync($"Set your AFK: {message}");
         }
         private static readonly HttpClient client = new HttpClient();
@@ -333,7 +332,7 @@ namespace CarrotBot.Commands
             eb.WithTitle("About CarrotBot");
             eb.WithColor(Utils.CBGreen);
             eb.WithDescription($"CarrotBot is a multipurpose Discord bot made by Mrcarrot#3305. Use `{Program.commandPrefix}help` for command help.");
-            eb.AddField("Shards", $"{Program.discord.ShardClients.Count}", true);
+            eb.AddField("Shards", $"{Program.discord!.ShardClients.Count}", true);
             eb.AddField("Guilds", $"{Utils.GuildCount}", true);
             eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
             //eb.AddField("DSharpPlus Version", $"v4.0.1");
@@ -361,7 +360,7 @@ namespace CarrotBot.Commands
             else
             {
                 await ctx.RespondAsync("You have requested a full deletion of all data CarrotBot has stored pertaining to your account. Please note that this may take some time and that CarrotBot may store additional data in the future.\nHowever, the bot does not store global user data, so data pertaining to you will not be stored unless you share a server with the bot.");
-                Leveling.LevelingData.DeleteUserData(ctx.User.Id);
+                LevelingData.DeleteUserData(ctx.User.Id);
                 Database.DeleteUserData(ctx.User.Id);
             }
         }

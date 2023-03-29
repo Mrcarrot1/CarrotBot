@@ -1,8 +1,6 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
-using DSharpPlus;
-using DSharpPlus.Entities;
+using System.IO;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Leveling

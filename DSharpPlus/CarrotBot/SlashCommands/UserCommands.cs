@@ -1,20 +1,15 @@
 using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq;
-using DSharpPlus;
+using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
-using DSharpPlus.SlashCommands.Attributes;
 
 namespace CarrotBot.SlashCommands;
 //[Group("user")]
 public class UserCommands : ApplicationCommandModule
 {
     [SlashCommand("user-info", "Gets info about a user.")]
-    public async Task Info(InteractionContext ctx, [Option("user", "The user in question. Leave blank to return your own info.")] DiscordUser user = null)
+    public async Task Info(InteractionContext ctx, [Option("user", "The user in question. Leave blank to return your own info.")] DiscordUser? user = null)
     {
         await ctx.IndicateResponseAsync();
         try
@@ -36,7 +31,7 @@ public class UserCommands : ApplicationCommandModule
             }
             if (user == null) user = ctx.User;
             if (userId != 0)
-                user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
+                user = await Program.discord!.ShardClients.First().Value.GetUserAsync(userId);
             string type = "User";
             if (user.IsBot)
                 type = "Bot";
@@ -52,7 +47,7 @@ public class UserCommands : ApplicationCommandModule
             eb.WithTitle("User Info");
             //eb.WithDescription($"{user.Username + "#" + user.Discriminator}\nNickname: {nick}\nCreated At: {user.CreationTimestamp} (UTC)\nType: {type}\nStatus: {status}");
             eb.AddField("Username", $"{user.Username}#{user.Discriminator}");
-            eb.AddField("Created", $"<t:{user.CreationTimestamp.ToUnixTimeSeconds()}:R> ({user.CreationTimestamp.ToUniversalTime().ToString("yyyy/MM/dd HH:mm:ss")} UTC)", true);
+            eb.AddField("Created", $"<t:{user.CreationTimestamp.ToUnixTimeSeconds()}:R> ({user.CreationTimestamp.ToUniversalTime():yyyy/MM/dd HH:mm:ss} UTC)", true);
             eb.AddField("Type", $"{type}", true);
             if (!ctx.Channel.IsPrivate)
             {

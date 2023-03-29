@@ -7,19 +7,22 @@
 
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>linux-arm</RuntimeIdentifier>
     <PublishReadyToRun>true</PublishReadyToRun>
     <Configuration>Debug</Configuration>
     <!--<PublishAot>true</PublishAot>-->
-   <!--<Nullable>Enable</Nullable>-->
+   <Nullable>Enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.3.*" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.*" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.*" />
+    <PackageReference Include="DSharpPlus" Version="4.4.0*" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.0*" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.4.0*" />
     <PackageReference Include="KarrotObjectNotation" Version="1.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

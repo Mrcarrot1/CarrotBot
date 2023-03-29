@@ -4,13 +4,12 @@
 //I don't know exactly which ones.
 //If you lose the will to live upon seeing some of this code, I do not blame you.
 //Good luck.
+
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using DSharpPlus;
+using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using System.Linq;
 
 namespace CarrotBot.Conversation
 {
@@ -22,15 +21,15 @@ namespace CarrotBot.Conversation
         /// <value></value>
         public ulong Id { get; } //Id in CB's internal system- NOT A DISCORD MESSAGE ID
         public DiscordMessage originalMessage { get; }
-        public DiscordMessage liveFeedMessage { get; set; }
-        public DiscordEmbed Embed { get; set; }
+        public DiscordMessage? liveFeedMessage { get; set; }
+        public DiscordEmbed? Embed { get; set; }
         public DiscordMember Author { get; }
-        public ConversationChannel originalChannel { get; }
+        public ConversationChannel? originalChannel { get; }
         public Dictionary<ulong, DiscordMessage> ChannelMessages { get; set; } //A list of Discord messages by channel
         public int IndexInEmbed { get; set; }
-        public ConversationMessage PreviousMessage { get; set; }
-        public ConversationMessage NextMessage { get; set; }
-        public DiscordMessage EmbedMessage { get; set; }
+        public ConversationMessage? PreviousMessage { get; set; }
+        public ConversationMessage? NextMessage { get; /*set;*/ }
+        public DiscordMessage? EmbedMessage { get; set; }
         /// <summary>
         /// Specifies whether the message was sent since the last time the bot started.
         /// </summary>
@@ -46,31 +45,35 @@ namespace CarrotBot.Conversation
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                 try
                 {
-                    eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
-                    eb.WithDescription(liveFeedMessage.Embeds[0].Description);
-                    if (liveFeedMessage.Embeds[0].Fields != null)
+                    if (liveFeedMessage is not null)
                     {
-                        foreach (DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                        eb.WithTitle($"[DELETED] {liveFeedMessage.Embeds[0].Title}");
+                        eb.WithDescription(liveFeedMessage.Embeds[0].Description);
+                        if (liveFeedMessage.Embeds[0].Fields != null)
                         {
-                            eb.AddField(f.Name, f.Value);
+                            foreach (DiscordEmbedField f in liveFeedMessage.Embeds[0].Fields)
+                            {
+                                eb.AddField(f.Name, f.Value);
+                            }
                         }
+
+                        eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
+                        eb.WithColor(DiscordColor.Red);
+                        await liveFeedMessage.ModifyAsync(embed: eb.Build());
                     }
-                    eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
-                    eb.WithColor(DiscordColor.Red);
-                    await liveFeedMessage.ModifyAsync(embed: eb.Build());
                 }
                 catch (Exception e)
                 {
-                    await Program.Mrcarrot.SendMessageAsync($"{e.ToString()}");
+                    await Program.Mrcarrot!.SendMessageAsync($"{e}");
                 }
                 foreach (KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
                 {
                     await msg.Value.DeleteAsync();
                 }
             }
-            catch
+            catch(Exception e)
             {
-
+                Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
             }
             /*if(includeOriginal)
                 await originalMessage.DeleteAsync();
@@ -122,17 +125,25 @@ namespace CarrotBot.Conversation
         public async Task UpdateMessage()
         {
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-            eb.WithTitle($"[EDITED] {liveFeedMessage.Embeds[0].Title}");
-            eb.AddField("Original Content:", liveFeedMessage.Embeds[0].Description);
-            eb.AddField("Edited Content:", originalMessage.Content);
-            eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
-            eb.WithColor(DiscordColor.Yellow);
-            await liveFeedMessage.ModifyAsync(embed: eb.Build());
+            if (liveFeedMessage is not null)
+            {
+                eb.WithTitle($"[EDITED] {liveFeedMessage.Embeds[0].Title}");
+                eb.AddField("Original Content:", liveFeedMessage.Embeds[0].Description);
+                eb.AddField("Edited Content:", originalMessage.Content);
+                eb.WithFooter(liveFeedMessage.Embeds[0].Footer.Text);
+                eb.WithColor(DiscordColor.Yellow);
+                await liveFeedMessage.ModifyAsync(embed: eb.Build());
+            }
+
             DiscordEmbedBuilder eb2 = new DiscordEmbedBuilder();
-            eb2.WithAuthor(Embed.Author.Name, Author.AvatarUrl);
-            eb2.WithFooter($"{Embed.Footer.Text} ・ Edited");
-            eb2.WithDescription(originalMessage.Content);
-            eb2.WithColor((DiscordColor)Embed.Color);
+            if (Embed is not null)
+            {
+                eb2.WithAuthor(Embed.Author.Name, Author.AvatarUrl);
+                eb2.WithFooter($"{Embed.Footer.Text} ・ Edited");
+                eb2.WithDescription(originalMessage.Content);
+                eb2.WithColor((DiscordColor)Embed.Color);
+            }
+
             if (originalMessage.Attachments.Count > 0)
             {
                 eb2.WithImageUrl(originalMessage.Attachments[0].Url);
@@ -182,21 +193,15 @@ namespace CarrotBot.Conversation
         public void DecrementIndex()
         {
             IndexInEmbed -= 1;
-            if (NextMessage != null)
-            {
-                if (NextMessage.IndexInEmbed > 0)
-                    NextMessage.DecrementIndex();
-            }
+            if (NextMessage is { IndexInEmbed: > 0 }) NextMessage.DecrementIndex();
         }
         public void UpdateEmbed(bool singleDirection, bool goForward)
         {
-            Embed = EmbedMessage.Embeds[0];
+            Embed = EmbedMessage?.Embeds[0];
             if (!singleDirection)
             {
-                if (NextMessage != null)
-                    NextMessage.UpdateEmbed(true, true);
-                if (PreviousMessage != null)
-                    NextMessage.UpdateEmbed(true, false);
+                NextMessage?.UpdateEmbed(true, true);
+                PreviousMessage?.UpdateEmbed(true, false);
                 return;
             }
             if (goForward && NextMessage != null)
@@ -208,7 +213,7 @@ namespace CarrotBot.Conversation
                 PreviousMessage.UpdateEmbed(true, false);
             }
         }
-        public ConversationMessage(ulong id, DiscordMessage msg, DiscordMember author, ConversationChannel chnOrig)
+        public ConversationMessage(ulong id, DiscordMessage msg, DiscordMember author, ConversationChannel? chnOrig)
         {
             Id = id;
             originalMessage = msg;
@@ -217,7 +222,7 @@ namespace CarrotBot.Conversation
             ChannelMessages = new Dictionary<ulong, DiscordMessage>();
             IndexInEmbed = 0;
         }
-        public ConversationMessage(ulong id, DiscordMessage msg, DiscordMember author, ConversationChannel chnOrig, int indexInEmbed)
+        /*public ConversationMessage(ulong id, DiscordMessage msg, DiscordMember author, ConversationChannel? chnOrig, int indexInEmbed)
         {
             Id = id;
             originalMessage = msg;
@@ -225,6 +230,6 @@ namespace CarrotBot.Conversation
             Author = author;
             ChannelMessages = new Dictionary<ulong, DiscordMessage>();
             IndexInEmbed = indexInEmbed;
-        }
+        }*/
     }
 }

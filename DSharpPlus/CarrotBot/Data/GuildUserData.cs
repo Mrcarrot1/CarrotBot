@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using DSharpPlus;
-using DSharpPlus.Entities;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Data
@@ -11,7 +9,7 @@ namespace CarrotBot.Data
     {
         public ulong Id { get; }
         public bool IsAFK { get; internal set; }
-        public string AFKMessage { get; internal set; }
+        public string? AFKMessage { get; internal set; }
         public DateTimeOffset AFKTime { get; internal set; }
         public List<Tuple<string, DateTimeOffset, ulong>> Warnings { get; internal set; } //Warning message, time, user who issued the warning
         public ulong GuildId { get; }

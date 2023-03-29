@@ -1,21 +1,19 @@
 using System;
-using System.Diagnostics;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
+using CarrotBot.Data;
 using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using CarrotBot.Data;
+using DSharpPlus.Entities;
 
 namespace CarrotBot.Leveling
 {
     public class LevelingCommands : BaseCommandModule
     {
-        [Command("rank"), Aliases("level"), Description("Shows your level and rank in the server."), LevelingCommandAttribute]
-        public async Task Rank(CommandContext ctx, [Description("The user to check the rank for.")] string user = null)
+        [Command("rank"), Aliases("level"), Description("Shows your level and rank in the server."), LevelingCommand]
+        public async Task Rank(CommandContext ctx, [Description("The user to check the rank for.")] string? user = null)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
             {
@@ -24,7 +22,7 @@ namespace CarrotBot.Leveling
             }
             try
             {
-                DiscordMember Member = null;
+                DiscordMember? Member = null;
                 if (user == null)
                 {
                     Member = ctx.Member;
@@ -33,7 +31,7 @@ namespace CarrotBot.Leveling
                 {
                     try
                     {
-                        Member = await ctx.Guild.FindMemberAsync(user);
+                        Member = await ctx.Guild.FindMemberAsync(user)!;
                     }
                     catch
                     {
@@ -41,7 +39,7 @@ namespace CarrotBot.Leveling
                     }
                 }
                 LevelingServer lvlServer = LevelingData.Servers[ctx.Guild.Id];
-                LevelingUser lvlUser = LevelingData.Servers[ctx.Guild.Id].Users[Member.Id];
+                LevelingUser lvlUser = LevelingData.Servers[ctx.Guild.Id].Users[Member!.Id];
                 lvlServer.SortUsersByRank();
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                 eb.WithTitle($"{Member.Username}'s Level");
@@ -49,7 +47,7 @@ namespace CarrotBot.Leveling
                 eb.WithColor(Utils.CBOrange);
                 //This looks bad
                 //and it is
-                eb.WithDescription($"Level **{lvlUser.Level}**\n{lvlUser.CurrentXP}/{lvlServer.XPNeededForLevel(lvlUser.Level + 1)} XP\nServer rank: **{lvlServer.UsersByRank.IndexOf(lvlServer.UsersByRank.FirstOrDefault(x => x.Id == lvlUser.Id)) + 1}/{lvlServer.UsersByRank.Count}**");
+                eb.WithDescription($"Level **{lvlUser.Level}**\n{lvlUser.CurrentXP}/{lvlServer.XPNeededForLevel(lvlUser.Level + 1)} XP\nServer rank: **{lvlServer.UsersByRank.IndexOf(lvlServer.UsersByRank.FirstOrDefault(x => x.Id == lvlUser.Id)!) + 1}/{lvlServer.UsersByRank.Count}**");
                 //eb.WithFooter("This is a beta. Server rankings are coming soon.");
                 await ctx.RespondAsync(embed: eb.Build());
             }
@@ -62,8 +60,8 @@ namespace CarrotBot.Leveling
             }
         }
 
-        [Command("addlevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Adds a role to be granted to a user when they reach a certain level."), LevelingCommandAttribute, RequireLeveling]
-        public async Task AddLevelRole(CommandContext ctx, [Description("The level at which to grant the role.")] int level, [Description("The role to grant.")] string role)
+        [Command("addlevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Adds a role to be granted to a user when they reach a certain level."), LevelingCommand, RequireLeveling]
+        public async Task AddLevelRole(CommandContext ctx, [Description("The level at which to grant the role.")] int level, [Description("The role to grant.")] string? role)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
             {
@@ -72,7 +70,7 @@ namespace CarrotBot.Leveling
             }
             try
             {
-                DiscordRole Role = null;
+                DiscordRole? Role;
                 try
                 {
                     Role = ctx.Guild.GetRole(Utils.GetId(role));
@@ -91,7 +89,7 @@ namespace CarrotBot.Leveling
             }
         }
 
-        [Command("removelevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Removes a level from being granted at a certain level."), LevelingCommandAttribute, RequireLeveling]
+        [Command("removelevelrole"), RequirePermissions(Permissions.ManageRoles), Description("Removes a level from being granted at a certain level."), LevelingCommand, RequireLeveling]
         public async Task RemoveLevelRole(CommandContext ctx, [Description("The level from which to remove the role.")] int level)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -117,7 +115,7 @@ namespace CarrotBot.Leveling
             }
         }
 
-        [Command("leaderboard"), Aliases("lb", "top"), Description("Shows a leaderboard of users"), LevelingCommandAttribute]
+        [Command("leaderboard"), Aliases("lb", "top"), Description("Shows a leaderboard of users"), LevelingCommand]
         public async Task Leaderboard(CommandContext ctx, int page = 1)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -154,11 +152,11 @@ namespace CarrotBot.Leveling
                     Title = $"{ctx.Guild.Name} Leveling Leaderboard",
                     Description = $"**Showing page {page}**"
                 };
-                if (levelingServer.UsersByRank.Count < 20 * (int)(page - 1))
+                if (levelingServer.UsersByRank.Count < 20 * (page - 1))
                 {
                     await ctx.RespondAsync("No users to show on that page!");
                 }
-                int usersToShow = levelingServer.UsersByRank.Count - (page - 1 * 20) < 20 ? levelingServer.UsersByRank.Count - (page - 1 * 20) : 20;
+                //int usersToShow = levelingServer.UsersByRank.Count - (page - 1 * 20) < 20 ? levelingServer.UsersByRank.Count - (page - 1 * 20) : 20;
                 for (int i = (20 * (page - 1)); i < (20 * (page - 1)) + 20; i++)
                 {
                     LevelingUser user = levelingServer.UsersByRank[i];
@@ -169,7 +167,7 @@ namespace CarrotBot.Leveling
             }
         }
 
-        [Command("enableleveling"), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling(false)]
+        [Command("enableleveling"), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling(false)]
         public async Task EnableLeveling(CommandContext ctx)
         {
             if (LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -181,11 +179,14 @@ namespace CarrotBot.Leveling
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle("Leveling Enabled");
             eb.WithDescription("You have enabled leveling for this server. Here are some tips to help you customize the experience!");
-            eb.AddField("Useful Commands", $"`addnoxpchannel`: Blacklists a channel from earning XP. Useful for hidden channels and/or places such as meme chats or bot channels.\n`setlevelupchannel`: Redirects level-up messages to a specific channel. Can be used to keep chat cleaner.\n`addlevelrole`: Adds a role reward for users who reach a certain level.\nSee `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}help leveling` for a full list of commands.");
+            eb.AddField("Useful Commands", $@"`addnoxpchannel`: Blacklists a channel from earning XP. Useful for hidden channels and/or places such as meme chats or bot channels.
+                `setlevelupchannel`: Redirects level-up messages to a specific channel. Can be used to keep chat cleaner.
+                `addlevelrole`: Adds a role reward for users who reach a certain level.
+                See `{Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}help leveling` for a full list of commands.");
             await ctx.RespondAsync(embed: eb.Build());
         }
 
-        [Command("disableleveling"), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("disableleveling"), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task DisableLeveling(CommandContext ctx, [Description("Whether or not to delete all leveling data for this server")] bool deleteData)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -196,11 +197,11 @@ namespace CarrotBot.Leveling
             LevelingData.RemoveServer(ctx.Guild.Id, deleteData);
         }
 
-        [Command("addnoxpchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Blacklists a channel from earning XP."), LevelingCommandAttribute, RequireLeveling]
-        public async Task AddNoXPChannel(CommandContext ctx, [RemainingText] string channel)
+        [Command("addnoxpchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Blacklists a channel from earning XP."), LevelingCommand, RequireLeveling]
+        public async Task AddNoXPChannel(CommandContext ctx, [RemainingText] string? channel)
         {
             Logger.Log("Started AddNoXPChannel");
-            ulong channelId = 0;
+            ulong channelId;
             try
             {
                 channelId = Utils.GetId(channel);
@@ -229,15 +230,15 @@ namespace CarrotBot.Leveling
             await ctx.RespondAsync($"Added XP-blocked channel: <#{channelId}>");
         }
 
-        [Command("removenoxpchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Removes a channel from the XP blacklist."), LevelingCommandAttribute, RequireLeveling]
-        public async Task RemoveNoXPChannel(CommandContext ctx, [RemainingText] string channel)
+        [Command("removenoxpchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Removes a channel from the XP blacklist."), LevelingCommand, RequireLeveling]
+        public async Task RemoveNoXPChannel(CommandContext ctx, [RemainingText] string? channel)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
             {
                 await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
                 return;
             }
-            ulong channelId = 0;
+            ulong channelId;
             try
             {
                 channelId = Utils.GetId(channel);
@@ -259,15 +260,15 @@ namespace CarrotBot.Leveling
             await ctx.RespondAsync($"Removed XP-blocked channel: <#{channelId}>");
         }
 
-        [Command("setlevelupchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Sets a channel to send all level-up messages in."), LevelingCommandAttribute, RequireLeveling]
-        public async Task SetLevelUpChannel(CommandContext ctx, [RemainingText] string channel)
+        [Command("setlevelupchannel"), RequireUserPermissions(Permissions.ManageGuild), Description("Sets a channel to send all level-up messages in."), LevelingCommand, RequireLeveling]
+        public async Task SetLevelUpChannel(CommandContext ctx, [RemainingText] string? channel)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
             {
                 await ctx.RespondAsync("Leveling is not enabled for this server.\nUse `%enableleveling` if you wish to enable it.");
                 return;
             }
-            ulong channelId = 0;
+            ulong channelId;
             try
             {
                 channelId = Utils.GetId(channel);
@@ -289,7 +290,7 @@ namespace CarrotBot.Leveling
             await ctx.RespondAsync($"Set level-up message channel: <#{channelId}>");
         }
 
-        [Command("removelevelupchannel"), Description("Removes the channel all level-up messages are being sent to."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("removelevelupchannel"), Description("Removes the channel all level-up messages are being sent to."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task RemoveLevelUpChannel(CommandContext ctx)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -302,7 +303,7 @@ namespace CarrotBot.Leveling
             await ctx.RespondAsync("Removed level-up message channel.");
         }
 
-        [Command("addlevelupmessage"), Description("Adds a message that will be displayed to a user who reaches a certain level."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("addlevelupmessage"), Description("Adds a message that will be displayed to a user who reaches a certain level."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task AddLevelUpMessage(CommandContext ctx, [Description("The level to show the message at.")] int level, [RemainingText, Description("The message to show.")] string message)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -318,7 +319,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("removelevelupmessage"), Description("Removes a level up message from the list to be shown to users who reach a certain level."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("removelevelupmessage"), Description("Removes a level up message from the list to be shown to users who reach a certain level."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task RemoveLevelUpMessage(CommandContext ctx, [Description("The level to remove the message from.")] int level)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -334,7 +335,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("setxpcooldown"), Description("Sets the XP cooldown in this server."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("setxpcooldown"), Description("Sets the XP cooldown in this server."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task SetXPCooldown(CommandContext ctx, [Description("The cooldown in seconds. Default: 60.")] int cooldown)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -354,7 +355,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("setxpperlevel"), Description("Sets the XP per level in this server."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("setxpperlevel"), Description("Sets the XP per level in this server."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task SetXPPerLevel(CommandContext ctx, [Description("The amount of XP required to reach level 1. Default: 150.")] int xp)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -374,7 +375,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("setxppermessage"), Description("Sets the XP a user receives for sending one message."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("setxppermessage"), Description("Sets the XP a user receives for sending one message."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task SetXPPerMessage(CommandContext ctx, [Description("The amount of XP to give. Default: 5.")] int xp)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -395,7 +396,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("setxppermessage"), Description("Sets the XP a user receives for sending one message."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("setxppermessage"), Description("Sets the XP a user receives for sending one message."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task SetXPPerMessage(CommandContext ctx, [Description("The minimum amount of XP to give. Default: 5.")] int minXP, [Description("The maximum amount of XP to give. Default: 5.")] int maxXP)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -416,7 +417,7 @@ namespace CarrotBot.Leveling
             LevelingData.Servers[ctx.Guild.Id].FlushData();
         }
 
-        [Command("levelingsettings"), Description("Shows the settings for leveling in this server."), LevelingCommandAttribute, RequireLeveling]
+        [Command("levelingsettings"), Description("Shows the settings for leveling in this server."), LevelingCommand, RequireLeveling]
         public async Task LevelingSettings(CommandContext ctx)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -449,7 +450,7 @@ namespace CarrotBot.Leveling
             await ctx.RespondAsync(eb.Build());
         }
 
-        [Command("resetlevels"), Description("Resets XP and levels."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("resetlevels"), Description("Resets XP and levels."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task ResetLevels(CommandContext ctx, bool confirm = false)
         {
             if (!LevelingData.Servers.ContainsKey(ctx.Guild.Id))
@@ -478,7 +479,7 @@ namespace CarrotBot.Leveling
             }
         }
 
-        [Command("resetlevelsettings"), Description("Resets leveling settings to their defaults."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+        [Command("resetlevelsettings"), Description("Resets leveling settings to their defaults."), RequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
         public async Task ResetLevelSettings(CommandContext ctx, bool confirm = false)
         {
             if (confirm)

@@ -1,14 +1,10 @@
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
+using CarrotBot.Data;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using CarrotBot.Data;
 
 namespace CarrotBot.SlashCommands;
 
@@ -21,11 +17,6 @@ public class AdminCommands : ApplicationCommandModule
         if (messages > 1000 || messages < 1)
         {
             await ctx.UpdateResponseAsync("Please enter a number between 1 and 1000.");
-            return;
-        }
-        if (messages > int.MaxValue || messages < 1)
-        {
-            await ctx.UpdateResponseAsync("Invalid message count!");
             return;
         }
         var messagesList = (await ctx.Channel.GetMessagesAsync((int)messages + 1)).Where(x => !x.Pinned).ToList();
@@ -77,12 +68,12 @@ public class AdminCommands : ApplicationCommandModule
     }*/
 
     [SlashCommand("kick", "Kicks a user from the server.", false), SlashRequirePermissions(Permissions.KickMembers), SlashCommandPermissions(Permissions.KickMembers), SlashRequireGuild]
-    public async Task Kick(InteractionContext ctx, [Option("user", "The user to kick.")] DiscordUser user, [Option("reason", "The reason for kicking the user.")] string reason = null)
+    public async Task Kick(InteractionContext ctx, [Option("user", "The user to kick.")] DiscordUser user, [Option("reason", "The reason for kicking the user.")] string? reason = null)
     {
         await ctx.IndicateResponseAsync();
         bool dmFailed = false;
-        DiscordMember member = user as DiscordMember;
-        if (member.Roles.Any() && member.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+        DiscordMember? member = user as DiscordMember;
+        if (member is not null && member.Roles.Any() && member.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
         {
             await ctx.UpdateResponseAsync("You don't have permission to kick that user!");
             return;
@@ -91,7 +82,7 @@ public class AdminCommands : ApplicationCommandModule
         {
             try
             {
-                await member.SendMessageAsync($"You have been kicked from {ctx.Guild.Name} by {ctx.User.Username}.");
+                await member!.SendMessageAsync($"You have been kicked from {ctx.Guild.Name} by {ctx.User.Username}.");
                 if (reason != null)
                     await member.SendMessageAsync($"Reason for kick: {reason}");
                 else
@@ -101,7 +92,7 @@ public class AdminCommands : ApplicationCommandModule
             {
                 dmFailed = true;
             }
-            await member.RemoveAsync(reason);
+            await member!.RemoveAsync(reason);
             await ctx.UpdateResponseAsync(dmFailed ? $"Kicked {user.Username}. I couldn't DM them." : $"Kicked {user.Username}.");
         }
         catch
@@ -166,8 +157,8 @@ public class AdminCommands : ApplicationCommandModule
         }
     }*/
 
-    [SlashCommand("ban", "Bans a user from the server.", true), SlashRequirePermissions(Permissions.BanMembers), SlashCommandPermissions(Permissions.BanMembers), SlashRequireGuild]
-    public async Task Ban(InteractionContext ctx, [Option("user", "The user to ban.")] DiscordUser user, [Option("reason", "The reason for banning the user.")] string reason = null)
+    [SlashCommand("ban", "Bans a user from the server."), SlashRequirePermissions(Permissions.BanMembers), SlashCommandPermissions(Permissions.BanMembers), SlashRequireGuild]
+    public async Task Ban(InteractionContext ctx, [Option("user", "The user to ban.")] DiscordUser user, [Option("reason", "The reason for banning the user.")] string? reason = null)
     {
         await ctx.IndicateResponseAsync();
         if (!ctx.Guild.Members.ContainsKey(user.Id))
@@ -176,13 +167,13 @@ public class AdminCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync($"Banned {user.Username}#{user.Discriminator}.");
             return;
         }
-        DiscordMember member = user as DiscordMember;
+        DiscordMember? member = user as DiscordMember;
 
         bool dmFailed = false;
 
         try
         {
-            if (member.Roles.Any() && member.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
+            if (member!.Roles.Any() && member.Roles.OrderBy(x => x.Position).First().Position >= ctx.Member.Roles.OrderBy(x => x.Position).First().Position)
             {
                 await ctx.UpdateResponseAsync("You don't have permission to ban that user!");
                 return;
@@ -209,10 +200,9 @@ public class AdminCommands : ApplicationCommandModule
     }
 
     [SlashCommand("unban", "Unbans a user from the server.", false), SlashRequirePermissions(Permissions.BanMembers), SlashRequireGuild]
-    public async Task Unban(InteractionContext ctx, [Option("user", "The user to unban.")] DiscordUser user, [Option("reason", "The reason for unbanning the user.")] string reason = null)
+    public async Task Unban(InteractionContext ctx, [Option("user", "The user to unban.")] DiscordUser user, [Option("reason", "The reason for unbanning the user.")] string? reason = null)
     {
         await ctx.IndicateResponseAsync();
-        ulong userId = user.Id;
         //DiscordUser user = await Program.discord.ShardClients.First().Value.GetUserAsync(userId);
         try
         {
@@ -251,12 +241,9 @@ public class AdminCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
         eb.WithAuthor("Warning Issued");
         eb.WithColor(Utils.CBOrange);
-        if (reason != null)
-            eb.WithDescription($"Warned <@!{userId}>: **{reason}**");
-        else
-            eb.WithDescription($"Warned <@!{userId}>. No reason given.");
+        eb.WithDescription($"Warned <@!{userId}>: **{reason}**");
         GuildUserData userData = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
-        if (reason == "" || reason == null)
+        if (string.IsNullOrEmpty(reason))
             reason = "No reason given.";
         userData.AddWarning(reason, ctx.User.Id);
         userData.FlushData();
@@ -283,22 +270,23 @@ public class AdminCommands : ApplicationCommandModule
             }
     }*/
     [SlashCommand("warnings", "Allows a user to check warnings in this server.")]
-    public async Task Warnings(InteractionContext ctx, [Option("userMention", "The user to check warnings for. Leave blank to check your own.")] DiscordUser user = null)
+    public async Task Warnings(InteractionContext ctx, [Option("userMention", "The user to check warnings for. Leave blank to check your own.")] DiscordUser? user = null)
     {
         await ctx.IndicateResponseAsync();
         ulong userId = ctx.User.Id;
-        if (user != null)
+        if (user is not null)
             userId = user.Id;
         GuildUserData userData = Database.GetOrCreateGuildData(ctx.Guild.Id).GetOrCreateUserData(userId);
         if (userData.Warnings.Count == 0)
         {
             await ctx.UpdateResponseAsync("That user doesn't have any warnings in this server.");
         }
-        else foreach (var warning in userData.Warnings)
+        else
+            foreach (var warning in userData.Warnings)
             {
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
                 eb.WithAuthor($"{(await ctx.Guild.GetMemberAsync(userId)).Username}'s Warnings");
-                eb.AddField($"{warning.Item2.ToString("yyyy-MM-dd HH:mm:ss")}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
+                eb.AddField($"{warning.Item2:yyyy-MM-dd HH:mm:ss}", $"Warned by <@!{warning.Item3}>\nReason: {warning.Item1}");
                 await ctx.UpdateResponseAsync(eb.Build());
             }
     }
@@ -332,7 +320,7 @@ public class AdminCommands : ApplicationCommandModule
         GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
         guildData.ModMailChannel = null;
         guildData.FlushData();
-        await ctx.UpdateResponseAsync($"Modmail channel(if any) removed.");
+        await ctx.UpdateResponseAsync("Modmail channel(if any) removed.");
     }
     [SlashCommand("set-message-logs-channel", "Sets a channel to log message changes and deletions in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), SlashRequireGuild]
     public async Task SetAttachLogsChannel(InteractionContext ctx, [Option("channel", "The channel to set up.")] DiscordChannel channel)

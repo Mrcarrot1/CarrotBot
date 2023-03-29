@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace CarrotBot.Conversation
 {
     public class ConversationChannel
@@ -20,15 +17,9 @@ namespace CarrotBot.Conversation
         /// </summary>
         /// <value></value>
         public ulong GuildId { get; }
-        public ulong ConversationId { get; }
+        //public ulong ConversationId { get; }
 
-        public ConversationChannel()
-        {
-            CallSign = null;
-            Id = 0;
-            GuildId = 0;
-        }
-        public ConversationChannel(ulong id, string server, ulong guildId, ulong conversationId = 0)
+        public ConversationChannel(ulong id, string server, ulong guildId)
         {
             CallSign = server;
             Id = id;

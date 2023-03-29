@@ -1,13 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using DSharpPlus;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Leveling
 {
-    public class LevelingData
+    public static class LevelingData
     {
         public static Dictionary<ulong, LevelingServer> Servers = new Dictionary<ulong, LevelingServer>();
 
@@ -50,7 +49,7 @@ namespace CarrotBot.Leveling
 
                         if (serverIndex.Values.ContainsKey("xpRateOfChange"))
                             server.XPRateOfChange = (int)serverIndex.Values["xpRateOfChange"];
-                            
+
                         foreach (KONNode childNode in serverIndex.Children)
                         {
                             if (childNode.Name == "ROLES")
@@ -67,9 +66,9 @@ namespace CarrotBot.Leveling
                             {
                                 foreach (ulong Item in array1.Items)
                                 {
-                                    bool ok = Utils.TryLoadDatabaseNode($@"{Utils.levelingDataPath}/Server_{item}/User_{Item}.cb", out KONNode userNode);
+                                    bool ok = Utils.TryLoadDatabaseNode($@"{Utils.levelingDataPath}/Server_{item}/User_{Item}.cb", out KONNode? userNode);
                                     if (!ok) continue;
-                                    LevelingUser user = new LevelingUser(Item, (int)userNode.Values["xp"], (int)userNode.Values["level"], server, DateTimeOffset.FromUnixTimeSeconds((long)userNode.Values["lastMessageTime"]));
+                                    LevelingUser user = new LevelingUser(Item, (int)userNode!.Values["xp"], (int)userNode.Values["level"], server, DateTimeOffset.FromUnixTimeSeconds((long)userNode.Values["lastMessageTime"]));
                                     server.Users.Add(Item, user);
                                     server.UsersByRank.Add(user);
                                 }

@@ -1,14 +1,11 @@
 using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Linq;
+using CarrotBot.Data;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
-using CarrotBot.Data;
 
 namespace CarrotBot.SlashCommands;
 [SlashCommandGroup("join-filter", "SlashCommands for working with regex join filters.")]
@@ -49,7 +46,7 @@ public class JoinFilterCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync("No filters to show.");
             return;
         }
-        if (filtersToShow < 1 || page < 1)
+        if (filtersToShow < 1)
         {
             await ctx.UpdateResponseAsync("Invalid page number!");
             return;
@@ -65,7 +62,7 @@ public class JoinFilterCommands : ApplicationCommandModule
             JoinFilter filter = guild.JoinFilters[i];
             string ban = filter.Ban ? "Yes" : "No";
             eb.AddField("ID", $"`{i}`", true);
-            eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+            eb.AddField("Regex", $"`{filter.Regex}`", true);
             eb.AddField("Ban?", ban, true);
         }
         eb.WithColor(Utils.CBGreen);
@@ -91,7 +88,7 @@ public class JoinFilterCommands : ApplicationCommandModule
             DiscordEmbedBuilder eb = new();
 
             eb.WithTitle($"Filter {filterId} info");
-            eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+            eb.AddField("Regex", $"`{filter.Regex}`", true);
             eb.AddField("Ban?", (filter.Ban ? "Yes" : "No"), true);
             eb.AddField("Created By", filter.CreatorId != 0 ? $"<@{filter.CreatorId}>" : "Unknown", true);
             string exceptions = "";
@@ -163,7 +160,7 @@ public class JoinFilterCommands : ApplicationCommandModule
 
             filter.Ban = ban;
             guildData.FlushData();
-            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set filter {filterId} (`{filter.Regex.ToString()}`) to " + (ban ? "ban" : "kick") + " users.").WithColor(Utils.CBGreen));
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set filter {filterId} (`{filter.Regex}`) to " + (ban ? "ban" : "kick") + " users.").WithColor(Utils.CBGreen));
         }
         catch (IndexOutOfRangeException)
         {
@@ -186,9 +183,9 @@ public class JoinFilterCommands : ApplicationCommandModule
             GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
             JoinFilter filter = guildData.JoinFilters[filterId];
 
-            filter.Regex = new System.Text.RegularExpressions.Regex(regex);
+            filter.Regex = new Regex(regex);
             guildData.FlushData();
-            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set filter {filterId} to `{filter.ToString()}`.").WithColor(Utils.CBGreen));
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set filter {filterId} to `{filter}`.").WithColor(Utils.CBGreen));
         }
         catch (IndexOutOfRangeException)
         {
@@ -293,7 +290,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync("No blacklist entries to show.");
             return;
         }
-        if (blacklistsToShow < 1 || page < 1)
+        if (blacklistsToShow < 1)
         {
             await ctx.UpdateResponseAsync("Invalid page number!");
             return;
@@ -433,7 +430,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
 
             blacklist.Username = username;
             guildData.FlushData();
-            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set blacklist entry {blacklistId} to {blacklist.ToString()}.").WithColor(Utils.CBGreen));
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully set blacklist entry {blacklistId} to {blacklist}.").WithColor(Utils.CBGreen));
         }
         catch (IndexOutOfRangeException)
         {

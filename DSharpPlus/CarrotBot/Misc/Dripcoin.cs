@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Linq;
 using System.IO;
-using DSharpPlus;
-using DSharpPlus.Entities;
+using System.Threading.Tasks;
+using CarrotBot.Leveling;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using CarrotBot.Leveling;
-using CarrotBot.Data;
+using DSharpPlus.Entities;
 using KarrotObjectNotation;
 
 namespace CarrotBot
 {
-    public class Dripcoin
+    public static class Dripcoin
     {
         public static Dictionary<ulong, double> UserBalances = new Dictionary<ulong, double>();
 
@@ -21,6 +18,7 @@ namespace CarrotBot
         {
             if (LevelingData.Servers[824824193001979924].Users.ContainsKey(Id))
             {
+                // ReSharper disable once PossibleLossOfFraction
                 UserBalances.Add(Id, LevelingData.Servers[824824193001979924].Users[Id].TotalXP / 5);
             }
             else
@@ -79,43 +77,24 @@ namespace CarrotBot
             File.WriteAllText($@"{Utils.localDataPath}/Dripcoin.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
         }
     }
-    [Group("dripcoin"), Hidden]
+    [Group("dripcoin"), Hidden, RequireGuild]
     public class DripcoinCommands : BaseCommandModule
     {
         [Command("balance")]
-        public async Task Balance(CommandContext ctx, [RemainingText] string user = null)
+        public async Task Balance(CommandContext ctx, [RemainingText] DiscordMember? member = null)
         {
             if (ctx.Guild.Id != 824824193001979924) return;
-            DiscordMember member;
-            if (user == null) member = ctx.Member;
-            else
-                try
-                {
-                    member = await ctx.Guild.GetMemberAsync(Utils.GetId(user));
-                }
-                catch (FormatException)
-                {
-                    member = ctx.Guild.Members.FirstOrDefault(x => x.Value.Username.ToLowerInvariant() == user.ToLowerInvariant()).Value;
-                }
-            if (!Dripcoin.UserBalances.ContainsKey(member.Id)) Dripcoin.CreateUser(member.Id);
+            member ??= ctx.Member;
+            if (!Dripcoin.UserBalances.ContainsKey(member!.Id)) Dripcoin.CreateUser(member.Id);
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
             eb.WithTitle($"Dripcoin Wallet Balance: {member.Username}");
             eb.WithDescription($"{Dripcoin.UserBalances[member.Id]} Dripcoin");
             await ctx.RespondAsync(embed: eb.Build());
         }
 
-        [Command("transfer")]
-        public async Task Transfer(CommandContext ctx, double amount, [RemainingText] string user)
+        [Command("transfer"), Hidden, RequireGuild]
+        public async Task Transfer(CommandContext ctx, double amount, [RemainingText] DiscordMember member)
         {
-            DiscordMember member;
-            try
-            {
-                member = await ctx.Guild.GetMemberAsync(Utils.GetId(user));
-            }
-            catch (FormatException)
-            {
-                member = ctx.Guild.Members.FirstOrDefault(x => x.Value.Username.ToLowerInvariant() == user.ToLowerInvariant()).Value;
-            }
             try
             {
                 Dripcoin.TransferBalance(ctx.User.Id, member.Id, amount);
