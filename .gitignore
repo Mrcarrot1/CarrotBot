@@ -364,3 +364,4 @@ DSharpPlus/Data
 *Makefile
 *.code-workspace
 *api-key*
+*.key
