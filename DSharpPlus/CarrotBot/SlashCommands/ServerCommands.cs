@@ -13,7 +13,7 @@ public class ServerCommands : ApplicationCommandModule
     public async Task Owner(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
-        var eb = new DiscordEmbedBuilder();
+        DiscordEmbedBuilder eb = new();
         eb.WithDescription($"<@{ctx.Guild.Owner.Id}>\n{ctx.Guild.Owner.Username}#{ctx.Guild.Owner.Discriminator}\n{ctx.Guild.Owner.Id}\n{ctx.Guild.Name}");
         eb.Color = Utils.CBGreen;
         //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
@@ -25,8 +25,10 @@ public class ServerCommands : ApplicationCommandModule
     public async Task Info(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
-        var eb = new DiscordEmbedBuilder();
-        eb.Color = Utils.CBGreen;
+        DiscordEmbedBuilder eb = new()
+        {
+            Color = Utils.CBGreen
+        };
         //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
         eb.WithThumbnail(ctx.Guild.IconUrl);
         eb.WithTitle("Server Info");
@@ -34,7 +36,7 @@ public class ServerCommands : ApplicationCommandModule
 
         eb.AddField("Name", $"{ctx.Guild.Name}");
         eb.AddField("Owned By", $"<@!{ctx.Guild.Owner.Id}>", true);
-        eb.AddField("Created At", $"<t:{ctx.Guild.CreationTimestamp.ToUnixTimeSeconds()}:R> ({ctx.Guild.CreationTimestamp.ToUniversalTime().ToString("yyyy/MM/dd HH:mm:ss")} UTC)");
+        eb.AddField("Created At", $"<t:{ctx.Guild.CreationTimestamp.ToUnixTimeSeconds()}:R> ({ctx.Guild.CreationTimestamp.ToUniversalTime():yyyy/MM/dd HH:mm:ss} UTC)");
         int textChannels = 0;
         int voiceChannels = 0;
         int categories = 0;

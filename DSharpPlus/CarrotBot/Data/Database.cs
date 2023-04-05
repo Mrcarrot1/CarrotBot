@@ -27,7 +27,7 @@ namespace CarrotBot.Data
             Guilds = new Dictionary<ulong, GuildData>();
             RootNodes = new List<KONNode>();
             if (Program.doNotWrite) return;
-            DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Database.cb")));
+            DatabaseNode = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.localDataPath}/Database.cb"));
             RootNodes.Add(DatabaseNode);
             foreach (KONArray array in DatabaseNode.Arrays)
             {
@@ -37,7 +37,7 @@ namespace CarrotBot.Data
                     {
                         try
                         {
-                            KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb")));
+                            KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.localDataPath}/Guild_{item}/Index.cb"));
                             RootNodes.Add(guildNode);
                             GuildData guild = new GuildData(item);
                             guild.GuildPrefix = (string)guildNode.Values["prefix"];
@@ -214,7 +214,7 @@ namespace CarrotBot.Data
                 guildsArray.AddItem(guildData.Id);
             }
             DatabaseNode.AddArray(guildsArray);
-            File.WriteAllText($@"{Utils.localDataPath}/Database.cb", SensitiveInformation.EncryptDataFile("//PERSISTENT\n" + KONWriter.Default.Write(DatabaseNode)));
+            SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Database.cb", "//PERSISTENT\n" + KONWriter.Default.Write(DatabaseNode));
             if (flushAll)
             {
                 foreach (KeyValuePair<ulong, GuildData> guild in Guilds)

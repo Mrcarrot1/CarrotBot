@@ -88,9 +88,9 @@ namespace CarrotBot
             Database.Load();
             if (!isBeta)
                 Dripcoin.LoadData();
-            discord.MessageCreated += CommandHandler;
-            discord.MessageCreated += MainMessageHandler;
-            discord.Ready += ReadyHandler;
+            discord.MessageCreated += HandleCommand;
+            discord.MessageCreated += HandleMessage;
+            discord.Ready += Ready;
             discord.MessageUpdated += MessageUpdated;
             discord.MessageDeleted += MessageDeleted;
             discord.GuildMemberAdded += MemberJoined;
@@ -388,7 +388,7 @@ namespace CarrotBot
             }
             return Task.CompletedTask;
         }
-        static async Task MainMessageHandler(DiscordClient client, MessageCreateEventArgs e)
+        static async Task HandleMessage(DiscordClient client, MessageCreateEventArgs e)
         {
             try
             {
@@ -440,7 +440,7 @@ namespace CarrotBot
                 Logger.Log(ee.ToString(), Logger.CBLogLevel.EXC);
             }
         }
-        static async Task ReadyHandler(DiscordClient client, ReadyEventArgs e)
+        static async Task Ready(DiscordClient client, ReadyEventArgs e)
         {
             try
             {
@@ -577,7 +577,7 @@ namespace CarrotBot
                 await channel.SendMessageAsync(eb.Build());
             }
         }
-        static async Task CommandHandler(DiscordClient client, MessageCreateEventArgs e)
+        static async Task HandleCommand(DiscordClient client, MessageCreateEventArgs e)
         {
             try
             {

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
 
@@ -43,7 +44,7 @@ namespace CarrotBot.SlashCommands
         {
             if (digits != null)
             {
-                if (digits > int.MaxValue || digits < 1)
+                if (digits is > int.MaxValue or < 1)
                 {
                     await ctx.RespondAsync("Invalid number of digits!");
                 }

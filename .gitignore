@@ -353,7 +353,7 @@ MigrationBackup/
 .ionide/
 
 
-*SensitiveInformation.cs
+*LegacySensitiveInformation.cs
 *GUI*
 *CBMessenger*
 *CBRunningCheck*
@@ -365,3 +365,4 @@ DSharpPlus/Data
 *.code-workspace
 *api-key*
 *.key
+*.idea*

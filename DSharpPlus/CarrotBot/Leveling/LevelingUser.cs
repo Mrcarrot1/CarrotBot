@@ -113,7 +113,7 @@ namespace CarrotBot.Leveling
             node.AddValue("level", Level);
             node.AddValue("lastMessageTime", LastMessageTimestamp.ToUnixTimeSeconds());
             node.AddValue("mentionForLevelUp", MentionForLevelUp);
-            File.WriteAllText($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
+            SensitiveInformation.AES256WriteFile($@"{Utils.levelingDataPath}/Server_{Server.Id}/User_{Id}.cb", KONWriter.Default.Write(node));
         }
         public LevelingUser(ulong id, LevelingServer server)
         {

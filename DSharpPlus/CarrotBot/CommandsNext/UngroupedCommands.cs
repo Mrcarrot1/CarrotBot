@@ -335,7 +335,7 @@ namespace CarrotBot.CommandsNext
             eb.AddField("Shards", $"{Program.discord!.ShardClients.Count}", true);
             eb.AddField("Guilds", $"{Utils.GuildCount}", true);
             eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
-            //eb.AddField("DSharpPlus Version", $"v4.0.1");
+            eb.AddField("DSharpPlus Version", Utils.DSharpPlusVersion, true);
             eb.AddField("Invite/Vote Link", "https://discord.bots.gg/bots/389513870835974146");
             eb.AddField("Support Server", "https://discord.gg/wHPwHu7");
             eb.AddField("Source Repository", "https://github.com/Mrcarrot1/CarrotBot");

@@ -52,7 +52,7 @@ public class UserCommands : ApplicationCommandModule
             if (!ctx.Channel.IsPrivate)
             {
                 string nick = member.Nickname;
-                if (nick == null || nick == "")
+                if (nick is null or "")
                     nick = member.Username;
                 eb.AddField("Nickname", $"{nick}", true);
             }

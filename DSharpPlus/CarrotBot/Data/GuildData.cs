@@ -90,7 +90,7 @@ namespace CarrotBot.Data
             }
             node.AddChild(joinBlacklistsNode);
 
-            File.WriteAllText($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
+            SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", KONWriter.Default.Write(node));
         }
 
         public GuildUserData GetOrCreateUserData(ulong userId)

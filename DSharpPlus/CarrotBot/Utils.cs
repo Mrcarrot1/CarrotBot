@@ -16,6 +16,17 @@ namespace CarrotBot
     {
         private static readonly string version = "1.5.2";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
+        private static string? dspVersion = null;
+        public static string DSharpPlusVersion
+        {
+            get
+            {
+                if (dspVersion is not null)
+                    return dspVersion;
+                dspVersion = Program.discord!.ShardClients[0].VersionString;
+                return dspVersion;
+            }
+        }
         public static readonly string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
         public static readonly string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
@@ -228,7 +239,6 @@ namespace CarrotBot
         }
         public static bool TryLoadDatabaseNode(string inputPath, out KONNode? output)
         {
-#nullable disable
             if (!File.Exists(inputPath))
             {
                 output = null;
@@ -238,14 +248,13 @@ namespace CarrotBot
             //So we return nothing and delete the file.
             //Usually, the calling scope should also contain code to remove the reference to the file from wherever it was.
             //Also check for files marked as persistent- these shouldn't be removed.
-            string DecryptedContents = SensitiveInformation.DecryptDataFile(File.ReadAllText(inputPath));
+            string DecryptedContents = SensitiveInformation.AES256ReadFile(inputPath);
             if (DateTime.Now - File.GetLastWriteTime(inputPath) > new TimeSpan(30, 0, 0, 0) && !DecryptedContents.StartsWith("//PERSISTENT"))
             {
                 output = null;
                 File.Delete(inputPath);
                 return false;
             }
-#nullable enable
             return KONParser.Default.TryParse(DecryptedContents, out output);
         }
 

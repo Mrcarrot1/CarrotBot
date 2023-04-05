@@ -56,7 +56,7 @@ namespace CarrotBot
         public static void LoadData()
         {
             UserBalances = new Dictionary<ulong, double>();
-            KONNode node = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Dripcoin.cb")));
+            KONNode node = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.localDataPath}/Dripcoin.cb"));
             foreach (KONNode userNode in node.Children)
             {
                 UserBalances.Add((ulong)userNode.Values["id"], (double)userNode.Values["balance"]);
@@ -74,7 +74,7 @@ namespace CarrotBot
                 userNode.AddValue("balance", user.Value);
                 node.AddChild(userNode);
             }
-            File.WriteAllText($@"{Utils.localDataPath}/Dripcoin.cb", SensitiveInformation.EncryptDataFile(KONWriter.Default.Write(node)));
+            SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Dripcoin.cb", KONWriter.Default.Write(node));
         }
     }
     [Group("dripcoin"), Hidden, RequireGuild]
