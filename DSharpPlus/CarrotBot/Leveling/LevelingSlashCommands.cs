@@ -252,7 +252,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
         LevelingData.Servers[ctx.Guild.Id].SetLevelUpChannel(channel.Id);
         LevelingData.Servers[ctx.Guild.Id].FlushData();
-        await ctx.RespondAsync($"Set level-up message channel: <#{channel.Id}>");
+        await ctx.UpdateResponseAsync($"Set level-up message channel: <#{channel.Id}>");
     }
 
     [SlashCommand("remove-level-up-channel", "Removes the channel all level-up messages are being sent to.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
@@ -266,7 +266,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
         LevelingData.Servers[ctx.Guild.Id].SetLevelUpChannel(null);
         LevelingData.Servers[ctx.Guild.Id].FlushData();
-        await ctx.RespondAsync("Removed level-up message channel.");
+        await ctx.UpdateResponseAsync("Removed level-up message channel.");
     }
 
     [SlashCommand("add-level-up-message", "Adds a message that will be displayed to a user who reaches a certain level.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
