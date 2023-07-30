@@ -4,6 +4,7 @@ using System.Text;
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using ZipFile = System.IO.Compression.ZipFile;
 using DSharpPlus;
 using DSharpPlus.Entities;
@@ -61,11 +62,12 @@ namespace CarrotBot
             }
             if (eventId.ToString() == "ConnectionClose" || eventId.ToString() == "HeartbeatFailure")
             {
-                Data.Database.FlushDatabase(true);
+                Task.Run(async () => await Program.discord.StartAsync()); //Reconnect the client
+                /*Data.Database.FlushDatabase(true);
                 Conversation.ConversationData.WriteDatabase();
                 Leveling.LevelingData.FlushAllData();
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
-                Environment.Exit(0);
+                Environment.Exit(0);*/
             }
         }
         public IDisposable BeginScope<TState>(TState state)
