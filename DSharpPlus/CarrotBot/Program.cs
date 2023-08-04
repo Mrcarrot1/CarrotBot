@@ -1,7 +1,7 @@
 //Definitions for debugging
 //BETA sets the bot to a beta state, which logs into the beta account, has more logging, and other tweaks.
 //DATABASE_WRITE_PROTECTED is used for when the beta must read from the main database but cannot write to it. The only difference is that no data will be written to disk.
-//#define BETA
+#define BETA
 //#define DATABASE_WRITE_PROTECTED
 
 using System;
@@ -43,7 +43,7 @@ namespace CarrotBot
 
 
         public static bool conversation = false;
-        static bool firstRun = true;
+        private static bool _firstRun = true;
 
         public static DiscordShardedClient? discord;
         public static DiscordMember? Mrcarrot;
@@ -51,10 +51,6 @@ namespace CarrotBot
         public static string commandPrefix = "";
         static async Task Main(string[] args)
         {
-            if (isBeta)
-            {
-                Logger.Log("Starting CarrotBot (using beta account)");
-            }
 #if !BETA
             if (args.Contains("--beta")) isBeta = true;
 #endif
@@ -62,6 +58,11 @@ namespace CarrotBot
 #if !DATABASE_WRITE_PROTECTED
             if (args.Contains("--db-write-protect")) doNotWrite = true;
 #endif
+            if (isBeta)
+            {
+                Logger.Log("Starting CarrotBot (using beta account)");
+            }
+
             //Check for do not start flag in the form of a file-
             //The beta ignores this.
             if (File.Exists($@"{Utils.localDataPath}/DO_NOT_START.cb") && !isBeta)
@@ -454,14 +455,50 @@ namespace CarrotBot
                 }
                 await discord.UpdateStatusAsync(new DiscordActivity($"in {Utils.GuildCount} servers | /help", ActivityType.Playing));
 
-                if (firstRun && !isBeta)
+                if (_firstRun && !isBeta)
                 {
                     await Conversation.Conversation.StartConversation(false);
-                    firstRun = false;
+                    _firstRun = false;
                 }
                 if (!doNotWrite)
                     LevelingData.LoadDatabase();
                 //await BotGuild.GetChannel(502841234285527041).SendMessageAsync("CarrotBot ready.");
+                foreach (GuildData guildData in Database.Guilds.Values)
+                {
+                    DiscordGuild guild;
+                    try
+                    {
+                        guild = await discord.GetShard(guildData.Id).GetGuildAsync(guildData.Id);
+                    }
+                    catch (NotFoundException)
+                    {
+                        continue;
+                    }
+                    List<ulong> rolesToRemove = new(32);
+                    foreach (KeyValuePair<ulong, ulong> role in guildData.CustomRoles)
+                    {
+                        DiscordMember? member = await guild.GetMemberAsync(role.Key);
+                        if (member == null) rolesToRemove.Add(role.Key);
+                        else
+                        {
+                            if (member.PremiumSince != null ||
+                                guildData.CustomRolesAllowed != GuildData.AllowCustomRoles.Booster) continue;
+                            DiscordRole? dRole = guild.GetRole(role.Value);
+                            if (dRole == null)
+                            {
+                                continue;
+                            }
+                            rolesToRemove.Add(role.Key);
+                            await member.RevokeRoleAsync(dRole,
+                                "User has stopped boosting this server.");
+                        }
+                    }
+
+                    foreach (ulong userId in rolesToRemove)
+                    {
+                        guildData.CustomRoles.Remove(userId);
+                    }
+                }
             }
             catch (Exception ee)
             {
@@ -471,9 +508,9 @@ namespace CarrotBot
         static async Task MessageUpdated(DiscordClient client, MessageUpdateEventArgs e)
         {
             if (e.Channel.IsPrivate || e.Author.Id == discord!.CurrentUser.Id) return;
-            if (!isBeta && ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            if (!isBeta && ConversationData.ConversationMessagesByOrigId.TryGetValue(e.Message.Id, out var value))
             {
-                await ConversationData.ConversationMessagesByOrigId[e.Message.Id].UpdateMessage();
+                await value.UpdateMessage();
             }
 
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
@@ -545,9 +582,9 @@ namespace CarrotBot
         static async Task MessageDeleted(DiscordClient client, MessageDeleteEventArgs e)
         {
             if (e.Channel.IsPrivate || e.Message.Author == null || e.Message.Author.Id == discord!.CurrentUser.Id) return;
-            if (ConversationData.ConversationMessagesByOrigId.ContainsKey(e.Message.Id))
+            if (ConversationData.ConversationMessagesByOrigId.TryGetValue(e.Message.Id, out var value))
             {
-                await ConversationData.ConversationMessagesByOrigId[e.Message.Id].DeleteMessage(false);
+                await value.DeleteMessage(false);
             }
             GuildData guildData = Database.GetOrCreateGuildData(e.Guild.Id);
             if (guildData.MessageLogsChannel != null)

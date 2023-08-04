@@ -16,10 +16,10 @@ namespace CarrotBot
 
         public static void CreateUser(ulong Id)
         {
-            if (LevelingData.Servers[824824193001979924].Users.ContainsKey(Id))
+            if (LevelingData.Servers[824824193001979924].Users.TryGetValue(Id, out var user))
             {
                 // ReSharper disable once PossibleLossOfFraction
-                UserBalances.Add(Id, LevelingData.Servers[824824193001979924].Users[Id].TotalXP / 5);
+                UserBalances.Add(Id, user.TotalXP / 5);
             }
             else
             {

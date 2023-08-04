@@ -39,8 +39,10 @@ namespace CarrotBot.Data
                         {
                             KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.localDataPath}/Guild_{item}/Index.cb"));
                             RootNodes.Add(guildNode);
-                            GuildData guild = new GuildData(item);
-                            guild.GuildPrefix = (string)guildNode.Values["prefix"];
+                            GuildData guild = new(item)
+                            {
+                                GuildPrefix = (string)guildNode.Values["prefix"]
+                            };
                             guild.GuildPrefix = guild.GuildPrefix.Replace(@"\", "");
                             if (guildNode.Values.TryGetValue("modmailChannel", out object? modmailChannel))
                             {
@@ -81,8 +83,8 @@ namespace CarrotBot.Data
                                         {
                                             if (node.Name == "WARNING")
                                             {
-                                                if (node.Values.ContainsKey("message"))
-                                                    user.Warnings.Add(new Tuple<string, DateTimeOffset, ulong>((string)node.Values["message"],
+                                                if (node.Values.TryGetValue("message", out var value))
+                                                    user.Warnings.Add(new Tuple<string, DateTimeOffset, ulong>((string)value,
                                                     DateTimeOffset.FromUnixTimeMilliseconds((long)node.Values["time"]),
                                                     (ulong)node.Values["warnedBy"]));
                                                 else
@@ -125,17 +127,17 @@ namespace CarrotBot.Data
                                     foreach (KONNode node1 in node.Children)
                                     {
                                         JoinFilter filter = new JoinFilter("(?!.*)", false, 0); //If there's a problem reading it, just add a new filter with a regex designed to have 0 valid matches
-                                        if (node1.Values.ContainsKey("regex"))
+                                        if (node1.Values.TryGetValue("regex", out var value))
                                         {
-                                            filter.Regex = new Regex((string)node1.Values["regex"]);
+                                            filter.Regex = new Regex((string)value);
                                         }
-                                        if (node1.Values.ContainsKey("ban"))
+                                        if (node1.Values.TryGetValue("ban", out var node1Value))
                                         {
-                                            filter.Ban = (bool)node1.Values["ban"];
+                                            filter.Ban = (bool)node1Value;
                                         }
-                                        if (node1.Values.ContainsKey("creatorId"))
+                                        if (node1.Values.TryGetValue("creatorId", out var value1))
                                         {
-                                            filter.CreatorId = (ulong)node1.Values["creatorId"];
+                                            filter.CreatorId = (ulong)value1;
                                         }
                                         foreach (KONArray array1 in node1.Arrays)
                                         {
@@ -156,17 +158,17 @@ namespace CarrotBot.Data
                                     foreach (KONNode node1 in node.Children)
                                     {
                                         JoinBlacklist blacklist = new JoinBlacklist("", false, 0);
-                                        if (node1.Values.ContainsKey("username"))
+                                        if (node1.Values.TryGetValue("username", out var value))
                                         {
-                                            blacklist.Username = (string)node1.Values["username"];
+                                            blacklist.Username = (string)value;
                                         }
-                                        if (node1.Values.ContainsKey("ban"))
+                                        if (node1.Values.TryGetValue("ban", out var node1Value))
                                         {
-                                            blacklist.Ban = (bool)node1.Values["ban"];
+                                            blacklist.Ban = (bool)node1Value;
                                         }
-                                        if (node1.Values.ContainsKey("creatorId"))
+                                        if (node1.Values.TryGetValue("creatorId", out var value1))
                                         {
-                                            blacklist.CreatorId = (ulong)node1.Values["creatorId"];
+                                            blacklist.CreatorId = (ulong)value1;
                                         }
                                         foreach (KONArray array1 in node1.Arrays)
                                         {
@@ -196,9 +198,15 @@ namespace CarrotBot.Data
                 }
             }
         }
+        /// <summary>
+        /// Searches for the GuildData object with the given ID. If found, returns that.
+        /// Otherwise, creates a new one, adds it to the database, and returns it.
+        /// </summary>
+        /// <param name="Id">The guild ID.</param>
+        /// <returns>The GuildData object that represents the guild with the given ID.</returns>
         public static GuildData GetOrCreateGuildData(ulong Id)
         {
-            if (Guilds.ContainsKey(Id)) return Guilds[Id];
+            if (Guilds.TryGetValue(Id, out var data)) return data;
             GuildData output = new GuildData(Id, true);
             Guilds.Add(Id, output);
             FlushDatabase();

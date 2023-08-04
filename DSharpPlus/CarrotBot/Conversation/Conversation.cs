@@ -196,16 +196,16 @@ namespace CarrotBot.Conversation
                     var replyMsg = message.ReferencedMessage;
                     if (replyMsg.Author.Id == Program.discord!.CurrentUser.Id)
                     {
-                        if (ConversationData.ConversationMessagesByOutId.ContainsKey(replyMsg.Id))
+                        if (ConversationData.ConversationMessagesByOutId.TryGetValue(replyMsg.Id, out var value))
                         {
-                            RefMsg = ConversationData.ConversationMessagesByOutId[replyMsg.Id];
+                            RefMsg = value;
                         }
                     }
                     else
                     {
-                        if (ConversationData.ConversationMessagesByOrigId.ContainsKey(replyMsg.Id))
+                        if (ConversationData.ConversationMessagesByOrigId.TryGetValue(replyMsg.Id, out var value))
                         {
-                            RefMsg = ConversationData.ConversationMessagesByOrigId[replyMsg.Id];
+                            RefMsg = value;
                         }
                     }
                 }

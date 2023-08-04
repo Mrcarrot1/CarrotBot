@@ -29,26 +29,26 @@ namespace CarrotBot.Leveling
                     {
                         KONNode serverIndex = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.levelingDataPath}/Server_{item}/Index.cb"));
                         LevelingServer server = new LevelingServer(item);
-                        if (serverIndex.Values.ContainsKey("levelUpChannel"))
-                            server.SetLevelUpChannel((ulong)serverIndex.Values["levelUpChannel"]);
+                        if (serverIndex.Values.TryGetValue("levelUpChannel", out var value))
+                            server.SetLevelUpChannel((ulong)value);
 
-                        if (serverIndex.Values.ContainsKey("xpCooldown"))
-                            server.XPCooldown = (int)serverIndex.Values["xpCooldown"];
+                        if (serverIndex.Values.TryGetValue("xpCooldown", out var indexValue))
+                            server.XPCooldown = (int)indexValue;
 
-                        if (serverIndex.Values.ContainsKey("xpPerLevel"))
-                            server.XPPerLevel = (int)serverIndex.Values["xpPerLevel"];
+                        if (serverIndex.Values.TryGetValue("xpPerLevel", out var serverIndexValue))
+                            server.XPPerLevel = (int)serverIndexValue;
 
-                        if (serverIndex.Values.ContainsKey("minXPPerMessage"))
-                            server.MinXPPerMessage = (int)serverIndex.Values["minXPPerMessage"];
+                        if (serverIndex.Values.TryGetValue("minXPPerMessage", out var value1))
+                            server.MinXPPerMessage = (int)value1;
 
-                        if (serverIndex.Values.ContainsKey("maxXPPerMessage"))
-                            server.MaxXPPerMessage = (int)serverIndex.Values["maxXPPerMessage"];
+                        if (serverIndex.Values.TryGetValue("maxXPPerMessage", out var indexValue1))
+                            server.MaxXPPerMessage = (int)indexValue1;
 
-                        if (serverIndex.Values.ContainsKey("cumulativeRoles"))
-                            server.CumulativeRoles = (bool)serverIndex.Values["cumulativeRoles"];
+                        if (serverIndex.Values.TryGetValue("cumulativeRoles", out var serverIndexValue1))
+                            server.CumulativeRoles = (bool)serverIndexValue1;
 
-                        if (serverIndex.Values.ContainsKey("xpRateOfChange"))
-                            server.XPRateOfChange = (int)serverIndex.Values["xpRateOfChange"];
+                        if (serverIndex.Values.TryGetValue("xpRateOfChange", out var value2))
+                            server.XPRateOfChange = (int)value2;
 
                         foreach (KONNode childNode in serverIndex.Children)
                         {
@@ -117,7 +117,8 @@ namespace CarrotBot.Leveling
                 return 1;
             return 0; //If x > y and y > x are both false, they're equal
         }
-        public static void FlushServerList()
+
+        private static void FlushServerList()
         {
             if (Program.doNotWrite) return;
             KONNode node = new KONNode("LEVELING_DATABASE");
@@ -127,7 +128,7 @@ namespace CarrotBot.Leveling
                 serversArray.Items.Add(server.Key);
             }
             node.AddArray(serversArray);
-            File.WriteAllText($@"{Utils.levelingDataPath}/LevelingDatabase.cb", "//PERSISTENT\n" + KONWriter.Default.Write(node));
+            SensitiveInformation.AES256WriteFile($@"{Utils.levelingDataPath}/LevelingDatabase.cb", "//PERSISTENT\n" + KONWriter.Default.Write(node));
         }
         public static void FlushAllData()
         {

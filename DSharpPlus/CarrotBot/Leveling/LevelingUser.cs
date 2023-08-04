@@ -89,9 +89,9 @@ namespace CarrotBot.Leveling
                             }
                         }
                     }
-                    if (Server.LevelUpMessages.ContainsKey(Level))
+                    if (Server.LevelUpMessages.TryGetValue(Level, out var message))
                     {
-                        eb.Description += $"\n{Server.LevelUpMessages[Level]}";
+                        eb.Description += $"\n{message}";
                     }
                     Server.SortUsersByRank();
                     string? content = MentionForLevelUp ? $"<@!{msg.Author.Id}>" : null;

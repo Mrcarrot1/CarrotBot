@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using CarrotBot.Data;
@@ -339,5 +340,26 @@ public class AdminCommands : ApplicationCommandModule
         guildData.MessageLogsChannel = null;
         guildData.FlushData();
         await ctx.UpdateResponseAsync("Message log channel(if any) removed.");
+    }
+
+    [SlashCommand("custom-roles-set", "Sets whether and how the custom roles module will be enabled in this server."), SlashRequirePermissions(Permissions.ManageRoles)]
+    public async Task CustomRolesSet(InteractionContext ctx, [Option("choice", "The option to set.")] GuildData.AllowCustomRoles choice)
+    {
+        await ctx.IndicateResponseAsync();
+        GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
+        guildData.CustomRolesAllowed = choice;
+        guildData.FlushData();
+        DiscordEmbedBuilder eb = new()
+        {
+            Title = "Success",
+            Color = Utils.CBGreen,
+            Description = $"Set custom roles to **{choice switch
+            {
+                GuildData.AllowCustomRoles.All => "All Members",
+                GuildData.AllowCustomRoles.Booster => "Boosters Only",
+                _ => "None",
+            }}**."
+        };
+        await ctx.UpdateResponseAsync(eb.Build());
     }
 }

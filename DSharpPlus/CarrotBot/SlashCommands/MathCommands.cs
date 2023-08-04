@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using DSharpPlus.SlashCommands;
+using NCalcAsync;
 
 namespace CarrotBot.SlashCommands
 {
@@ -57,6 +58,22 @@ namespace CarrotBot.SlashCommands
         public async Task Pow(InteractionContext ctx, [Option("number1", "The first number.")] double num1, [Option("number2", "The second number.")] double num2)
         {
             await ctx.RespondAsync($"{Math.Pow(num1, num2)}");
+        }
+
+        [SlashCommand("eval", "Evaluates a mathematical expression.")]
+        public async Task Evan(InteractionContext ctx, [Option("expression", "The expression to evaluate.")] string expression)
+        {
+            await ctx.IndicateResponseAsync();
+            Expression exp = new(expression);
+            //if (exp.HasErrors()) await ctx.UpdateResponseAsync("Invalid expression.");
+            try
+            {
+                await ctx.UpdateResponseAsync($"{expression} = {await exp.EvaluateAsync() ?? "Invalid expression."}");
+            }
+            catch (Exception e)
+            {
+                await ctx.UpdateResponseAsync(e.Message);
+            }
         }
     }
 }

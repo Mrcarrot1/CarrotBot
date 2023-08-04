@@ -14,7 +14,7 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.5.2";
+        private static readonly string version = "1.5.99"; //TODO: Change when released
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         private static string? dspVersion = null;
         public static string DSharpPlusVersion
@@ -329,8 +329,9 @@ namespace CarrotBot
         /// <param name="ctx"></param>
         /// <param name="message"></param>
         /// <returns></returns>
-        public static async Task UpdateResponseAsync(this InteractionContext ctx, string message)
+        public static async Task UpdateResponseAsync(this InteractionContext ctx, string? message)
         {
+            if (message is null) return;
             await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(message));
         }
 
@@ -447,7 +448,7 @@ namespace CarrotBot
             {
                 foreach (CommandOverload overload in command.Overloads)
                 {
-                    foreach (int ovCount in getOverloadArgCounts(overload))
+                    foreach (int ovCount in GetOverloadArgCounts(overload))
                     {
                         output.Add(ovCount);
                     }
@@ -456,7 +457,7 @@ namespace CarrotBot
             return output.ToArray();
         }
 
-        private static int[] getOverloadArgCounts(CommandOverload overload)
+        private static int[] GetOverloadArgCounts(CommandOverload overload)
         {
             List<int> output = new();
 

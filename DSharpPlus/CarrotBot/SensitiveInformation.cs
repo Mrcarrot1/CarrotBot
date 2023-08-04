@@ -12,7 +12,7 @@ namespace CarrotBot
                                              //lmao I love that past me thought I would never have any collaborators
                                              //As of CB 1.6 betas neither this file nor any other source code files in this project directly contain any sensitive information, allowing it to be released
                                              //So great job on the comments, past me
-                                             
+
         public static readonly string? botToken = File.Exists("00_token.cb") ? AES256ReadFile("00_token.cb") : null;
         public static readonly string? betaToken = File.Exists("00_token-beta.cb") ? AES256ReadFile("00_token-beta.cb") : null;
         public static readonly string? catAPIKey = File.Exists("00_cat-api-key.cb") ? AES256ReadFile("00_cat-api-key.cb") : null;
@@ -23,9 +23,16 @@ namespace CarrotBot
             get
             {
                 if (encryptionKey is not null) return encryptionKey;
-                var assembly = Assembly.GetExecutingAssembly();
+                Assembly assembly = Assembly.GetExecutingAssembly();
                 using Stream? stream = assembly.GetManifestResourceStream("CarrotBot.carrotbot-encryption-key.key");
-                if (stream is null) return Array.Empty<byte>();
+                if (stream is null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine("ERROR: No encryption key was embedded in this build. The application will not be able to encode or decode data files.");
+                    Console.ResetColor();
+                    return Array.Empty<byte>();
+                }
+
                 using BinaryReader reader = new(stream);
                 encryptionKey = reader.ReadBytes(32);
                 return encryptionKey;
@@ -46,7 +53,7 @@ namespace CarrotBot
             await using StreamWriter encryptWriter = new(cryptoStream, Encoding.UTF8);
             await encryptWriter.WriteAsync(text);
         }
-        
+
         public static void AES256WriteFile(string path, string text)
         {
             using FileStream fileStream = new(path, FileMode.Create);
@@ -84,7 +91,7 @@ namespace CarrotBot
             using StreamReader decryptReader = new(cryptoStream);
             return await decryptReader.ReadToEndAsync();
         }
-        
+
         public static string AES256ReadFile(string path)
         {
             using FileStream fileStream = new(path, FileMode.Open);

@@ -3,7 +3,7 @@
 
 using DSharpPlus.Entities;
 
-namespace CarrotBot.Modules.ReactionRoles
+namespace CarrotBot.ReactionRoles
 {
     public class ReactionRole
     {

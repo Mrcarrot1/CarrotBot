@@ -71,7 +71,7 @@ namespace CarrotBot.Conversation
                     await msg.Value.DeleteAsync();
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
             }

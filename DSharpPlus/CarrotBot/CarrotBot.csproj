@@ -14,12 +14,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.4.*" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.*" />
-    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.4.*" />
-    <PackageReference Include="KarrotObjectNotation" Version="1.1.5" />
+    <PackageReference Include="DSharpPlus" Version="4.4.1" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.4.1" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.4.1" />
+    <PackageReference Include="KarrotObjectNotation" Version="1.1.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <EmbeddedResource Include="carrotbot-encryption-key.key" />
+    <PackageReference Include="NCalcAsync" Version="3.2.6" />
   </ItemGroup>
 
 </Project>

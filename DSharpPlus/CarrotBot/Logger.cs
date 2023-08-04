@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using CarrotBot.Conversation;
 using CarrotBot.Data;
 using CarrotBot.Leveling;
@@ -28,9 +29,13 @@ namespace CarrotBot
                 Setup();
             //ISocketMessageChannel channel = Program.client.GetChannel(490551836323872779) as ISocketMessageChannel;
             File.AppendAllText(logPath, $"\n[{level} {DateTime.Now:HH:mm:ss}] {Message}");
-            if (level == CBLogLevel.ERR) Console.ForegroundColor = ConsoleColor.DarkYellow;
-            if (level == CBLogLevel.WRN) Console.ForegroundColor = ConsoleColor.Yellow;
-            if (level == CBLogLevel.EXC) Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = level switch
+            {
+                CBLogLevel.ERR => ConsoleColor.DarkYellow,
+                CBLogLevel.WRN => ConsoleColor.Yellow,
+                CBLogLevel.EXC => ConsoleColor.Red,
+                _ => Console.ForegroundColor
+            };
             Console.WriteLine($"\n[{level} {DateTime.Now:HH:mm:ss}] {Message}");
             Console.ForegroundColor = ConsoleColor.White;
             if (level == CBLogLevel.EXC)
@@ -55,11 +60,13 @@ namespace CarrotBot
             if (exception is not null) Console.WriteLine(exception.ToString());
             if (eventId.ToString() == "ConnectionClose" || eventId.ToString() == "HeartbeatFailure")
             {
-                Database.FlushDatabase(true);
+                //Task.Run(async () => await Program.discord!.StopAsync()).GetAwaiter().GetResult();
+                Task.Run(async () => await Program.discord!.StartAsync());
+                /*Database.FlushDatabase(true);
                 ConversationData.WriteDatabase();
                 LevelingData.FlushAllData();
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
-                Environment.Exit(0);
+                Environment.Exit(0);*/
             }
         }
 #nullable disable

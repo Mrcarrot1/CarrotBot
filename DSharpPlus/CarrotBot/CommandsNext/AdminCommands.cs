@@ -133,7 +133,7 @@ namespace CarrotBot.CommandsNext
             {
                 await ctx.RespondAsync("That user doesn't have any warnings in this server!");
             }
-            else 
+            else
                 foreach (var warning in user.Warnings)
                 {
                     DiscordEmbedBuilder eb = new DiscordEmbedBuilder();

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using DSharpPlus.SlashCommands;
 using KarrotObjectNotation;
 
 namespace CarrotBot.Data
@@ -21,13 +22,15 @@ namespace CarrotBot.Data
         public ulong? ModMailChannel { get; internal set; }
 
         public ulong? MessageLogsChannel { get; internal set; }
+        
+        public Dictionary<ulong, ulong> CustomRoles { get; }
 
         public AllowCustomRoles CustomRolesAllowed { get; internal set; }
 
         public void FlushData(bool flushUserData = false)
         {
             if (Program.doNotWrite) return;
-            KONNode node = new KONNode($"GUILD_{Id}");
+            KONNode node = new($"GUILD_{Id}");
             node.AddValue("id", Id);
             node.AddValue("prefix", GuildPrefix);
             if (ModMailChannel != null)
@@ -41,7 +44,7 @@ namespace CarrotBot.Data
 
             node.AddValue("customRolesAllowed", CustomRolesAllowed.ToString());
 
-            KONArray usersArray = new KONArray("USERS");
+            KONArray usersArray = new("USERS");
             foreach (KeyValuePair<ulong, GuildUserData> user in Users)
             {
                 usersArray.Items.Add(user.Key);
@@ -49,21 +52,21 @@ namespace CarrotBot.Data
             }
             node.AddArray(usersArray);
 
-            KONArray joinRolesArray = new KONArray("JOIN_ROLES");
+            KONArray joinRolesArray = new("JOIN_ROLES");
             foreach (ulong role in RolesToAssignOnJoin)
             {
                 joinRolesArray.Items.Add(role);
             }
             node.AddArray(joinRolesArray);
 
-            KONNode regexFiltersNode = new KONNode("JOIN_FILTERS");
+            KONNode regexFiltersNode = new("JOIN_FILTERS");
             foreach (JoinFilter filter in JoinFilters)
             {
-                KONNode filterNode = new KONNode("FILTER");
+                KONNode filterNode = new("FILTER");
                 filterNode.AddValue("regex", filter.Regex.ToString());
                 filterNode.AddValue("ban", filter.Ban);
                 filterNode.AddValue("creatorId", filter.CreatorId);
-                KONArray exceptionsArray = new KONArray("EXCEPTIONS");
+                KONArray exceptionsArray = new("EXCEPTIONS");
                 foreach (ulong exception in filter.Exceptions)
                 {
                     exceptionsArray.AddItem(exception);
@@ -73,14 +76,14 @@ namespace CarrotBot.Data
             }
             node.AddChild(regexFiltersNode);
 
-            KONNode joinBlacklistsNode = new KONNode("JOIN_BLACKLISTS");
+            KONNode joinBlacklistsNode = new("JOIN_BLACKLISTS");
             foreach (JoinBlacklist blacklist in JoinBlacklists)
             {
-                KONNode blacklistNode = new KONNode("BLACKLIST");
+                KONNode blacklistNode = new("BLACKLIST");
                 blacklistNode.AddValue("username", blacklist.Username);
                 blacklistNode.AddValue("ban", blacklist.Ban);
                 blacklistNode.AddValue("creatorId", blacklist.CreatorId);
-                KONArray exceptionsArray = new KONArray("EXCEPTIONS");
+                KONArray exceptionsArray = new("EXCEPTIONS");
                 foreach (ulong exception in blacklist.Exceptions)
                 {
                     exceptionsArray.AddItem(exception);
@@ -90,13 +93,23 @@ namespace CarrotBot.Data
             }
             node.AddChild(joinBlacklistsNode);
 
+            KONNode customRolesNode = new("CUSTOM_ROLES");
+            foreach (KeyValuePair<ulong, ulong> role in CustomRoles)
+            {
+                KONNode roleNode = new("ROLE");
+                roleNode.AddValue("user", role.Key);
+                roleNode.AddValue("role", role.Value);
+                customRolesNode.AddChild(roleNode);
+            }
+            node.AddChild(customRolesNode);
+            
             SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Guild_{Id}/Index.cb", KONWriter.Default.Write(node));
         }
 
         public GuildUserData GetOrCreateUserData(ulong userId)
         {
-            if (Users.ContainsKey(userId)) return Users[userId];
-            GuildUserData output = new GuildUserData(userId, Id, true);
+            if (Users.TryGetValue(userId, out var data)) return data;
+            GuildUserData output = new(userId, Id, true);
             Users.Add(userId, output);
             FlushData();
             return output;
@@ -113,6 +126,7 @@ namespace CarrotBot.Data
             JoinBlacklists = new List<JoinBlacklist>();
             GuildPrefix = "%";
             CustomRolesAllowed = AllowCustomRoles.None;
+            CustomRoles = new();
             if (createIndex)
                 FlushData();
         }
@@ -128,8 +142,11 @@ namespace CarrotBot.Data
 
         public enum AllowCustomRoles
         {
+            [ChoiceName("None")]
             None,
+            [ChoiceName("Boosters Only")]
             Booster,
+            [ChoiceName("All Members")]
             All
         }
     }

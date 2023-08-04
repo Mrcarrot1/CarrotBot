@@ -1,11 +1,12 @@
 //CarrotBot Conversation message data file format.
-//Revised 27th January 2022.
+//Revised 3 May 2023.
 //When parsing, be sure to:
 //  A)Check if the file is more than 30 days old, and delete it if it is. (Utils.TryLoadDatabaseNode)
 //  B)Create the appropriate references to the message in the following locations:
 //      * Conversation.ConversationData.ConversationMessages
 //      * Conversation.ConversationData.ConversationMessagesByOrigId
 //      * Conversation.ConversationData.ConversationMessagesByOutId
+// Note that this format is always stored with encryption(in CB 1.6+, AES256)
 CONVERSATION_MESSAGES
 {
     date = 211203 //YYMMDD

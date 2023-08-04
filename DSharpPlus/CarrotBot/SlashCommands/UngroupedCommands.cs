@@ -217,7 +217,7 @@ public class UngroupedCommands : ApplicationCommandModule
                     if (!ctx.Channel.IsPrivate)
                     {
                         if ((cmd.Name == "rank" || cmd.Name == "leaderboard" || cmd.Name == "disableleveling") && !Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
-                        if (cmd.Name == "enableleveling" && Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
+                        if (cmd.Name == "enable-leveling" && Leveling.LevelingData.Servers.ContainsKey(ctx.Guild.Id)) continue;
                         if (cmd.IsHidden && !(cmd.Name == "dripcoin" && ctx.Guild.Id == 824824193001979924))
                         {
                             continue;
@@ -322,22 +322,22 @@ public class UngroupedCommands : ApplicationCommandModule
         {
             await ctx.Member.ModifyAsync(x => x.Nickname = $"[AFK] {ctx.Member.DisplayName}");
         }
-        catch(UnauthorizedException) { }
+        catch (UnauthorizedException) { }
         await ctx.UpdateResponseAsync($"Set your AFK: {message}");
     }
-    private static readonly HttpClient client = new HttpClient();
+    private static readonly HttpClient Client = new HttpClient();
     [SlashCommand("catpic", "Provides a random cat picture courtesy of thecatapi.com")]
     public async Task CatPic(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
         try
         {
-            client.DefaultRequestHeaders.Add("x-api-key", SensitiveInformation.catAPIKey);
-            var responseString = await client.GetStringAsync("https://api.thecatapi.com/v1/images/search");
+            Client.DefaultRequestHeaders.Add("x-api-key", SensitiveInformation.catAPIKey);
+            string responseString = await Client.GetStringAsync("https://api.thecatapi.com/v1/images/search");
             responseString = responseString.Substring(1, responseString.Length - 2); //This API gives response strings surrounded by [] so we remove them
-            Console.WriteLine("Response string: {0}", responseString);
+            Console.WriteLine($"Response string: {responseString}");
             KONNode node = KONParser.Default.ParseJSON(responseString);
-            string url = (string)node.Values["url"];
+            string? url = (string)node.Values["url"];
             await ctx.UpdateResponseAsync(url);
         }
         catch (Exception e)
@@ -357,7 +357,7 @@ public class UngroupedCommands : ApplicationCommandModule
         eb.AddField("Shards", $"{Program.discord!.ShardClients.Count}", true);
         eb.AddField("Guilds", $"{Utils.GuildCount}", true);
         eb.AddField("Current Version", $"v{Utils.currentVersion}", true);
-        eb.AddField("DSharpPlus Version", Utils.DSharpPlusVersion, true);
+        eb.AddField("DSharpPlus Version", $"v{Utils.DSharpPlusVersion}", true);
         eb.AddField("Invite/Vote Link", "https://discord.bots.gg/bots/389513870835974146");
         eb.AddField("Support Server", "https://discord.gg/wHPwHu7");
         eb.AddField("Source Repository", "https://github.com/Mrcarrot1/CarrotBot");
@@ -420,8 +420,8 @@ public class UngroupedCommands : ApplicationCommandModule
             else
             {
                 //Check for image URLs and set the first one we find to the embed's image URL
-                Regex URLRegex = new Regex(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
-                foreach (Match match in URLRegex.Matches(message))
+                Regex urlRegex = new(@"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)");
+                foreach (Match match in urlRegex.Matches(message))
                 {
                     if (Utils.IsImageUrl(match.Value))
                     {
@@ -432,11 +432,13 @@ public class UngroupedCommands : ApplicationCommandModule
             }
 
             //var sentMessage = await channel.SendMessageAsync(embed: eb.Build());
-            var button = new DiscordButtonComponent(ButtonStyle.Primary, $"mmreplybutton_{ctx.User.Id}", "Reply");
+            DiscordButtonComponent button = new(ButtonStyle.Primary, $"mmreplybutton_{ctx.User.Id}", "Reply");
 
-            var messageBuilder = new DiscordMessageBuilder()
-                .WithEmbed(eb.Build())
-                .AddComponents(button);
+            DiscordMessageBuilder? messageBuilder = new()
+            {
+                Embed = eb.Build()
+            };
+            messageBuilder.AddComponents(button);
 
             await channel.SendMessageAsync(messageBuilder);
 
@@ -447,7 +449,7 @@ public class UngroupedCommands : ApplicationCommandModule
             await ctx.UpdateResponseAsync("This server does not currently have modmail configured. Please try contacting the server's moderators directly.");
         }
     }
-    //[SlashCommand("custom-role", "Grants a custom role(in future, to server boosters).")]
+    [SlashCommand("custom-role", "Grants a custom role(in future, to server boosters).")]
     public async Task CustomRole(InteractionContext ctx, [Option("name", "The name of the role.")] string name,
     //Discord default role colors
     [Choice("Light Teal", "#1abc9c")]
@@ -472,50 +474,85 @@ public class UngroupedCommands : ApplicationCommandModule
     [Choice("Dark Grey 2", "#546e7a")]
     [Option("color", "The hex color for the role."),
     NameLocalization(Localization.BritishEnglish, "colour"),
-    DescriptionLocalization(Localization.BritishEnglish, "The hex colour for the role.")] string color, [Option("icon", "The URL or link to your desired icon image.")] string? iconUrl = null)
+    DescriptionLocalization(Localization.BritishEnglish, "The hex colour for the role.")] string color, [Option("iconURL", "The URL or link to your desired icon image.")] string? iconUrl = null, [Option("icon", "The icon for the role.")] DiscordAttachment? icon = null)
     {
         try
         {
             GuildData guildData = Database.GetOrCreateGuildData(ctx.Guild.Id);
-            //if (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.All || (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.Booster && ctx.Member.PremiumSince is not null))
+            switch (guildData.CustomRolesAllowed)
             {
-                await ctx.IndicateResponseAsync(true);
-                if (!Regex.IsMatch(color, "#?[0-9A-Fa-f]{6}"))
+                case GuildData.AllowCustomRoles.All:
+                case GuildData.AllowCustomRoles.Booster when ctx.Member.PremiumSince is not null:
                 {
-                    await ctx.UpdateResponseAsync("Please enter a valid hex color. To find your desired color value, visit ");
-                    return;
-                }
-                Stream? iconStream = null;
-                if (iconUrl != null)
-                {
-                    if (!Utils.IsImageUrl(iconUrl))
+                    await ctx.IndicateResponseAsync(true);
+                    if (!Regex.IsMatch(color, "#?[0-9A-Fa-f]{6}"))
                     {
-                        await ctx.UpdateResponseAsync("Please provide a valid image URL!");
+                        await ctx.UpdateResponseAsync("Please enter a valid hex color.");
                         return;
                     }
-                    HttpClient httpClient = new();
-                    if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
-                    var httpIconStream = await httpClient.GetStreamAsync(iconUrl);
 
+                    Stream? iconStream = null;
+                    if (icon is not null)
+                    {
+                        if (!icon.MediaType.StartsWith(("image")))
+                        {
+                            await ctx.UpdateResponseAsync("Please upload a valid image.");
+                            return;
+                        }
+
+                        HttpClient httpClient = new();
+                        if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
+                        iconStream = await httpClient.GetStreamAsync(iconUrl);
+                    }
+                    else if (iconUrl is not null)
+                    {
+                        if (!Utils.IsImageUrl(iconUrl))
+                        {
+                            await ctx.UpdateResponseAsync("Please provide a valid image URL.");
+                            return;
+                        }
+
+                        HttpClient httpClient = new();
+                        if (!Directory.Exists("temp")) Directory.CreateDirectory("temp");
+                        iconStream = await httpClient.GetStreamAsync(iconUrl);
+                    }
+
+                    if (guildData.CustomRoles.TryGetValue(ctx.Member.Id, out ulong roleId) && ctx.Guild.Roles.TryGetValue(roleId, out DiscordRole? role))
+                    {
+                        await role.ModifyAsync(name, color: new DiscordColor(color), icon: iconStream);
+                        await ctx.UpdateResponseAsync("Role updated.");
+                    }
+                    else
+                    {
+                        role = await ctx.Guild.CreateRoleAsync(name, color: new DiscordColor(color), icon: iconStream);
+                        DiscordRole headerRole = ctx.Guild.Roles[1044292868329705562];
+                        await role.ModifyPositionAsync(headerRole.Position - 1); //For some unfathomable reason position - 1 is one *lower*. I have no idea why the Discord devs did this or what they were smoking.
+                        await ctx.Member.GrantRoleAsync(role);
+                        await ctx.UpdateResponseAsync("Role granted.");
+                    }
+
+                    break;
                 }
-                DiscordRole role = await ctx.Guild.CreateRoleAsync(name, color: new DiscordColor(color), icon: iconStream);
-                DiscordRole headerRole = ctx.Guild.Roles[1044292868329705562];
-                await role.ModifyPositionAsync(headerRole.Position - 1); //For some unfathomable reason position - 1 is one *lower*. I have no idea why the Discord devs did this or what they were smoking.
-                await ctx.Member.GrantRoleAsync(role);
-                await ctx.UpdateResponseAsync("Role granted.");
+                case GuildData.AllowCustomRoles.Booster:
+                    await ctx.RespondAsync("Custom roles are only available to people who boost the server.\nBoost to help the server and get a custom role!", true);
+                    break;
+                case GuildData.AllowCustomRoles.None:
+                default:
+                    await ctx.RespondAsync("This server doesn't have custom roles enabled.", true);
+                    break;
             }
-            /*else if (guildData.CustomRolesAllowed == GuildData.AllowCustomRoles.Booster)
-            {
-                await ctx.RespondAsync("Custom roles are only available to people who boost!\nBoost to help the server and get a custom role!", true);
-            }
-            else
-            {
-                await ctx.RespondAsync("This server doesn't have custom roles enabled.", true);
-            }*/
         }
         catch (Exception e)
         {
             Console.WriteLine(e.ToString());
         }
+    }
+
+    [SlashCommand("get-premium-status",
+        "Returns whether or not the user has premium status(boosted) the server and for how long."), SlashRequireGuild]
+    public async Task GetPremiumStatus(InteractionContext ctx)
+    {
+        if (ctx.Member.PremiumSince == null) await ctx.RespondAsync("None.");
+        else await ctx.RespondAsync(ctx.Member.PremiumSince.ToString());
     }
 }
