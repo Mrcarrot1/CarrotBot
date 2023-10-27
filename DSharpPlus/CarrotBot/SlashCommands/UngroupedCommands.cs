@@ -280,7 +280,7 @@ public class UngroupedCommands : ApplicationCommandModule
             Conversation.ConversationData.WriteDatabase();
             Dripcoin.WriteData();
         }
-        Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
+        Logger.Log($"Bot shutdown initiated by {ctx.User.Username}.");
         Console.WriteLine();
         Environment.Exit(0);
     }
@@ -401,7 +401,7 @@ public class UngroupedCommands : ApplicationCommandModule
         {
             DiscordChannel channel = ctx.Guild.GetChannel((ulong)guildData.ModMailChannel);
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                .WithAuthor($"Modmail from {ctx.Member.Username}#{ctx.Member.Discriminator}", iconUrl: ctx.Member.AvatarUrl)
+                .WithAuthor($"Modmail from {ctx.Member.Username}", iconUrl: ctx.Member.AvatarUrl)
                 .WithDescription($"{message}")
                 .WithFooter($"ID: {ctx.Member.Id}")
                 .WithColor(Utils.CBOrange)

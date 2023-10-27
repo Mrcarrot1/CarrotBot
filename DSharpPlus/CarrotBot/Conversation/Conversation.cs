@@ -86,12 +86,12 @@ namespace CarrotBot.Conversation
                             ConversationData.LastMessage = secondMsgObject;
                             foreach (KeyValuePair<ulong, DiscordMessage> msg in ConversationData.LastMessage.ChannelMessages)
                             {
-                                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
+                                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}: {originalMessage.Content}");
                                 await msg.Value.ModifyAsync(embed: embed3);
                             }
                             await ConversationData.LastMessage.EmbedMessage.ModifyAsync(embed: embed3);
                             DiscordEmbedBuilder eb4 = new DiscordEmbedBuilder();
-                            eb4.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+                            eb4.WithTitle($"Message from {message.Author.Username} (via {Server})");
                             eb4.WithDescription(message.Content);
                             eb4.WithFooter($"Internal CB Id: {secondMsgObject.Id}\nUser Id: {message.Author.Id}");
                             eb4.WithColor(DiscordColor.Green);
@@ -134,7 +134,7 @@ namespace CarrotBot.Conversation
                     ConversationData.WriteDatabase();
                 }
                 ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel);
-                string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
+                string Title = $"{message.Author.Username}";
                 string Footer = $"Via {Server}";
 
                 if (Program.BotGuild.Members.ContainsKey(userId))
@@ -287,7 +287,7 @@ namespace CarrotBot.Conversation
                 msgObject.PreviousMessage = ConversationData.LastMessage;
                 ConversationData.LastMessage = msgObject;
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-                eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+                eb.WithTitle($"Message from {message.Author.Username} (via {Server})");
                 eb.WithDescription(message.Content);
                 eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
                 eb.WithColor(DiscordColor.Green);

@@ -213,7 +213,7 @@ public class JoinFilterCommands : ApplicationCommandModule
 
             ulong Id = user.Id;
             filter.Exceptions.Add(Id);
-            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully added an exception to the join filter for {user.Username}#{user.Discriminator}.").WithColor(Utils.CBGreen));
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully added an exception to the join filter for {user.Username}.").WithColor(Utils.CBGreen));
         }
         catch (IndexOutOfRangeException)
         {
@@ -240,11 +240,11 @@ public class JoinFilterCommands : ApplicationCommandModule
             if (filter.Exceptions.Contains(Id))
             {
                 filter.Exceptions.RemoveAll(x => x == Id);
-                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully removed the exception to the join filter for {user.Username}#{user.Discriminator}.").WithColor(Utils.CBGreen));
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully removed the exception to the join filter for {user.Username}.").WithColor(Utils.CBGreen));
             }
             else
             {
-                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Couldn't find an exception for {user.Username}#{user.Discriminator}.").WithColor(DiscordColor.Red));
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Couldn't find an exception for {user.Username}.").WithColor(DiscordColor.Red));
             }
         }
         catch (IndexOutOfRangeException)
@@ -458,7 +458,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
 
             ulong Id = user.Id;
             blacklist.Exceptions.Add(Id);
-            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully added an exception to the join blacklist entry for {user.Username}#{user.Discriminator}.").WithColor(Utils.CBGreen));
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully added an exception to the join blacklist entry for {user.Username}.").WithColor(Utils.CBGreen));
         }
         catch (IndexOutOfRangeException)
         {
@@ -485,11 +485,11 @@ public class JoinBlacklistCommands : ApplicationCommandModule
             if (blacklist.Exceptions.Contains(Id))
             {
                 blacklist.Exceptions.RemoveAll(x => x == Id);
-                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully removed the exception to the join blacklist entry for {user.Username}#{user.Discriminator}.").WithColor(Utils.CBGreen));
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithTitle("Success").WithDescription($"Successfully removed the exception to the join blacklist entry for {user.Username}.").WithColor(Utils.CBGreen));
             }
             else
             {
-                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Couldn't find an exception for {user.Username}#{user.Discriminator}.").WithColor(DiscordColor.Red));
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription($"Couldn't find an exception for {user.Username}.").WithColor(DiscordColor.Red));
             }
         }
         catch (IndexOutOfRangeException)

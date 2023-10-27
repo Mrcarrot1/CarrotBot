@@ -256,7 +256,7 @@ namespace CarrotBot.Commands
             Leveling.LevelingData.FlushAllData();
             Dripcoin.WriteData();
             Conversation.ConversationData.WriteDatabase();
-            Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
+            Logger.Log($"Bot shutdown initiated by {ctx.User.Username}.");
             Console.WriteLine();
             Environment.Exit(0);
         }

@@ -74,7 +74,7 @@ public class ConversationSlashCommands : ApplicationCommandModule
             }
             else
             {
-                await Program.BotGuild.Channels[818960822151544873].SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
+                await Program.BotGuild.Channels[818960822151544873].SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}: {Id}, {name}, Guild ID: {ctx.Guild.Id}");
                 await ctx.UpdateResponseAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
             }
         }

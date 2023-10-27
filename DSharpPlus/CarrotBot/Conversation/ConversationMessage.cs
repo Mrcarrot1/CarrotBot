@@ -150,7 +150,7 @@ namespace CarrotBot.Conversation
             DiscordEmbed embed = eb2.Build();
             foreach (KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
             {
-                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
+                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}: {originalMessage.Content}");
                 await msg.Value.ModifyAsync(embed: embed);
             }
             /*DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
@@ -175,7 +175,7 @@ namespace CarrotBot.Conversation
             //UpdateEmbed(false, true);
             foreach(KeyValuePair<ulong, DiscordMessage> msg in ChannelMessages)
             {
-                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}#{originalMessage.Author.Discriminator}: {originalMessage.Content}");
+                //await msg.Value.ModifyAsync($"({originalChannel.Server}) {originalMessage.Author.Username}: {originalMessage.Content}");
                 await msg.Value.ModifyAsync(embed: embed);
             }*/
         }

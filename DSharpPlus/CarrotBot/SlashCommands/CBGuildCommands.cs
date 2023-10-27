@@ -106,7 +106,7 @@ public class CBGuildCommands : ApplicationCommandModule
             else
             {
                 DiscordChannel discordChannel = await Program.discord.GetShard(guildId).GetChannelAsync(818960822151544873);
-                await discordChannel.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}#{ctx.User.Discriminator}: {Id}, {name}");
+                await discordChannel.SendMessageAsync($"Channel requested for addition to conversation by {ctx.User.Username}: {Id}, {name}");
                 await ctx.UpdateResponseAsync("Channel submitted for review. Please be patient as you wait for the channel to be connected to the conversation.");
             }
         }
@@ -160,7 +160,7 @@ public class CBGuildCommands : ApplicationCommandModule
         //DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
         if (!confirm)
         {
-            await ctx.UpdateResponseAsync($"About to add {user.Username}#{user.Discriminator} as a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+            await ctx.UpdateResponseAsync($"About to add {user.Username} as a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
         }
         else
         {
@@ -177,7 +177,7 @@ public class CBGuildCommands : ApplicationCommandModule
         //DiscordMember duser = await Program.BotGuild.GetMemberAsync(Id);
         if (!confirm)
         {
-            await ctx.UpdateResponseAsync($"About to remove {user.Username}#{user.Discriminator} from being a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
+            await ctx.UpdateResponseAsync($"About to remove {user.Username} from being a conversation moderator.\nType `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}conversation addmod {Id} true` to continue.");
         }
         else
         {
