@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CarrotBot.Conversation;
@@ -279,7 +281,7 @@ public class UngroupedCommands : ApplicationCommandModule
             ConversationData.WriteDatabase();
             Dripcoin.WriteData();
         }
-        Logger.Log($"Bot shutdown initiated by {ctx.User.Username}#{ctx.User.Discriminator}.");
+        Logger.Log($"Bot shutdown initiated by {ctx.User.Username}.");
         Console.WriteLine();
         Environment.Exit(0);
     }
@@ -334,11 +336,23 @@ public class UngroupedCommands : ApplicationCommandModule
         {
             Client.DefaultRequestHeaders.Add("x-api-key", SensitiveInformation.catAPIKey);
             string responseString = await Client.GetStringAsync("https://api.thecatapi.com/v1/images/search");
-            responseString = responseString.Substring(1, responseString.Length - 2); //This API gives response strings surrounded by [] so we remove them
+
             Console.WriteLine($"Response string: {responseString}");
-            KONNode node = KONParser.Default.ParseJSON(responseString);
-            string? url = (string)node.Values["url"];
-            await ctx.UpdateResponseAsync(url);
+            JsonNode? node = JsonNode.Parse(responseString);
+            if (node is not null)
+            {
+                string url = node.AsArray()[0]!.AsObject()["url"]!.GetValue<string>();
+                await ctx.UpdateResponseAsync(url);
+            }
+            else
+            {
+                await ctx.UpdateResponseAsync("Something went wrong. Please try again.");
+            }
+        }
+        catch (JsonException e)
+        {
+            await ctx.UpdateResponseAsync("The response from the server was not formatted correctly.");
+            Logger.Log(e.ToString(), Logger.CBLogLevel.EXC);
         }
         catch (Exception e)
         {
@@ -400,7 +414,7 @@ public class UngroupedCommands : ApplicationCommandModule
         {
             DiscordChannel channel = ctx.Guild.GetChannel((ulong)guildData.ModMailChannel);
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                .WithAuthor($"Modmail from {ctx.Member.Username}#{ctx.Member.Discriminator}", iconUrl: ctx.Member.AvatarUrl)
+                .WithAuthor($"Modmail from {ctx.Member.Username}", iconUrl: ctx.Member.AvatarUrl)
                 .WithDescription($"{message}")
                 .WithFooter($"ID: {ctx.Member.Id}")
                 .WithColor(Utils.CBOrange)

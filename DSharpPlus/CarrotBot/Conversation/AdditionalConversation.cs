@@ -29,7 +29,7 @@ namespace CarrotBot.Conversation
             DiscordEmbedBuilder eb = new DiscordEmbedBuilder
             {
                 Description = message.Content,
-            }.WithAuthor($"{message.Author.Username}#{message.Author.Discriminator}", iconUrl: message.Author.GetAvatarUrl(ImageFormat.Auto))
+            }.WithAuthor($"{message.Author.Username}", iconUrl: message.Author.GetAvatarUrl(ImageFormat.Auto))
             .WithFooter($"Via {Channels[message.Channel.Guild.Id].CallSign}")
             .WithColor(DiscordColor.LightGray);
             if (ConversationData.VerifiedUsers.Contains(message.Author.Id))

@@ -46,7 +46,7 @@ public class UserCommands : ApplicationCommandModule
             eb.WithThumbnail(user.AvatarUrl);
             eb.WithTitle("User Info");
             //eb.WithDescription($"{user.Username + "#" + user.Discriminator}\nNickname: {nick}\nCreated At: {user.CreationTimestamp} (UTC)\nType: {type}\nStatus: {status}");
-            eb.AddField("Username", $"{user.Username}#{user.Discriminator}");
+            eb.AddField("Username", $"{user.Username}");
             eb.AddField("Created", $"<t:{user.CreationTimestamp.ToUnixTimeSeconds()}:R> ({user.CreationTimestamp.ToUniversalTime():yyyy/MM/dd HH:mm:ss} UTC)", true);
             eb.AddField("Type", $"{type}", true);
             if (!ctx.Channel.IsPrivate)

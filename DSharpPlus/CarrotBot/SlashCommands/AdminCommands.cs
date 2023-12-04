@@ -165,7 +165,7 @@ public class AdminCommands : ApplicationCommandModule
         if (!ctx.Guild.Members.ContainsKey(user.Id))
         {
             await ctx.Guild.BanMemberAsync(user.Id, reason: reason);
-            await ctx.UpdateResponseAsync($"Banned {user.Username}#{user.Discriminator}.");
+            await ctx.UpdateResponseAsync($"Banned {user.Username}.");
             return;
         }
         DiscordMember? member = user as DiscordMember;
@@ -192,7 +192,7 @@ public class AdminCommands : ApplicationCommandModule
                 dmFailed = true;
             }
             await member.BanAsync(reason: reason);
-            await ctx.UpdateResponseAsync(dmFailed ? $"Banned {user.Username}#{user.Discriminator}. I couldn't DM them." : $"Banned {user.Username}#{user.Discriminator}.");
+            await ctx.UpdateResponseAsync(dmFailed ? $"Banned {user.Username}. I couldn't DM them." : $"Banned {user.Username}#{user.Discriminator}.");
         }
         catch
         {
@@ -208,7 +208,7 @@ public class AdminCommands : ApplicationCommandModule
         try
         {
             await user.UnbanAsync(ctx.Guild, reason);
-            await ctx.UpdateResponseAsync($"Unbanned {user.Username}#{user.Discriminator}.");
+            await ctx.UpdateResponseAsync($"Unbanned {user.Username}.");
         }
         catch
         {

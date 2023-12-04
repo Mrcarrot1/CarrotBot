@@ -14,7 +14,7 @@ public class ServerCommands : ApplicationCommandModule
     {
         await ctx.IndicateResponseAsync();
         DiscordEmbedBuilder eb = new();
-        eb.WithDescription($"<@{ctx.Guild.Owner.Id}>\n{ctx.Guild.Owner.Username}#{ctx.Guild.Owner.Discriminator}\n{ctx.Guild.Owner.Id}\n{ctx.Guild.Name}");
+        eb.WithDescription($"<@{ctx.Guild.Owner.Id}>\n{ctx.Guild.Owner.Username}\n{ctx.Guild.Owner.Id}\n{ctx.Guild.Name}");
         eb.Color = Utils.CBGreen;
         //eb.WithFooter("© Mrcarrot 2018-21. All Rights Reserved.");
         eb.WithThumbnail(ctx.Guild.Owner.GetAvatarUrl(ImageFormat.Auto));

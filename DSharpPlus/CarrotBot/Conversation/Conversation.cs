@@ -130,7 +130,7 @@ namespace CarrotBot.Conversation
                     ConversationData.WriteDatabase();
                 }
                 ConversationMessage msgObject = new ConversationMessage(ConversationData.GenerateMessageId(), message, user, originalChannel);
-                string Title = $"{message.Author.Username}#{message.Author.Discriminator}";
+                string Title = $"{message.Author.Username}";
                 string Footer = $"Via {Server}";
 
                 if (Program.BotGuild is not null && Program.BotGuild.Members.ContainsKey(userId))
@@ -275,7 +275,7 @@ namespace CarrotBot.Conversation
                 msgObject.PreviousMessage = ConversationData.LastMessage;
                 ConversationData.LastMessage = msgObject;
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-                eb.WithTitle($"Message from {message.Author.Username}#{message.Author.Discriminator} (via {Server})");
+                eb.WithTitle($"Message from {message.Author.Username} (via {Server})");
                 eb.WithDescription(message.Content);
                 eb.WithFooter($"Internal CB Id: {msgObject.Id}\nUser Id: {message.Author.Id}");
                 eb.WithColor(DiscordColor.Green);

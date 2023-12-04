@@ -20,13 +20,13 @@ namespace CarrotBot.CommandsNext
         [Command("reportbug"), Description("Reports a bug with the bot")]
         public async Task ReportBug(CommandContext ctx, [RemainingText, Description("A description of the bug you are experiencing.")] string bug)
         {
-            await Program.Mrcarrot!.SendMessageAsync($"Bug reported by {ctx.User.Username}#{ctx.User.Discriminator}: {bug}");
+            await Program.Mrcarrot!.SendMessageAsync($"Bug reported by {ctx.User.Username}: {bug}");
             await ctx.RespondAsync("Bug reported.");
         }
         [Command("suggestfeature"), Description("Suggests a feature for the bot")]
         public async Task SuggestFeature(CommandContext ctx, [RemainingText, Description("A description of the feature you would like to suggest.")] string feature)
         {
-            await Program.Mrcarrot!.SendMessageAsync($"Feature suggested by {ctx.User.Username}#{ctx.User.Discriminator}: {feature}");
+            await Program.Mrcarrot!.SendMessageAsync($"Feature suggested by {ctx.User.Username}: {feature}");
             await ctx.RespondAsync("Feature suggested.");
         }
         //[Command("remoteupdate"), RequireOwner]

@@ -310,7 +310,7 @@ namespace CarrotBot
                                 .AddComponents(new DiscordButtonComponent(ButtonStyle.Primary, $"mmfubutton_{e.Interaction.Guild.Id}_{e.Interaction.Channel.Id}_{(await e.Interaction.GetOriginalResponseAsync()).Id}", "Reply"));
 
                             eb = new DiscordEmbedBuilder()
-                                .WithAuthor(name: $"Response sent by {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.AvatarUrl)
+                                .WithAuthor(name: $"Response sent by {e.Interaction.User.Username}", iconUrl: e.Interaction.User.AvatarUrl)
                                 .WithDescription(message)
                                 .WithColor(Utils.CBOrange);
 
@@ -342,7 +342,7 @@ namespace CarrotBot
                         if (e.Values.TryGetValue("response", out string? response))
                         {
                             DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                                .WithAuthor(name: $"Response from {e.Interaction.User.Username}#{e.Interaction.User.Discriminator}", iconUrl: e.Interaction.User.GetAvatarUrl(ImageFormat.Auto))
+                                .WithAuthor(name: $"Response from {e.Interaction.User.Username}", iconUrl: e.Interaction.User.GetAvatarUrl(ImageFormat.Auto))
                                 .WithDescription(response)
                                 .WithColor(Utils.CBOrange);
 
@@ -566,7 +566,7 @@ namespace CarrotBot
                 }
 
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                    .WithAuthor($"{e.Author.Username}#{e.Author.Discriminator} (Click to Jump)", $"{e.Message.JumpLink.AbsoluteUri}", iconUrl: e.Author.AvatarUrl)
+                    .WithAuthor($"{e.Author.Username} (Click to Jump)", $"{e.Message.JumpLink.AbsoluteUri}", iconUrl: e.Author.AvatarUrl)
                     .WithDescription(description)
                     .WithColor(Utils.DiscordYellow)
                     .WithFooter($"ID: {e.Author.Id}");
@@ -601,7 +601,7 @@ namespace CarrotBot
                 if (description.Length > 4096) description = description.SafeSubstring(0, 4093) + "...";
 
                 DiscordEmbedBuilder eb = new DiscordEmbedBuilder()
-                    .WithAuthor($"{e.Message.Author.Username}#{e.Message.Author.Discriminator}", iconUrl: e.Message.Author.AvatarUrl)
+                    .WithAuthor($"{e.Message.Author.Username}", iconUrl: e.Message.Author.AvatarUrl)
                     .WithDescription(description)
                     .WithColor(Utils.DiscordRed)
                     .WithFooter($"ID: {e.Message.Author.Id}");
