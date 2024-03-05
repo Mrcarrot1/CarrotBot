@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -17,14 +18,14 @@ namespace CarrotBot.Data
     /// </summary>
     public static class Database
     {
-        public static Dictionary<ulong, GuildData> Guilds = new Dictionary<ulong, GuildData>();
+        public static ConcurrentDictionary<ulong, GuildData> Guilds = new();
 
         private static KONNode? DatabaseNode;
         private static List<KONNode> RootNodes = new List<KONNode>();
 
         public static void Load()
         {
-            Guilds = new Dictionary<ulong, GuildData>();
+            Guilds = new();
             RootNodes = new List<KONNode>();
             if (Program.doNotWrite) return;
             DatabaseNode = KONParser.Default.Parse(SensitiveInformation.AES256ReadFile($@"{Utils.localDataPath}/Database.cb"));
@@ -184,7 +185,7 @@ namespace CarrotBot.Data
                                     }
                                 }
                             }
-                            Guilds.Add(guild.Id, guild);
+                            Guilds.AddOrUpdate(guild.Id, id => guild, (id, g) => guild);
                             if (guildNode.Name == "GUILD")
                             {
                                 guild.FlushData();
@@ -204,30 +205,27 @@ namespace CarrotBot.Data
         /// </summary>
         /// <param name="Id">The guild ID.</param>
         /// <returns>The GuildData object that represents the guild with the given ID.</returns>
-        public static GuildData GetOrCreateGuildData(ulong Id)
-        {
-            if (Guilds.TryGetValue(Id, out var data)) return data;
-            GuildData output = new GuildData(Id, true);
-            Guilds.Add(Id, output);
-            FlushDatabase();
-            return output;
-        }
+        public static GuildData GetOrCreateGuildData(ulong Id) => Guilds.GetOrAdd(Id, id => new(id, true));
+
         public static void FlushDatabase(bool flushAll = false)
         {
-            if (Program.doNotWrite) return;
-            DatabaseNode = new KONNode("DATABASE");
-            KONArray guildsArray = new KONArray("GUILDS");
-            foreach (GuildData guildData in Guilds.Values)
+            lock (Guilds)
             {
-                guildsArray.AddItem(guildData.Id);
-            }
-            DatabaseNode.AddArray(guildsArray);
-            SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Database.cb", "//PERSISTENT\n" + KONWriter.Default.Write(DatabaseNode));
-            if (flushAll)
-            {
-                foreach (KeyValuePair<ulong, GuildData> guild in Guilds)
+                if (Program.doNotWrite) return;
+                DatabaseNode = new KONNode("DATABASE");
+                KONArray guildsArray = new KONArray("GUILDS");
+                foreach (GuildData guildData in Guilds.Values)
                 {
-                    guild.Value.FlushData(true);
+                    guildsArray.AddItem(guildData.Id);
+                }
+                DatabaseNode.AddArray(guildsArray);
+                SensitiveInformation.AES256WriteFile($@"{Utils.localDataPath}/Database.cb", "//PERSISTENT\n" + KONWriter.Default.Write(DatabaseNode));
+                if (flushAll)
+                {
+                    foreach (KeyValuePair<ulong, GuildData> guild in Guilds)
+                    {
+                        guild.Value.FlushData(true);
+                    }
                 }
             }
         }
