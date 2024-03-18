@@ -532,6 +532,7 @@ namespace CarrotBot
             }*/
             if (guildData.MessageLogsChannel != null)
             {
+                if (e.Author.IsBot) return;
                 DiscordChannel channel = e.Guild.GetChannel((ulong)guildData.MessageLogsChannel);
                 StringBuilder attachments1 = new(64);
                 foreach (DiscordAttachment attachment in e.MessageBefore.Attachments)
