@@ -25,7 +25,14 @@ namespace CarrotBot.Data
             Guilds = new Dictionary<ulong, GuildData>();
             RootNodes = new List<KONNode>();
             if (Program.doNotWrite) return;
-            DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Database.cb")));
+            try
+            {
+                DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Database.cb")));
+            }
+            catch //If there's an issue reading the file, fall back to the backup, also in several other places in this file
+            {
+                DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.backupDataPath}/Database.cb")));
+            }
             RootNodes.Add(DatabaseNode);
             foreach (KONArray array in DatabaseNode.Arrays)
             {
@@ -35,7 +42,15 @@ namespace CarrotBot.Data
                     {
                         try
                         {
-                            KONNode guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb")));
+                            KONNode guildNode;
+                            try
+                            {
+                                guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Guild_{item}/Index.cb")));
+                            }
+                            catch
+                            {
+                                guildNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.backupDataPath}/Guild_{item}/Index.cb")));
+                            }
                             RootNodes.Add(guildNode);
                             GuildData guild = new GuildData(item);
                             guild.GuildPrefix = (string)guildNode.Values["prefix"];
@@ -66,6 +81,7 @@ namespace CarrotBot.Data
                                     foreach (ulong item1 in array1.Items)
                                     {
                                         bool ok = Utils.TryLoadDatabaseNode($@"{Utils.localDataPath}/Guild_{item}/User_{item1}.cb", out KONNode userNode);
+                                        if (!ok) ok = Utils.TryLoadDatabaseNode($@"{Utils.backupDataPath}/Guild_{item}/User_{item1}.cb", out userNode);
                                         if (!ok) continue;
                                         RootNodes.Add(userNode);
                                         GuildUserData user = new GuildUserData(item1, guild.Id);

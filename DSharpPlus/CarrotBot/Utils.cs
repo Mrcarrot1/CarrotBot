@@ -16,11 +16,12 @@ namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.5.7";
+        private static readonly string version = "1.5.8";
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
         public static string localDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Data";
+        public static string backupDataPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Backup/Data";
         //public static string localDataPath = @"/home/mrcarrot/Documents/CarrotBot/Data";
         public static string logsPath = $@"{Directory.GetParent(Environment.CurrentDirectory)}/Logs";
         public static string conversationDataPath = $@"{localDataPath}/Conversation";
