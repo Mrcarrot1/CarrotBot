@@ -62,17 +62,16 @@ namespace CarrotBot
             }
             if (eventId.ToString() == "ConnectionClose" || eventId.ToString() == "HeartbeatFailure")
             {
-                Task.Run(async () => await Program.discord.StartAsync()); //Reconnect the client
-                /*Data.Database.FlushDatabase(true);
+                //Task.Run(async () => await Program.discord.StartAsync()); //Reconnect the client
+                Data.Database.FlushDatabase(true);
                 Conversation.ConversationData.WriteDatabase();
                 Leveling.LevelingData.FlushAllData();
                 Process.Start($@"{Environment.CurrentDirectory}/CarrotBot");
-                Environment.Exit(0);*/
+                Environment.Exit(0);
             }
         }
-        public IDisposable BeginScope<TState>(TState state)
+        public IDisposable? BeginScope<TState>(TState state)
         {
-#nullable disable
             return null;
         }
         public bool IsEnabled(LogLevel logLevel)
