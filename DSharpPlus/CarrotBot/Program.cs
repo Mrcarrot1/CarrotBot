@@ -136,6 +136,7 @@ namespace CarrotBot
 
                 return Task.CompletedTask;
             };
+            discord.GuildMemberUpdated += MemberUpdated;
             //discord.MessageReactionAdded += ReactionAdded;
 
 
@@ -742,6 +743,15 @@ namespace CarrotBot
                     Conversation.ConversationData.WriteDatabase();
                 }
             });
+        }
+        static async Task MemberUpdated(DiscordClient client, GuildMemberUpdateEventArgs e)
+        {
+            if (e.Guild.Id != 727293343352225853) return;
+
+            if (e.MemberBefore.PremiumSince is null && e.MemberAfter.PremiumSince is not null)
+            {
+                await e.Guild.GetChannel(746632972014452796).SendMessageAsync($"<@!{e.Member.Id}> thanks for the boost! Use /modmail to request a custom role!");
+            }
         }
     }
 }
