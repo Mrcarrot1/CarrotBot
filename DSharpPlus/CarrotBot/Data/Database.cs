@@ -29,8 +29,9 @@ namespace CarrotBot.Data
             {
                 DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.localDataPath}/Database.cb")));
             }
-            catch //If there's an issue reading the file, fall back to the backup, also in several other places in this file
+            catch(Exception e) //If there's an issue reading the file, fall back to the backup, also in several other places in this file
             {
+                Console.WriteLine(e);
                 DatabaseNode = KONParser.Default.Parse(SensitiveInformation.DecryptDataFile(File.ReadAllText($@"{Utils.backupDataPath}/Database.cb")));
             }
             RootNodes.Add(DatabaseNode);

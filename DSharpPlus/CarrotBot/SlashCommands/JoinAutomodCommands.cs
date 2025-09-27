@@ -65,7 +65,7 @@ public class JoinFilterCommands : ApplicationCommandModule
             JoinFilter filter = guild.JoinFilters[i];
             string ban = filter.Ban ? "Yes" : "No";
             eb.AddField("ID", $"`{i}`", true);
-            eb.AddField("Regex", $"`{filter.Regex.ToString()}`", true);
+            eb.AddField("Regex", $"`{filter.Regex}`", true);
             eb.AddField("Ban?", ban, true);
         }
         eb.WithColor(Utils.CBGreen);
@@ -79,7 +79,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -111,7 +111,7 @@ public class JoinFilterCommands : ApplicationCommandModule
             if (e is ArgumentOutOfRangeException || e is IndexOutOfRangeException)
                 await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
             else
-                throw;
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
         }
     }
 
@@ -121,7 +121,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -137,9 +137,9 @@ public class JoinFilterCommands : ApplicationCommandModule
         catch (Exception e)
         {
             if (e is ArgumentOutOfRangeException || e is IndexOutOfRangeException)
-                await ctx.RespondEmbedAsync(null, "Couldn't find a filter with that number!", DiscordColor.Red);
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
             else
-                throw;
+                await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
         }
     }
 
@@ -152,7 +152,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -169,6 +169,10 @@ public class JoinFilterCommands : ApplicationCommandModule
         {
             await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
         }
+        catch
+        {
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
+        }
     }
 
     [SlashCommand("modify-regex", "Used to modify the regex used in the filter.", false), SlashRequirePermissions(Permissions.BanMembers)]
@@ -177,7 +181,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -194,6 +198,10 @@ public class JoinFilterCommands : ApplicationCommandModule
         {
             await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
         }
+        catch
+        {
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
+        }
     }
 
     [SlashCommand("add-exception", "Adds an exception to the filter rule.", false), SlashRequirePermissions(Permissions.BanMembers)]
@@ -202,7 +210,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -219,6 +227,10 @@ public class JoinFilterCommands : ApplicationCommandModule
         {
             await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
         }
+        catch
+        {
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
+        }
     }
 
     [SlashCommand("remove-exception", "Removes an exception from the filter rule.", false), SlashRequirePermissions(Permissions.BanMembers)]
@@ -227,7 +239,7 @@ public class JoinFilterCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid filter ID!");
                 return;
@@ -250,6 +262,10 @@ public class JoinFilterCommands : ApplicationCommandModule
         catch (IndexOutOfRangeException)
         {
             await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Couldn't find a filter with that number!").WithColor(DiscordColor.Red));
+        }
+        catch
+        {
+            await ctx.UpdateResponseAsync(new DiscordEmbedBuilder().WithDescription("Something went wrong. Please double-check the filter ID.").WithColor(DiscordColor.Red));
         }
     }
     //}
@@ -315,7 +331,6 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         eb.WithColor(Utils.CBGreen);
         eb.WithFooter("Showing exact blacklist ・ Use `joinfilters list` to view regex filters");
         await ctx.UpdateResponseAsync(embed: eb.Build());
-
     }
 
     [SlashCommand("info", "Displays various information about a join blacklist entry.", false), SlashRequirePermissions(Permissions.BanMembers)]
@@ -324,7 +339,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;
@@ -366,7 +381,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (blacklistIdl > int.MaxValue || blacklistIdl < 1)
+            if (blacklistIdl > int.MaxValue || blacklistIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;
@@ -397,7 +412,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (blacklistIdl > int.MaxValue || blacklistIdl < 1)
+            if (blacklistIdl > int.MaxValue || blacklistIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;
@@ -422,7 +437,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (blacklistIdl > int.MaxValue || blacklistIdl < 1)
+            if (blacklistIdl > int.MaxValue || blacklistIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;
@@ -447,7 +462,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (blacklistIdl > int.MaxValue || blacklistIdl < 1)
+            if (blacklistIdl > int.MaxValue || blacklistIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;
@@ -472,7 +487,7 @@ public class JoinBlacklistCommands : ApplicationCommandModule
         await ctx.IndicateResponseAsync();
         try
         {
-            if (filterIdl > int.MaxValue || filterIdl < 1)
+            if (filterIdl > int.MaxValue || filterIdl < 0)
             {
                 await ctx.UpdateResponseAsync("Invalid blacklist ID!");
                 return;

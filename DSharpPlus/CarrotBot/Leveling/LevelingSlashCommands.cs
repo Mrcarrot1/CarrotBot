@@ -14,7 +14,7 @@ namespace CarrotBot.Leveling;
 
 public class LevelingSlashCommands : ApplicationCommandModule
 {
-    [SlashCommand("rank", "Shows your level and rank in the server."), LevelingCommandAttribute]
+    [SlashCommand("rank", "Shows your level and rank in the server."), LevelingCommand]
     public async Task Rank(InteractionContext ctx, [Option("user", "The user to check the rank for.")] DiscordUser user = null)
     {
         await ctx.IndicateResponseAsync();
@@ -50,7 +50,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
             eb.WithColor(Utils.CBOrange);
             //This looks bad
             //and it is
-            eb.WithDescription($"Level **{lvlUser.Level}**\n{lvlUser.CurrentXP}/{lvlServer.XPNeededForLevel(lvlUser.Level + 1)} XP\nServer rank: **{lvlServer.UsersByRank.IndexOf(lvlServer.UsersByRank.FirstOrDefault(x => x.Id == lvlUser.Id)) + 1}/{lvlServer.UsersByRank.Count}**");
+            eb.WithDescription($"Level **{lvlUser.Level}**\n{lvlUser.CurrentXP}/{lvlServer.XPNeededForLevel(lvlUser.Level + 1)} XP\nServer rank: **{lvlServer.UsersByRank.FindIndex(x => x.Id == lvlUser.Id) + 1}/{lvlServer.UsersByRank.Count}**");
             //eb.WithFooter("This is a beta. Server rankings are coming soon.");
             await ctx.UpdateResponseAsync(embed: eb.Build());
         }
@@ -63,7 +63,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("add-level-role", "Adds a role to be granted to a user when they reach a certain level.", false), SlashRequirePermissions(Permissions.ManageRoles), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("add-level-role", "Adds a role to be granted to a user when they reach a certain level.", false), SlashRequirePermissions(Permissions.ManageRoles), LevelingCommand, RequireLeveling]
     public async Task AddLevelRole(InteractionContext ctx, [Option("level", "The level at which to grant the role.")] long levell, [Option("role", "The role to grant.")] DiscordRole Role)
     {
         await ctx.IndicateResponseAsync();
@@ -90,7 +90,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("remove-level-role", "Removes a level from being granted at a certain level."), SlashRequirePermissions(Permissions.ManageRoles), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("remove-level-role", "Removes a level from being granted at a certain level."), SlashRequirePermissions(Permissions.ManageRoles), LevelingCommand, RequireLeveling]
     public async Task RemoveLevelRole(InteractionContext ctx, [Option("level", "The level from which to remove the role.")] long levell)
     {
         await ctx.IndicateResponseAsync();
@@ -123,7 +123,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("leaderboard", "Shows a leaderboard of users"), LevelingCommandAttribute]
+    [SlashCommand("leaderboard", "Shows a leaderboard of users"), LevelingCommand]
     public async Task Leaderboard(InteractionContext ctx, [Option("page", "The page of the list to show.")] long pagel = 1)
     {
         await ctx.IndicateResponseAsync();
@@ -182,7 +182,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("enable-leveling", "Enables leveling in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling(false)]
+    [SlashCommand("enable-leveling", "Enables leveling in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling(false)]
     public async Task EnableLeveling(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -195,11 +195,11 @@ public class LevelingSlashCommands : ApplicationCommandModule
         DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
         eb.WithTitle("Leveling Enabled");
         eb.WithDescription("You have enabled leveling for this server. Here are some tips to help you customize the experience!");
-        eb.AddField("Useful Commands", $"`addnoxpchannel`: Blacklists a channel from earning XP. Useful for hidden channels and/or places such as meme chats or bot channels.\n`setlevelupchannel`: Redirects level-up messages to a specific channel. Can be used to keep chat cleaner.\n`addlevelrole`: Adds a role reward for users who reach a certain level.\nSee `{Data.Database.GetOrCreateGuildData(ctx.Guild.Id).GuildPrefix}help leveling` for a full list of commands.");
+        eb.AddField("Useful Commands", $"`/add-no-xp-channel`: Blacklists a channel from earning XP. Useful for hidden channels and/or places such as meme chats or bot channels.\n`/set-level-up-channel`: Redirects level-up messages to a specific channel. Can be used to keep chat cleaner.\n`/add-level-role`: Adds a role reward for users who reach a certain level.");
         await ctx.UpdateResponseAsync(embed: eb.Build());
     }
 
-    [SlashCommand("disable-leveling", "Disables leveling in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("disable-leveling", "Disables leveling in this server.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task DisableLeveling(InteractionContext ctx, [Option("delete-data", "Whether or not to delete all leveling data for this server")] bool deleteData)
     {
         await ctx.IndicateResponseAsync();
@@ -212,7 +212,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync("Successfully disabled leveling.");
     }
 
-    [SlashCommand("add-no-xp-channel", "Blacklists a channel from earning XP.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("add-no-xp-channel", "Blacklists a channel from earning XP.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task AddNoXPChannel(InteractionContext ctx, [Option("channel", "The channel to blacklist.")] DiscordChannel channel)
     {
         await ctx.IndicateResponseAsync();
@@ -227,7 +227,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync($"Added XP-blocked channel: <#{channel.Id}>");
     }
 
-    [SlashCommand("remove-no-xp-channel", "Removes a channel from the XP blacklist.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("remove-no-xp-channel", "Removes a channel from the XP blacklist.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task RemoveNoXPChannel(InteractionContext ctx, [Option("channel", "The channel to remove.")] DiscordChannel channel)
     {
         await ctx.IndicateResponseAsync();
@@ -241,7 +241,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync($"Removed XP-blocked channel: <#{channel.Id}>");
     }
 
-    [SlashCommand("set-level-up-channel", "Sets a channel to send all level-up messages in.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("set-level-up-channel", "Sets a channel to send all level-up messages in.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task SetLevelUpChannel(InteractionContext ctx, [Option("channel", "The channel to set.")] DiscordChannel channel)
     {
         await ctx.IndicateResponseAsync();
@@ -255,7 +255,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync($"Set level-up message channel: <#{channel.Id}>");
     }
 
-    [SlashCommand("remove-level-up-channel", "Removes the channel all level-up messages are being sent to.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("remove-level-up-channel", "Removes the channel all level-up messages are being sent to.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task RemoveLevelUpChannel(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -269,7 +269,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync("Removed level-up message channel.");
     }
 
-    [SlashCommand("add-level-up-message", "Adds a message that will be displayed to a user who reaches a certain level.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("add-level-up-message", "Adds a message that will be displayed to a user who reaches a certain level.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task AddLevelUpMessage(InteractionContext ctx, [Option("level", "The level to show the message at.")] long levell, [Option("message", "The message to show.")] string message)
     {
         await ctx.IndicateResponseAsync();
@@ -292,7 +292,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("remove-level-up-message", "Removes a level-up message from the list to be shown to users who reach a certain level.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("remove-level-up-message", "Removes a level-up message from the list to be shown to users who reach a certain level.", false), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task RemoveLevelUpMessage(InteractionContext ctx, [Option("level", "The level to remove the message from.")] long levell)
     {
         await ctx.IndicateResponseAsync();
@@ -315,7 +315,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("clear-level-up-messages", "Clears all level-up messages in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("clear-level-up-messages", "Clears all level-up messages in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task ClearLevelUpMessages(InteractionContext ctx, [Option("confirm", "Whether to confirm deletion.")] bool confirm = false)
     {
         await ctx.IndicateResponseAsync();
@@ -342,7 +342,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         server.FlushData();
     }
 
-    [SlashCommand("set-xp-cooldown", "Sets the XP cooldown in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("set-xp-cooldown", "Sets the XP cooldown in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task SetXPCooldown(InteractionContext ctx, [Option("cooldown", "The cooldown in seconds. Default: 60.")] long cooldownl)
     {
         await ctx.IndicateResponseAsync();
@@ -369,7 +369,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("set-xp-per-level", "Sets the XP per level in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("set-xp-per-level", "Sets the XP per level in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task SetXPPerLevel(InteractionContext ctx, [Option("xp", "The amount of XP required to reach level 1. Default: 150.")] long xpl)
     {
         await ctx.IndicateResponseAsync();
@@ -396,7 +396,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("set-xp-rate-of-change", "Sets the rate of change of XP required per level in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("set-xp-rate-of-change", "Sets the rate of change of XP required per level in this server."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task SetXPRateOfChange(InteractionContext ctx, [Option("rate", "The number of times to add the level 1 XP requirement to each new level's requirement. Default: 1.")] long ratel)
     {
         await ctx.IndicateResponseAsync();
@@ -416,7 +416,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("set-xp-per-message", "Sets the XP a user receives for sending one message."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("set-xp-per-message", "Sets the XP a user receives for sending one message."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task SetXPPerMessage(InteractionContext ctx, [Option("xp", "The amount of XP to give. Default: 5.")] long xpl, [Option("max-xp", "The maximum amount of XP to give. Default: 5.")] long? maxXPl = null)
     {
         await ctx.IndicateResponseAsync();
@@ -464,7 +464,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         LevelingData.Servers[ctx.Guild.Id].FlushData();
     }
 
-    [SlashCommand("leveling-settings", "Shows the settings for leveling in this server."), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("leveling-settings", "Shows the settings for leveling in this server."), LevelingCommand, RequireLeveling]
     public async Task LevelingSettings(InteractionContext ctx)
     {
         await ctx.IndicateResponseAsync();
@@ -498,7 +498,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         await ctx.UpdateResponseAsync(eb.Build());
     }
 
-    [SlashCommand("reset-levels", "Resets XP and levels."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("reset-levels", "Resets XP and levels."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task ResetLevels(InteractionContext ctx, [Option("confirm", "Whether or not to confirm the level reset.")] bool confirm = false)
     {
         await ctx.IndicateResponseAsync();
@@ -528,7 +528,7 @@ public class LevelingSlashCommands : ApplicationCommandModule
         }
     }
 
-    [SlashCommand("reset-level-settings", "Resets leveling settings to their defaults."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommandAttribute, RequireLeveling]
+    [SlashCommand("reset-level-settings", "Resets leveling settings to their defaults."), SlashRequireUserPermissions(Permissions.ManageGuild), LevelingCommand, RequireLeveling]
     public async Task ResetLevelSettings(InteractionContext ctx, [Option("confirm", "Whether or not to confirm the level settings reset.")] bool confirm = false)
     {
         await ctx.IndicateResponseAsync();

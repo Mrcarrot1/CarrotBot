@@ -11,12 +11,13 @@ using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.SlashCommands;
 using KarrotObjectNotation;
+using System.Reflection;
 
 namespace CarrotBot
 {
     public static class Utils
     {
-        private static readonly string version = "1.5.11";
+        private static readonly string version = (Assembly.GetExecutingAssembly().GetName().Version ?? new()).ToString();
         public static readonly string currentVersion = Program.isBeta ? $"{version}(beta)" : version;
         public static string yyMMdd = DateTime.Now.ToString("yyMMdd");
         public static DateTimeOffset startTime = DateTimeOffset.Now;
